@@ -6,30 +6,34 @@ class TerritoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
-      body: SizedBox(
-        width: 390,
-        height: 844,
+      backgroundColor: const Color(0xFFFAFBFC),
+      body: SafeArea(
         child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              const SizedBox(height: 10),
+
               _buildHeader(),
 
-              // Content
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    _buildMapSection(),
-                    const SizedBox(height: 24),
-                    _buildRecentActivity(),
-                    const SizedBox(height: 24),
-                    _buildTerritoriesList(),
-                    const SizedBox(height: 80), // Bottom spacing for nav
-                  ],
-                ),
-              ),
+              const SizedBox(height: 24),
+
+              _buildSummaryCard(),
+
+              const SizedBox(height: 24),
+
+              _buildMapSection(),
+
+              const SizedBox(height: 28),
+
+              _buildRecentActivity(),
+
+              const SizedBox(height: 28),
+
+              _buildTerritoriesList(),
+
+              const SizedBox(height: 100),
             ],
           ),
         ),
@@ -39,150 +43,101 @@ class TerritoriesScreen extends StatelessWidget {
 
   Widget _buildHeader() {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E5BFF), Color(0xFF0D47D4)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E5BFF).withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          const Text(
-            'Territorios',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Conquista, defiende y expande tu dominio',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.8),
-            ),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tu dominio total',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        RichText(
-                          text: TextSpan(
-                            style: const TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              height: 1,
-                            ),
-                            children: [
-                              const TextSpan(text: '12'),
-                              TextSpan(
-                                text: '/45',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white.withValues(alpha: 0.7),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'En disputa',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.8),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        const Text(
-                          '3',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            height: 1,
-                          ),
-                        ),
-                      ],
-                    ),
+          // Decorative elements
+          Positioned(
+            top: 30,
+            right: -50,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF6B8EFF).withValues(alpha: 0.04),
+                    const Color(0xFF6B8EFF).withValues(alpha: 0.01),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Control de la ciudad',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                        Text(
-                          '27%',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(10),
-                      child: LinearProgressIndicator(
-                        value: 0.27,
-                        minHeight: 12,
-                        backgroundColor: Colors.white.withValues(alpha: 0.2),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Colors.white.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+
+          Positioned(
+            bottom: 20,
+            left: -40,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFF7ED957).withValues(alpha: 0.03),
+                    const Color(0xFF7ED957).withValues(alpha: 0.01),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        "Territorios",
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
                         ),
                       ),
+                      SizedBox(height: 4),
+                      Text(
+                        "Conquista y defiende tu zona",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF6B6B6B),
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 8,
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                    child: const Icon(Icons.map, color: Color(0xFF1E5BFF)),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -194,7 +149,7 @@ class TerritoriesScreen extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -203,7 +158,7 @@ class TerritoriesScreen extends StatelessWidget {
           ),
         ],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
           Row(
@@ -273,6 +228,90 @@ class TerritoriesScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryCard() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    "Tu dominio",
+                    style: TextStyle(fontSize: 13, color: Color(0xFF6B6B6B)),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    "12 / 45",
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                ],
+              ),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: const [
+                  Text(
+                    "En disputa",
+                    style: TextStyle(fontSize: 13, color: Color(0xFF6B6B6B)),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    "3",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFFF9500),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: 0.27,
+              minHeight: 10,
+              backgroundColor: const Color(0xFFF0F2F6),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFF1E5BFF)),
+            ),
+          ),
+
+          const SizedBox(height: 6),
+
+          const Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              "27%",
+              style: TextStyle(fontSize: 12, color: Color(0xFF6B6B6B)),
+            ),
           ),
         ],
       ),
@@ -638,12 +677,12 @@ class TerritoriesScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: Colors.transparent, width: 2),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],

@@ -81,18 +81,6 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        // Challenges branch
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/challenges',
-              name: 'challenges',
-              pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: ChallengesPage()),
-            ),
-          ],
-        ),
-
         // Profile branch
         StatefulShellBranch(
           routes: [
@@ -101,6 +89,18 @@ final GoRouter appRouter = GoRouter(
               name: 'profile',
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: ProfileScreen()),
+            ),
+          ],
+        ),
+
+        // Challenges branch
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/challenges',
+              name: 'challenges',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: ChallengesPage()),
             ),
           ],
         ),
