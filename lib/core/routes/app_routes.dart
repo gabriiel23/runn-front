@@ -10,42 +10,42 @@ import 'package:runn_front/features/territory/presentation/pages/territory_page.
 import 'package:runn_front/features/challenges/presentation/pages/challenges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
 
-// Global keys for navigation
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-// GoRouter configuration
+// Branches order must match MainScaffold nav item order:
+// 0 Inicio | 1 Comunidad | 2 Territorios | 3 Retos | 4 Perfil
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/onboarding',
   routes: [
-    // Onboarding route
+    // Onboarding
     GoRoute(
       path: '/onboarding',
       name: 'onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
 
-    // Login route
+    // Login
     GoRoute(
       path: '/login',
       name: 'login',
       builder: (context, state) => const LoginScreen(),
     ),
 
-    // Register route
+    // Register
     GoRoute(
       path: '/register',
       name: 'register',
       builder: (context, state) => const RegisterScreen(),
     ),
 
-    // Shell route for main navigation with bottom bar
+    // Shell — main navigation with bottom bar
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
         return MainScaffold(navigationShell: navigationShell);
       },
       branches: [
-        // Home branch
+        // 0 — Inicio
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -57,7 +57,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        // Community branch
+        // 1 — Comunidad
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -69,7 +69,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        // Territories branch
+        // 2 — Territorios
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -81,19 +81,7 @@ final GoRouter appRouter = GoRouter(
           ],
         ),
 
-        // Profile branch
-        StatefulShellBranch(
-          routes: [
-            GoRoute(
-              path: '/profile',
-              name: 'profile',
-              pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: ProfileScreen()),
-            ),
-          ],
-        ),
-
-        // Challenges branch
+        // 3 — Retos
         StatefulShellBranch(
           routes: [
             GoRoute(
@@ -101,6 +89,18 @@ final GoRouter appRouter = GoRouter(
               name: 'challenges',
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: ChallengesPage()),
+            ),
+          ],
+        ),
+
+        // 4 — Perfil
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/profile',
+              name: 'profile',
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: ProfileScreen()),
             ),
           ],
         ),

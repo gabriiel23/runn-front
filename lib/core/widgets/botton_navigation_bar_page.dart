@@ -16,6 +16,7 @@ class BottomNavWidget extends StatelessWidget {
       {'id': 'home', 'label': 'Inicio', 'icon': Icons.home},
       {'id': 'territories', 'label': 'Territorios', 'icon': Icons.location_on},
       {'id': 'community', 'label': 'Comunidad', 'icon': Icons.people},
+      {'id': 'challenges', 'label': 'Retos', 'icon': Icons.emoji_events},
       {'id': 'profile', 'label': 'Perfil', 'icon': Icons.person},
     ];
 

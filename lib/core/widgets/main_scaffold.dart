@@ -23,10 +23,11 @@ class MainScaffold extends StatelessWidget {
 
   Widget _buildBottomNavigationBar(BuildContext context) {
     final navItems = [
-      {'label': 'Inicio', 'icon': Icons.home},
-      {'label': 'Comunidad', 'icon': Icons.people},
-      {'label': 'Territorios', 'icon': Icons.location_on},
-      {'label': 'Perfil', 'icon': Icons.person},
+      {'label': 'Inicio', 'icon': Icons.home_rounded},
+      {'label': 'Comunidad', 'icon': Icons.people_rounded},
+      {'label': 'Territorios', 'icon': Icons.location_on_rounded},
+      {'label': 'Retos', 'icon': Icons.emoji_events_rounded},
+      {'label': 'Perfil', 'icon': Icons.person_rounded},
     ];
 
     return Padding(
@@ -43,7 +44,7 @@ class MainScaffold extends StatelessWidget {
             ),
           ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
         child: SafeArea(
           top: false,
           child: Row(
@@ -82,8 +83,8 @@ class MainScaffold extends StatelessWidget {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(
-          horizontal: isActive ? 20 : 10,
-          vertical: 10,
+          horizontal: isActive ? 16 : 10,
+          vertical: 8,
         ),
         decoration: BoxDecoration(
           color: isActive
@@ -96,18 +97,18 @@ class MainScaffold extends StatelessWidget {
           children: [
             Icon(
               icon,
-              size: 24,
+              size: 22,
               color: isActive
                   ? const Color(0xFF1E5BFF)
                   : const Color(0xFF6B6B6B),
             ),
             if (isActive) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: 5),
               Text(
                 label,
                 style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
                   color: Color(0xFF1E5BFF),
                 ),
               ),
