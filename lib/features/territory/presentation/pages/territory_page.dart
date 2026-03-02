@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class TerritoriesScreen extends StatelessWidget {
   const TerritoriesScreen({super.key});
@@ -6,7 +6,7 @@ class TerritoriesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFFFFBFC),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -67,8 +67,8 @@ class TerritoriesScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF6B8EFF).withValues(alpha: 0.04),
-                    const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                    const Color(0xFFE8698A).withValues(alpha: 0.04),
+                    const Color(0xFFE8698A).withValues(alpha: 0.01),
                   ],
                 ),
               ),
@@ -134,7 +134,7 @@ class TerritoriesScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: const Icon(Icons.map, color: Color(0xFF1E5BFF)),
+                    child: const Icon(Icons.map, color: Color(0xFFC94070)),
                   ),
                 ],
               ),
@@ -187,7 +187,7 @@ class TerritoriesScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: Color(0xFF1E5BFF),
+                  color: Color(0xFFC94070),
                 ),
               ),
             ],
@@ -300,7 +300,7 @@ class TerritoriesScreen extends StatelessWidget {
               value: 0.27,
               minHeight: 10,
               backgroundColor: const Color(0xFFF0F2F6),
-              valueColor: const AlwaysStoppedAnimation(Color(0xFF1E5BFF)),
+              valueColor: const AlwaysStoppedAnimation(Color(0xFFC94070)),
             ),
           ),
 
@@ -489,10 +489,10 @@ class TerritoriesScreen extends StatelessWidget {
         icon = Icons.trending_up;
         break;
       default: // defended
-        bgColor = const Color(0xFF1E5BFF).withValues(alpha: 0.05);
-        borderColor = const Color(0xFF1E5BFF).withValues(alpha: 0.2);
-        iconBgColor = const Color(0xFF1E5BFF).withValues(alpha: 0.2);
-        iconColor = const Color(0xFF1E5BFF);
+        bgColor = const Color(0xFFC94070).withValues(alpha: 0.05);
+        borderColor = const Color(0xFFC94070).withValues(alpha: 0.2);
+        iconBgColor = const Color(0xFFC94070).withValues(alpha: 0.2);
+        iconColor = const Color(0xFFC94070);
         icon = Icons.shield;
     }
 
@@ -770,7 +770,7 @@ class TerritoriesScreen extends StatelessWidget {
               const SizedBox(height: 12),
               _buildActionButton(
                 'Intentar conquistar',
-                const Color(0xFF1E5BFF),
+                const Color(0xFFC94070),
                 () => {},
               ),
             ],
@@ -905,7 +905,7 @@ class TerritoriesScreen extends StatelessWidget {
           child: LinearProgressIndicator(
             value: dominance / 100,
             minHeight: 8,
-            backgroundColor: const Color(0xFFF4F6FA),
+            backgroundColor: const Color(0xFFFDF5F7),
             valueColor: AlwaysStoppedAnimation<Color>(
               status == 'owned'
                   ? const Color(0xFF4CD964)

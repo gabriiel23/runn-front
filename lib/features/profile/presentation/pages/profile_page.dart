@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -6,7 +6,7 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFFFFBFC),
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Column(
@@ -61,8 +61,8 @@ class ProfileScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF6B8EFF).withValues(alpha: 0.04),
-                    const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                    const Color(0xFFE8698A).withValues(alpha: 0.04),
+                    const Color(0xFFE8698A).withValues(alpha: 0.01),
                   ],
                 ),
               ),
@@ -78,8 +78,8 @@ class ProfileScreen extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    const Color(0xFF6B8EFF).withValues(alpha: 0.03),
-                    const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                    const Color(0xFFE8698A).withValues(alpha: 0.03),
+                    const Color(0xFFE8698A).withValues(alpha: 0.01),
                   ],
                 ),
               ),
@@ -100,14 +100,14 @@ class ProfileScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                           border: Border.all(
                             color: const Color(
-                              0xFF6B8EFF,
+                              0xFFE8698A,
                             ).withValues(alpha: 0.15),
                             width: 2,
                           ),
                         ),
                         child: CircleAvatar(
                           radius: 24,
-                          backgroundColor: const Color(0xFFF5F7FF),
+                          backgroundColor: const Color(0xFFFFF0F4),
                           backgroundImage: const NetworkImage(
                             'https://images.unsplash.com/photo-1650452671134-28837b325586?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdGhsZXRpYyUyMHBlcnNvbiUyMHJ1bm5pbmd8ZW58MXx8fHwxNzYzNjA1NjQzfDA&ixlib=rb-4.1.0&q=80&w=1080',
                           ),
@@ -117,12 +117,12 @@ class ProfileScreen extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF5F7FF),
+                          color: const Color(0xFFFFF0F4),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Icon(
                           Icons.settings_outlined,
-                          color: const Color(0xFF6B8EFF).withValues(alpha: 0.8),
+                          color: const Color(0xFFE8698A).withValues(alpha: 0.8),
                           size: 22,
                         ),
                       ),
@@ -200,10 +200,10 @@ class ProfileScreen extends StatelessWidget {
                       vertical: 20,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FD),
+                      color: const Color(0xFFFFF5F8),
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+                        color: const Color(0xFFE8698A).withValues(alpha: 0.08),
                         width: 1,
                       ),
                     ),
@@ -244,7 +244,7 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color: const Color(0xFF6B8EFF).withValues(alpha: 0.7),
+          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
           size: 22,
         ),
         const SizedBox(height: 8),
@@ -275,7 +275,7 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       width: 1,
       height: 50,
-      color: const Color(0xFF6B8EFF).withValues(alpha: 0.1),
+      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
     );
   }
 
@@ -324,9 +324,9 @@ class ProfileScreen extends StatelessWidget {
             child: LinearProgressIndicator(
               value: 0.27,
               minHeight: 12,
-              backgroundColor: const Color(0xFFF5F7FF),
+              backgroundColor: const Color(0xFFFFF0F4),
               valueColor: AlwaysStoppedAnimation<Color>(
-                const Color(0xFF6B8EFF).withValues(alpha: 0.8),
+                const Color(0xFFE8698A).withValues(alpha: 0.8),
               ),
             ),
           ),
@@ -361,8 +361,8 @@ class ProfileScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _buildAchievementItem(
             icon: Icons.trending_up_rounded,
-            iconColor: const Color(0xFF6B8EFF),
-            iconBgColor: const Color(0xFFF5F7FF),
+            iconColor: const Color(0xFFE8698A),
+            iconBgColor: const Color(0xFFFFF0F4),
             title: 'Mejor ritmo',
             description: '4:30 min/km alcanzado',
           ),
@@ -381,7 +381,7 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FD),
+        color: const Color(0xFFFFF5F8),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: iconColor.withValues(alpha: 0.1)),
       ),
@@ -476,10 +476,10 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FD),
+        color: const Color(0xFFFFF5F8),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+          color: const Color(0xFFE8698A).withValues(alpha: 0.08),
           width: 1,
         ),
       ),
@@ -491,7 +491,7 @@ class ProfileScreen extends StatelessWidget {
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF2FF),
+                  color: const Color(0xFFFFE4EC),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Stack(
@@ -592,7 +592,7 @@ class ProfileScreen extends StatelessWidget {
                 'Distancia',
                 run['distance'],
                 'km',
-                const Color(0xFF6B8EFF),
+                const Color(0xFFE8698A),
               ),
               _buildRunStat(
                 Icons.access_time_rounded,
@@ -671,16 +671,16 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildMenuItem(
             icon: Icons.watch_rounded,
-            iconColor: const Color(0xFF6B8EFF),
-            iconBgColor: const Color(0xFFF5F7FF),
+            iconColor: const Color(0xFFE8698A),
+            iconBgColor: const Color(0xFFFFF0F4),
             title: 'Dispositivos',
             subtitle: 'Sin dispositivo conectado',
             onTap: () {},
           ),
           _buildMenuItem(
             icon: Icons.track_changes_rounded,
-            iconColor: const Color(0xFF6B8EFF),
-            iconBgColor: const Color(0xFFF5F7FF),
+            iconColor: const Color(0xFFE8698A),
+            iconBgColor: const Color(0xFFFFF0F4),
             title: 'Objetivos',
             onTap: () {},
           ),
@@ -757,7 +757,7 @@ class ProfileScreen extends StatelessWidget {
             Icon(
               Icons.arrow_forward_rounded,
               size: 16,
-              color: const Color(0xFF6B8EFF).withValues(alpha: 0.7),
+              color: const Color(0xFFE8698A).withValues(alpha: 0.7),
             ),
           ],
         ),
@@ -820,7 +820,7 @@ class ProfileScreen extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: const Color(0xFF6B8EFF).withValues(alpha: 0.1),
+        color: const Color(0xFFE8698A).withValues(alpha: 0.1),
         width: 1,
       ),
       boxShadow: [

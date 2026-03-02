@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -86,7 +86,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFFFFBFC),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -205,14 +205,14 @@ class _RegisterScreenState extends State<RegisterScreen>
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: _isNameFocused
-                  ? const Color(0xFF1E5BFF)
+                  ? const Color(0xFFC94070)
                   : Colors.transparent,
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
                 color: _isNameFocused
-                    ? const Color(0xFF1E5BFF).withValues(alpha: 0.1)
+                    ? const Color(0xFFC94070).withValues(alpha: 0.1)
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: _isNameFocused ? 12 : 8,
                 offset: const Offset(0, 2),
@@ -238,7 +238,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               prefixIcon: Icon(
                 Icons.person_outline_rounded,
                 color: _isNameFocused
-                    ? const Color(0xFF1E5BFF)
+                    ? const Color(0xFFC94070)
                     : const Color(0xFF1A1A1A).withValues(alpha: 0.4),
                 size: 22,
               ),
@@ -275,14 +275,14 @@ class _RegisterScreenState extends State<RegisterScreen>
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: _isEmailFocused
-                  ? const Color(0xFF1E5BFF)
+                  ? const Color(0xFFC94070)
                   : Colors.transparent,
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
                 color: _isEmailFocused
-                    ? const Color(0xFF1E5BFF).withValues(alpha: 0.1)
+                    ? const Color(0xFFC94070).withValues(alpha: 0.1)
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: _isEmailFocused ? 12 : 8,
                 offset: const Offset(0, 2),
@@ -307,7 +307,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               prefixIcon: Icon(
                 Icons.mail_outline_rounded,
                 color: _isEmailFocused
-                    ? const Color(0xFF1E5BFF)
+                    ? const Color(0xFFC94070)
                     : const Color(0xFF1A1A1A).withValues(alpha: 0.4),
                 size: 22,
               ),
@@ -344,14 +344,14 @@ class _RegisterScreenState extends State<RegisterScreen>
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: _isPasswordFocused
-                  ? const Color(0xFF1E5BFF)
+                  ? const Color(0xFFC94070)
                   : Colors.transparent,
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
                 color: _isPasswordFocused
-                    ? const Color(0xFF1E5BFF).withValues(alpha: 0.1)
+                    ? const Color(0xFFC94070).withValues(alpha: 0.1)
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: _isPasswordFocused ? 12 : 8,
                 offset: const Offset(0, 2),
@@ -376,7 +376,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               prefixIcon: Icon(
                 Icons.lock_outline_rounded,
                 color: _isPasswordFocused
-                    ? const Color(0xFF1E5BFF)
+                    ? const Color(0xFFC94070)
                     : const Color(0xFF1A1A1A).withValues(alpha: 0.4),
                 size: 22,
               ),
@@ -425,14 +425,14 @@ class _RegisterScreenState extends State<RegisterScreen>
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: _isConfirmPasswordFocused
-                  ? const Color(0xFF1E5BFF)
+                  ? const Color(0xFFC94070)
                   : Colors.transparent,
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
                 color: _isConfirmPasswordFocused
-                    ? const Color(0xFF1E5BFF).withValues(alpha: 0.1)
+                    ? const Color(0xFFC94070).withValues(alpha: 0.1)
                     : Colors.black.withValues(alpha: 0.03),
                 blurRadius: _isConfirmPasswordFocused ? 12 : 8,
                 offset: const Offset(0, 2),
@@ -457,7 +457,7 @@ class _RegisterScreenState extends State<RegisterScreen>
               prefixIcon: Icon(
                 Icons.lock_outline_rounded,
                 color: _isConfirmPasswordFocused
-                    ? const Color(0xFF1E5BFF)
+                    ? const Color(0xFFC94070)
                     : const Color(0xFF1A1A1A).withValues(alpha: 0.4),
                 size: 22,
               ),
@@ -493,13 +493,13 @@ class _RegisterScreenState extends State<RegisterScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
         gradient: const LinearGradient(
-          colors: [Color(0xFF1E5BFF), Color(0xFF0D47E8)],
+          colors: [Color(0xFFC94070), Color(0xFFA8295A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF1E5BFF).withValues(alpha: 0.3),
+            color: const Color(0xFFC94070).withValues(alpha: 0.3),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -545,7 +545,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1E5BFF),
+              color: Color(0xFFC94070),
             ),
           ),
         ),
@@ -569,7 +569,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             TextSpan(
               text: 'Términos y Condiciones',
               style: TextStyle(
-                color: Color(0xFF1E5BFF),
+                color: Color(0xFFC94070),
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -577,7 +577,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             TextSpan(
               text: 'Política de Privacidad',
               style: TextStyle(
-                color: Color(0xFF1E5BFF),
+                color: Color(0xFFC94070),
                 fontWeight: FontWeight.w600,
               ),
             ),

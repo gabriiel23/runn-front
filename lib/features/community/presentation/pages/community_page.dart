@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -48,7 +48,7 @@ class _CommunityScreenState extends State<CommunityScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFFFFBFC),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -122,8 +122,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.05),
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                      const Color(0xFFE8698A).withValues(alpha: 0.05),
+                      const Color(0xFFE8698A).withValues(alpha: 0.01),
                     ],
                   ),
                 ),
@@ -159,13 +159,13 @@ class _CommunityScreenState extends State<CommunityScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F7FF),
+                            color: const Color(0xFFFFF0F4),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
                             Icons.menu_rounded,
                             color: const Color(
-                              0xFF6B8EFF,
+                              0xFFE8698A,
                             ).withValues(alpha: 0.8),
                             size: 22,
                           ),
@@ -174,7 +174,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F7FF),
+                            color: const Color(0xFFFFF0F4),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Stack(
@@ -183,7 +183,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                                 child: Icon(
                                   Icons.notifications_outlined,
                                   color: const Color(
-                                    0xFF6B8EFF,
+                                    0xFFE8698A,
                                   ).withValues(alpha: 0.8),
                                   size: 22,
                                 ),
@@ -233,11 +233,11 @@ class _CommunityScreenState extends State<CommunityScreen>
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FD),
+                        color: const Color(0xFFFFF5F8),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: const Color(
-                            0xFF6B8EFF,
+                            0xFFE8698A,
                           ).withValues(alpha: 0.08),
                         ),
                       ),
@@ -280,7 +280,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       children: [
         Icon(
           icon,
-          color: const Color(0xFF6B8EFF).withValues(alpha: 0.7),
+          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
           size: 20,
         ),
         const SizedBox(height: 6),
@@ -310,7 +310,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     return Container(
       width: 1,
       height: 40,
-      color: const Color(0xFF6B8EFF).withValues(alpha: 0.1),
+      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
     );
   }
 
@@ -323,7 +323,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: (accentColor ?? const Color(0xFF6B8EFF)).withValues(alpha: 0.10),
+        color: (accentColor ?? const Color(0xFFE8698A)).withValues(alpha: 0.10),
       ),
       boxShadow: [
         BoxShadow(
@@ -342,13 +342,13 @@ class _CommunityScreenState extends State<CommunityScreen>
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+            color: const Color(0xFFE8698A).withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             icon,
             size: 18,
-            color: const Color(0xFF6B8EFF).withValues(alpha: 0.8),
+            color: const Color(0xFFE8698A).withValues(alpha: 0.8),
           ),
         ),
         const SizedBox(width: 10),
@@ -371,14 +371,14 @@ class _CommunityScreenState extends State<CommunityScreen>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                  color: const Color(0xFFE8698A).withValues(alpha: 0.9),
                 ),
               ),
               const SizedBox(width: 2),
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 14,
-                color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                color: const Color(0xFFE8698A).withValues(alpha: 0.9),
               ),
             ],
           ),
@@ -399,14 +399,14 @@ class _CommunityScreenState extends State<CommunityScreen>
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isSearchFocused
-              ? const Color(0xFF6B8EFF).withValues(alpha: 0.3)
-              : const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+              ? const Color(0xFFE8698A).withValues(alpha: 0.3)
+              : const Color(0xFFE8698A).withValues(alpha: 0.08),
           width: _isSearchFocused ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: _isSearchFocused
-                ? const Color(0xFF6B8EFF).withValues(alpha: 0.08)
+                ? const Color(0xFFE8698A).withValues(alpha: 0.08)
                 : Colors.black.withValues(alpha: 0.02),
             blurRadius: _isSearchFocused ? 16 : 8,
             offset: const Offset(0, 2),
@@ -430,7 +430,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           prefixIcon: Icon(
             Icons.search_rounded,
             color: _isSearchFocused
-                ? const Color(0xFF6B8EFF).withValues(alpha: 0.8)
+                ? const Color(0xFFE8698A).withValues(alpha: 0.8)
                 : const Color(0xFF1A1A1A).withValues(alpha: 0.4),
             size: 22,
           ),
@@ -465,8 +465,8 @@ class _CommunityScreenState extends State<CommunityScreen>
         Expanded(
           child: _buildQuickActionCard(
             icon: Icons.group_add_rounded,
-            iconColor: const Color(0xFF6B8EFF),
-            iconBgColor: const Color(0xFFF5F7FF),
+            iconColor: const Color(0xFFE8698A),
+            iconBgColor: const Color(0xFFFFF0F4),
             label: 'Ver Grupos',
           ),
         ),
@@ -546,7 +546,7 @@ class _CommunityScreenState extends State<CommunityScreen>
         'emoji': '📍',
         'title': 'Nueva zona habilitada en el Centro Histórico',
         'time': 'Hace 3h',
-        'color': const Color(0xFF6B8EFF),
+        'color': const Color(0xFFE8698A),
       },
       {
         'emoji': '🔥',
@@ -639,7 +639,7 @@ class _CommunityScreenState extends State<CommunityScreen>
         'members': 247,
         'location': 'Centro Histórico',
         'level': 'Todos los niveles',
-        'color': const Color(0xFF6B8EFF),
+        'color': const Color(0xFFE8698A),
       },
       {
         'name': 'Trail Seekers',
@@ -818,8 +818,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
                     colors: [
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.15),
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+                      const Color(0xFFE8698A).withValues(alpha: 0.15),
+                      const Color(0xFFE8698A).withValues(alpha: 0.08),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -827,7 +827,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                 ),
                 child: Icon(
                   Icons.person_rounded,
-                  color: const Color(0xFF6B8EFF).withValues(alpha: 0.7),
+                  color: const Color(0xFFE8698A).withValues(alpha: 0.7),
                   size: 26,
                 ),
               ),
@@ -879,7 +879,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   children: [
                     Icon(
                       Icons.location_on_rounded,
-                      color: const Color(0xFF6B8EFF).withValues(alpha: 0.6),
+                      color: const Color(0xFFE8698A).withValues(alpha: 0.6),
                       size: 13,
                     ),
                     const SizedBox(width: 3),
@@ -914,7 +914,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: const Color(0xFFF5F7FF),
+              color: const Color(0xFFFFF0F4),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(
@@ -922,7 +922,7 @@ class _CommunityScreenState extends State<CommunityScreen>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF6B8EFF),
+                color: Color(0xFFE8698A),
               ),
             ),
           ),

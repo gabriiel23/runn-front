@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class MainScaffold extends StatelessWidget {
@@ -88,7 +88,7 @@ class MainScaffold extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFF1E5BFF).withValues(alpha: 0.1)
+              ? const Color(0xFFC94070).withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
         ),
@@ -99,7 +99,7 @@ class MainScaffold extends StatelessWidget {
               icon,
               size: 22,
               color: isActive
-                  ? const Color(0xFF1E5BFF)
+                  ? const Color(0xFFC94070)
                   : const Color(0xFF6B6B6B),
             ),
             if (isActive) ...[
@@ -109,7 +109,7 @@ class MainScaffold extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E5BFF),
+                  color: Color(0xFFC94070),
                 ),
               ),
             ],

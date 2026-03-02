@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class OnboardingScreen extends StatelessWidget {
@@ -7,7 +7,7 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: const Color(0xFFFDF5F7),
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -144,8 +144,8 @@ class OnboardingScreen extends StatelessWidget {
       children: [
         _buildFeatureItem(
           icon: Icons.play_arrow,
-          iconColor: const Color(0xFF1E5BFF),
-          iconBgColor: const Color(0xFF1E5BFF).withValues(alpha: 0.1),
+          iconColor: const Color(0xFFC94070),
+          iconBgColor: const Color(0xFFC94070).withValues(alpha: 0.1),
           title: 'Registrar carreras',
           description: 'Tracking GPS preciso de todas tus rutas',
         ),
@@ -160,8 +160,8 @@ class OnboardingScreen extends StatelessWidget {
         const SizedBox(height: 14),
         _buildFeatureItem(
           icon: Icons.location_on,
-          iconColor: const Color(0xFF1E5BFF),
-          iconBgColor: const Color(0xFF1E5BFF).withValues(alpha: 0.1),
+          iconColor: const Color(0xFFC94070),
+          iconBgColor: const Color(0xFFC94070).withValues(alpha: 0.1),
           title: 'Conquistar territorios',
           description: 'Domina zonas corriendo por tu ciudad',
         ),
@@ -226,10 +226,10 @@ class OnboardingScreen extends StatelessWidget {
             builder: (context) => ElevatedButton(
               onPressed: () => context.go('/register'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E5BFF),
+                backgroundColor: const Color(0xFFC94070),
                 foregroundColor: Colors.white,
                 elevation: 8,
-                shadowColor: const Color(0xFF1E5BFF).withValues(alpha: 0.3),
+                shadowColor: const Color(0xFFC94070).withValues(alpha: 0.3),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),
@@ -249,8 +249,8 @@ class OnboardingScreen extends StatelessWidget {
             builder: (context) => OutlinedButton(
               onPressed: () => context.go('/login'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF1E5BFF),
-                side: const BorderSide(color: Color(0xFF1E5BFF), width: 2),
+                foregroundColor: const Color(0xFFC94070),
+                side: const BorderSide(color: Color(0xFFC94070), width: 2),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                 ),

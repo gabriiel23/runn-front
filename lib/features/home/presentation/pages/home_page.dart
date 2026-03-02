@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
 class HomeScreen extends StatefulWidget {
@@ -45,7 +45,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFFFFBFC),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -114,8 +114,8 @@ class _HomeScreenState extends State<HomeScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.04),
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                      const Color(0xFFE8698A).withValues(alpha: 0.04),
+                      const Color(0xFFE8698A).withValues(alpha: 0.01),
                     ],
                   ),
                 ),
@@ -131,8 +131,8 @@ class _HomeScreenState extends State<HomeScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.03),
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                      const Color(0xFFE8698A).withValues(alpha: 0.03),
+                      const Color(0xFFE8698A).withValues(alpha: 0.01),
                     ],
                   ),
                 ),
@@ -156,18 +156,18 @@ class _HomeScreenState extends State<HomeScreen>
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: const Color(
-                                0xFF6B8EFF,
+                                0xFFE8698A,
                               ).withValues(alpha: 0.15),
                               width: 2,
                             ),
                           ),
                           child: CircleAvatar(
                             radius: 24,
-                            backgroundColor: const Color(0xFFF5F7FF),
+                            backgroundColor: const Color(0xFFFFF0F4),
                             child: Icon(
                               Icons.person_rounded,
                               color: const Color(
-                                0xFF6B8EFF,
+                                0xFFE8698A,
                               ).withValues(alpha: 0.8),
                               size: 24,
                             ),
@@ -177,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen>
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F7FF),
+                            color: const Color(0xFFFFF0F4),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Stack(
@@ -186,7 +186,7 @@ class _HomeScreenState extends State<HomeScreen>
                                 child: Icon(
                                   Icons.notifications_outlined,
                                   color: const Color(
-                                    0xFF6B8EFF,
+                                    0xFFE8698A,
                                   ).withValues(alpha: 0.8),
                                   size: 24,
                                 ),
@@ -262,11 +262,11 @@ class _HomeScreenState extends State<HomeScreen>
                         vertical: 20,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FD),
+                        color: const Color(0xFFFFF5F8),
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: const Color(
-                            0xFF6B8EFF,
+                            0xFFE8698A,
                           ).withValues(alpha: 0.08),
                           width: 1,
                         ),
@@ -305,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen>
       children: [
         Icon(
           icon,
-          color: const Color(0xFF6B8EFF).withValues(alpha: 0.7),
+          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
           size: 22,
         ),
         const SizedBox(height: 8),
@@ -336,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen>
     return Container(
       width: 1,
       height: 50,
-      color: const Color(0xFF6B8EFF).withValues(alpha: 0.1),
+      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
     );
   }
 
@@ -347,12 +347,12 @@ class _HomeScreenState extends State<HomeScreen>
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFF6B8EFF).withValues(alpha: 0.15),
+          color: const Color(0xFFE8698A).withValues(alpha: 0.15),
           width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+            color: const Color(0xFFE8698A).withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -373,8 +373,8 @@ class _HomeScreenState extends State<HomeScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF6B8EFF).withValues(alpha: 0.15),
-                        const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+                        const Color(0xFFE8698A).withValues(alpha: 0.15),
+                        const Color(0xFFE8698A).withValues(alpha: 0.08),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -383,7 +383,7 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                   child: Icon(
                     Icons.play_arrow_rounded,
-                    color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                    color: const Color(0xFFE8698A).withValues(alpha: 0.9),
                     size: 28,
                   ),
                 ),
@@ -426,8 +426,8 @@ class _HomeScreenState extends State<HomeScreen>
             Expanded(
               child: _buildStatCard(
                 icon: Icons.location_on_rounded,
-                iconColor: const Color(0xFF6B8EFF),
-                iconBgColor: const Color(0xFFF5F7FF),
+                iconColor: const Color(0xFFE8698A),
+                iconBgColor: const Color(0xFFFFF0F4),
                 label: 'Distancia',
                 value: '24.5',
                 unit: 'km',
@@ -631,7 +631,7 @@ class _HomeScreenState extends State<HomeScreen>
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                          color: const Color(0xFFE8698A).withValues(alpha: 0.9),
                           letterSpacing: -0.2,
                         ),
                       ),
@@ -639,7 +639,7 @@ class _HomeScreenState extends State<HomeScreen>
                       Icon(
                         Icons.arrow_forward_rounded,
                         size: 16,
-                        color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                        color: const Color(0xFFE8698A).withValues(alpha: 0.9),
                       ),
                     ],
                   ),
@@ -653,12 +653,12 @@ class _HomeScreenState extends State<HomeScreen>
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             border: Border.all(
-              color: const Color(0xFF6B8EFF).withValues(alpha: 0.12),
+              color: const Color(0xFFE8698A).withValues(alpha: 0.12),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6B8EFF).withValues(alpha: 0.06),
+                color: const Color(0xFFE8698A).withValues(alpha: 0.06),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -705,8 +705,8 @@ class _HomeScreenState extends State<HomeScreen>
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          const Color(0xFFF5F7FF),
-                          const Color(0xFFEFF2FF),
+                          const Color(0xFFFFF0F4),
+                          const Color(0xFFFFE4EC),
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
@@ -715,7 +715,7 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     child: Icon(
                       Icons.emoji_events_rounded,
-                      color: const Color(0xFF6B8EFF).withValues(alpha: 0.8),
+                      color: const Color(0xFFE8698A).withValues(alpha: 0.8),
                       size: 36,
                     ),
                   ),
@@ -753,9 +753,9 @@ class _HomeScreenState extends State<HomeScreen>
                     child: LinearProgressIndicator(
                       value: 0.27,
                       minHeight: 12,
-                      backgroundColor: const Color(0xFFF5F7FF),
+                      backgroundColor: const Color(0xFFFFF0F4),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        const Color(0xFF6B8EFF).withValues(alpha: 0.8),
+                        const Color(0xFFE8698A).withValues(alpha: 0.8),
                       ),
                     ),
                   ),
@@ -769,8 +769,8 @@ class _HomeScreenState extends State<HomeScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF6B8EFF).withValues(alpha: 0.12),
-                        const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+                        const Color(0xFFE8698A).withValues(alpha: 0.12),
+                        const Color(0xFFE8698A).withValues(alpha: 0.08),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -789,7 +789,7 @@ class _HomeScreenState extends State<HomeScreen>
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             color: const Color(
-                              0xFF6B8EFF,
+                              0xFFE8698A,
                             ).withValues(alpha: 0.95),
                             letterSpacing: -0.2,
                           ),

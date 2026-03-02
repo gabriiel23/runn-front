@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class BottomNavWidget extends StatelessWidget {
   final String activeScreen;
@@ -32,7 +32,7 @@ class BottomNavWidget extends StatelessWidget {
             topRight: Radius.circular(24),
           ),
           border: Border(
-            top: BorderSide(color: const Color(0xFFF4F6FA), width: 1),
+            top: BorderSide(color: const Color(0xFFFDF5F7), width: 1),
           ),
           boxShadow: [
             BoxShadow(
@@ -81,7 +81,7 @@ class BottomNavWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFF1E5BFF).withValues(alpha: 0.1)
+              ? const Color(0xFFC94070).withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
@@ -92,7 +92,7 @@ class BottomNavWidget extends StatelessWidget {
               icon,
               size: 24,
               color: isActive
-                  ? const Color(0xFF1E5BFF)
+                  ? const Color(0xFFC94070)
                   : const Color(0xFF6B6B6B),
             ),
             const SizedBox(height: 4),
@@ -102,7 +102,7 @@ class BottomNavWidget extends StatelessWidget {
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
                 color: isActive
-                    ? const Color(0xFF1E5BFF)
+                    ? const Color(0xFFC94070)
                     : const Color(0xFF6B6B6B),
               ),
             ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class ChallengesPage extends StatefulWidget {
   const ChallengesPage({super.key});
@@ -40,7 +40,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAFBFC),
+      backgroundColor: const Color(0xFFFFFBFC),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -129,8 +129,8 @@ class _ChallengesPageState extends State<ChallengesPage>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.04),
-                      const Color(0xFF6B8EFF).withValues(alpha: 0.01),
+                      const Color(0xFFE8698A).withValues(alpha: 0.04),
+                      const Color(0xFFE8698A).withValues(alpha: 0.01),
                     ],
                   ),
                 ),
@@ -165,7 +165,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF5F7FF),
+                            color: const Color(0xFFFFF0F4),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Stack(
@@ -174,7 +174,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                                 child: Icon(
                                   Icons.notifications_outlined,
                                   color: const Color(
-                                    0xFF6B8EFF,
+                                    0xFFE8698A,
                                   ).withValues(alpha: 0.8),
                                   size: 22,
                                 ),
@@ -225,11 +225,11 @@ class _ChallengesPageState extends State<ChallengesPage>
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FD),
+                        color: const Color(0xFFFFF5F8),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: const Color(
-                            0xFF6B8EFF,
+                            0xFFE8698A,
                           ).withValues(alpha: 0.08),
                         ),
                       ),
@@ -268,7 +268,7 @@ class _ChallengesPageState extends State<ChallengesPage>
       children: [
         Icon(
           icon,
-          color: const Color(0xFF6B8EFF).withValues(alpha: 0.7),
+          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
           size: 20,
         ),
         const SizedBox(height: 6),
@@ -298,7 +298,7 @@ class _ChallengesPageState extends State<ChallengesPage>
     return Container(
       width: 1,
       height: 40,
-      color: const Color(0xFF6B8EFF).withValues(alpha: 0.1),
+      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
     );
   }
 
@@ -311,7 +311,7 @@ class _ChallengesPageState extends State<ChallengesPage>
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: (accentColor ?? const Color(0xFF6B8EFF)).withValues(alpha: 0.10),
+        color: (accentColor ?? const Color(0xFFE8698A)).withValues(alpha: 0.10),
       ),
       boxShadow: [
         BoxShadow(
@@ -330,13 +330,13 @@ class _ChallengesPageState extends State<ChallengesPage>
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: const Color(0xFF6B8EFF).withValues(alpha: 0.08),
+            color: const Color(0xFFE8698A).withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             icon,
             size: 18,
-            color: const Color(0xFF6B8EFF).withValues(alpha: 0.8),
+            color: const Color(0xFFE8698A).withValues(alpha: 0.8),
           ),
         ),
         const SizedBox(width: 10),
@@ -359,14 +359,14 @@ class _ChallengesPageState extends State<ChallengesPage>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                  color: const Color(0xFFE8698A).withValues(alpha: 0.9),
                 ),
               ),
               const SizedBox(width: 2),
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 14,
-                color: const Color(0xFF6B8EFF).withValues(alpha: 0.9),
+                color: const Color(0xFFE8698A).withValues(alpha: 0.9),
               ),
             ],
           ),
@@ -392,14 +392,14 @@ class _ChallengesPageState extends State<ChallengesPage>
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF1E5BFF), Color(0xFF0D47D4)],
+              colors: [Color(0xFFC94070), Color(0xFFA8295A)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF1E5BFF).withValues(alpha: 0.3),
+                color: const Color(0xFFC94070).withValues(alpha: 0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -533,8 +533,8 @@ class _ChallengesPageState extends State<ChallengesPage>
     final challenges = [
       {
         'icon': Icons.directions_run_rounded,
-        'iconColor': const Color(0xFF6B8EFF),
-        'iconBgColor': const Color(0xFFF5F7FF),
+        'iconColor': const Color(0xFFE8698A),
+        'iconBgColor': const Color(0xFFFFF0F4),
         'title': 'Carrera matutina',
         'description': 'Corre 5 km antes de las 9 AM',
         'reward': '+50 pts',
@@ -680,7 +680,7 @@ class _ChallengesPageState extends State<ChallengesPage>
         'date': '28 Nov',
         'participants': 42,
         'distance': 5,
-        'color': const Color(0xFF6B8EFF),
+        'color': const Color(0xFFE8698A),
       },
       {
         'name': 'Desafío 10K',
