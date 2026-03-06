@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -170,37 +171,40 @@ class _CommunityScreenState extends State<CommunityScreen>
                             size: 22,
                           ),
                         ),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0F4),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Icon(
-                                  Icons.notifications_outlined,
-                                  color: const Color(
-                                    0xFFE8698A,
-                                  ).withValues(alpha: 0.8),
-                                  size: 22,
-                                ),
-                              ),
-                              Positioned(
-                                top: 10,
-                                right: 10,
-                                child: Container(
-                                  width: 7,
-                                  height: 7,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFF6B6B),
-                                    shape: BoxShape.circle,
+                        GestureDetector(
+                          onTap: () => context.go('/notifications'),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF0F4),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: Icon(
+                                    Icons.notifications_outlined,
+                                    color: const Color(
+                                      0xFFE8698A,
+                                    ).withValues(alpha: 0.8),
+                                    size: 22,
                                   ),
                                 ),
-                              ),
-                            ],
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFFF6B6B),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],

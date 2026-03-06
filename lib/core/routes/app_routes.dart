@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/widgets/main_scaffold.dart';
+import 'package:runn_front/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:runn_front/features/creation_runner_profile/presentation/pages/profile_setup_page.dart';
+import 'package:runn_front/features/creation_runner_profile/presentation/pages/physical_metrics_page.dart';
+import 'package:runn_front/features/creation_runner_profile/presentation/pages/runner_profile_page.dart';
 import 'package:runn_front/features/onboarding/presentation/pages/onboarding_page.dart';
 import 'package:runn_front/features/login/register/presentation/pages/login_page.dart';
 import 'package:runn_front/features/login/register/presentation/pages/register_page.dart';
@@ -9,10 +13,12 @@ import 'package:runn_front/features/community/presentation/pages/community_page.
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/challenges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
+import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
+import 'package:runn_front/features/run_results/presentation/pages/run_results_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
-// Branches order must match MainScaffold nav item order:
+// Branches order matches MainScaffold nav item order:
 // 0 Inicio | 1 Comunidad | 2 Territorios | 3 Retos | 4 Perfil
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
@@ -37,6 +43,48 @@ final GoRouter appRouter = GoRouter(
       path: '/register',
       name: 'register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+
+    // Start Career (outside shell — full screen)
+    GoRoute(
+      path: '/start_career',
+      name: 'start_career',
+      builder: (context, state) => const StartCareerScreen(),
+    ),
+
+    // Notifications (outside shell — full screen)
+    GoRoute(
+      path: '/notifications',
+      name: 'notifications',
+      builder: (context, state) => const NotificationsScreen(),
+    ),
+
+    // Runner profile creation flow (Step 1)
+    GoRoute(
+      path: '/profile_setup',
+      name: 'profile_setup',
+      builder: (context, state) => const ProfileSetupScreen(),
+    ),
+
+    // Runner profile creation flow (Step 2)
+    GoRoute(
+      path: '/physical_metrics',
+      name: 'physical_metrics',
+      builder: (context, state) => const PhysicalMetricsScreen(),
+    ),
+
+    // Runner profile creation flow (Step 3)
+    GoRoute(
+      path: '/runner_profile',
+      name: 'runner_profile',
+      builder: (context, state) => const RunnerProfileScreen(),
+    ),
+
+    // Run Results (outside shell — full screen)
+    GoRoute(
+      path: '/run_results',
+      name: 'run_results',
+      builder: (context, state) => const RunResultsScreen(),
     ),
 
     // Shell — main navigation with bottom bar

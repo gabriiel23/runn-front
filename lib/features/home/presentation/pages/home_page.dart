@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
+import 'package:go_router/go_router.dart';
+
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -173,37 +175,44 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                           ),
                         ),
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0F4),
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
                             borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Icon(
-                                  Icons.notifications_outlined,
-                                  color: const Color(
-                                    0xFFE8698A,
-                                  ).withValues(alpha: 0.8),
-                                  size: 24,
-                                ),
+                            onTap: () => context.go('/notifications'),
+                            child: Container(
+                              width: 48,
+                              height: 48,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF0F4),
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                              Positioned(
-                                top: 10,
-                                right: 10,
-                                child: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFF6B6B),
-                                    shape: BoxShape.circle,
+                              child: Stack(
+                                children: [
+                                  Center(
+                                    child: Icon(
+                                      Icons.notifications_outlined,
+                                      color: const Color(
+                                        0xFFE8698A,
+                                      ).withValues(alpha: 0.8),
+                                      size: 24,
+                                    ),
                                   ),
-                                ),
+                                  Positioned(
+                                    top: 10,
+                                    right: 10,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFFF6B6B),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -361,7 +370,7 @@ class _HomeScreenState extends State<HomeScreen>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: () => context.go('/start_career'),
           borderRadius: BorderRadius.circular(20),
           child: Center(
             child: Row(

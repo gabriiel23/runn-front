@@ -1,136 +1,280 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-class OnboardingScreen extends StatelessWidget {
+const kPink = Color(0xFFFFD3E0);
+const kPinkDark = Color(0xFFE8A0B8);
+const kPinkDeep = Color(0xFFC4607A);
+const kPinkLight = Color(0xFFFFF0F5);
+const kPinkMid = Color(0xFFFFB8CE);
+const kBgLight = Color(0xFFFCF8F9);
+
+class _OnboardingPage {
+  final String title;
+  final String description;
+  final String imageUrl;
+  final IconData fallbackIcon;
+
+  const _OnboardingPage({
+    required this.title,
+    required this.description,
+    required this.imageUrl,
+    required this.fallbackIcon,
+  });
+}
+
+const _pages = [
+  _OnboardingPage(
+    title: 'Conquista tu Ciudad',
+    description:
+        'Corre bucles cerrados para reclamar territorios y defenderlos de otros corredores.',
+    imageUrl: 'assets/territorios.png',
+    fallbackIcon: Icons.location_city_rounded,
+  ),
+  _OnboardingPage(
+    title: 'Mejora tu Rendimiento',
+    description:
+        'Entrena con planes personalizados y supera tus marcas personales cada semana.',
+    imageUrl: 'assets/rendimiento.jpg',
+    fallbackIcon: Icons.directions_run_rounded,
+  ),
+  _OnboardingPage(
+    title: 'Lleva tus Estadísticas',
+    description:
+        'Visualiza tu progreso, distancias, ritmo y calorías en tiempo real con cada carrera.',
+    imageUrl: 'assets/estadisticas.jpg',
+    fallbackIcon: Icons.bar_chart_rounded,
+  ),
+];
+
+class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with SingleTickerProviderStateMixin {
+  final PageController _pageController = PageController();
+  int _currentPage = 0;
+  late AnimationController _timerController;
+
+  // ============================================================
+  // TIEMPO DE CAMBIO AUTOMÁTICO DE DIAPOSITIVA
+  // Cambia este valor para ajustar cuántos segundos dura cada slide.
+  // Ejemplo: Duration(seconds: 3) para 3 segundos,
+  //          Duration(seconds: 8) para 8 segundos.
+  // ============================================================
+  static const _slideDuration = Duration(seconds: 5);
+
+  @override
+  void initState() {
+    super.initState();
+    _timerController =
+        AnimationController(vsync: this, duration: _slideDuration)
+          ..addStatusListener((status) {
+            if (status == AnimationStatus.completed) {
+              _nextPage();
+            }
+          });
+    _timerController.forward();
+  }
+
+  void _nextPage() {
+    final next = (_currentPage + 1) % _pages.length;
+    _pageController.animateToPage(
+      next,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _goToPage(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _onPageChanged(int index) {
+    setState(() => _currentPage = index);
+    _timerController.reset();
+    _timerController.forward();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _timerController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF5F7),
+      backgroundColor: kBgLight,
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Center(
+        child: Column(
+          children: [
+            // ── Carousel ─────────────────────────────────────────────────
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: _onPageChanged,
+                itemCount: _pages.length,
+                itemBuilder: (context, index) => _buildPage(_pages[index]),
+              ),
+            ),
+
+            // ── Bottom section ────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 36),
+              child: Column(
+                children: [
+                  // Page indicators
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(_pages.length, (i) {
+                        final isActive = i == _currentPage;
+                        return GestureDetector(
+                          onTap: () => _goToPage(i),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            width: isActive ? 32 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? kPink
+                                  : kPink.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+
+                  // Button
+                  GestureDetector(
+                    onTap: () => context.go('/login'),
                     child: Container(
-                      constraints: const BoxConstraints(maxWidth: 390),
-                      margin: const EdgeInsets.all(24),
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(32),
+                        color: kPink,
+                        borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
+                            color: kPink.withValues(alpha: 0.5),
                             blurRadius: 20,
-                            offset: const Offset(0, 10),
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Hero Image Section
-                          _buildHeroSection(),
-
-                          // Content Section
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Features
-                                _buildFeaturesList(),
-
-                                // Buttons
-                                const SizedBox(height: 32),
-                                _buildButtons(),
-                              ],
+                          Text(
+                            _currentPage == _pages.length - 1
+                                ? 'Comenzar'
+                                : 'Siguiente',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1A1A1A),
                             ),
+                          ),
+                          const SizedBox(width: 8),
+                          Icon(
+                            _currentPage == _pages.length - 1
+                                ? Icons.rocket_launch_rounded
+                                : Icons.arrow_forward_rounded,
+                            color: const Color(0xFF1A1A1A),
+                            size: 20,
                           ),
                         ],
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            );
-          },
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildHeroSection() {
-    return SizedBox(
-      height: 280,
-      child: Stack(
+  Widget _buildPage(_OnboardingPage page) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 64, 24, 0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Image
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(32),
-                topRight: Radius.circular(32),
-              ),
-              image: DecorationImage(
-                image: NetworkImage(
-                  'https://images.unsplash.com/photo-1602619075660-d0f5459cb189?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxydW5uZXIlMjBjaXR5JTIwc3Vuc2V0JTIwbW90aXZhdGlvbnxlbnwxfHx8fDE3NjM2NDE2OTd8MA&ixlib=rb-4.1.0&q=80&w=1080',
-                ),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-
-          // Gradient Overlay
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(32),
-                topRight: Radius.circular(32),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black.withValues(alpha: 0.6),
+          // Image — tamaño fijo, no ocupa toda la pantalla
+          ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              width: double.infinity,
+              height: 300,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          kPink.withValues(alpha: 0.25),
+                          kPinkMid.withValues(alpha: 0.45),
+                        ],
+                      ),
+                    ),
+                  ),
+                  page.imageUrl.isNotEmpty
+                      ? Image.network(
+                          page.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildFallback(page),
+                        )
+                      : _buildFallback(page),
+                  Container(color: Colors.black.withValues(alpha: 0.04)),
                 ],
               ),
             ),
           ),
 
-          // Logo/Title
-          Positioned(
-            bottom: 20,
-            left: 20,
-            right: 20,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Runn',
-                  style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Corre. Conquista. Domina.',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withValues(alpha: 0.9),
-                  ),
-                ),
-              ],
+          const SizedBox(height: 72),
+
+          // Title
+          Text(
+            page.title,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1A1A1A),
+              letterSpacing: -0.5,
+              height: 1.15,
+            ),
+          ),
+
+          const SizedBox(height: 14),
+
+          // Description
+          Text(
+            page.description,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: Color(0xFF64748B),
+              height: 1.6,
             ),
           ),
         ],
@@ -138,128 +282,39 @@ class OnboardingScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeaturesList() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildFallback(_OnboardingPage page) {
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        _buildFeatureItem(
-          icon: Icons.play_arrow,
-          iconColor: const Color(0xFFC94070),
-          iconBgColor: const Color(0xFFC94070).withValues(alpha: 0.1),
-          title: 'Registrar carreras',
-          description: 'Tracking GPS preciso de todas tus rutas',
+        GridView.builder(
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 8,
+            mainAxisSpacing: 1,
+            crossAxisSpacing: 1,
+          ),
+          itemCount: 64,
+          itemBuilder: (_, i) => Container(
+            color: i % 3 == 0
+                ? kPink.withValues(alpha: 0.18)
+                : kPinkLight.withValues(alpha: 0.5),
+          ),
         ),
-        const SizedBox(height: 14),
-        _buildFeatureItem(
-          icon: Icons.trending_up,
-          iconColor: const Color(0xFF4CD964),
-          iconBgColor: const Color(0xFF4CD964).withValues(alpha: 0.1),
-          title: 'Mejorar rendimiento',
-          description: 'Analiza tu progreso y supera tus metas',
-        ),
-        const SizedBox(height: 14),
-        _buildFeatureItem(
-          icon: Icons.location_on,
-          iconColor: const Color(0xFFC94070),
-          iconBgColor: const Color(0xFFC94070).withValues(alpha: 0.1),
-          title: 'Conquistar territorios',
-          description: 'Domina zonas corriendo por tu ciudad',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildFeatureItem({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required String title,
-    required String description,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
-          child: Icon(icon, color: iconColor, size: 24),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF6B6B6B),
-                  ),
+        Center(
+          child: Container(
+            width: 100,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.85),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: kPinkDeep.withValues(alpha: 0.25),
+                  blurRadius: 24,
                 ),
               ],
             ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildButtons() {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => context.go('/register'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFC94070),
-                foregroundColor: Colors.white,
-                elevation: 8,
-                shadowColor: const Color(0xFFC94070).withValues(alpha: 0.3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text(
-                'Únete a Nosotros!',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          width: double.infinity,
-          height: 56,
-          child: Builder(
-            builder: (context) => OutlinedButton(
-              onPressed: () => context.go('/login'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFC94070),
-                side: const BorderSide(color: Color(0xFFC94070), width: 2),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-              ),
-              child: const Text(
-                'Iniciar sesión',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
-            ),
+            child: Icon(page.fallbackIcon, color: kPinkDeep, size: 44),
           ),
         ),
       ],
