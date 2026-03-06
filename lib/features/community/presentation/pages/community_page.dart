@@ -138,8 +138,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFE8698A).withOpacity(0.04),
-                      const Color(0xFFE8698A).withOpacity(0.01),
+                      const Color(0xFFE8698A).withValues(alpha: 0.04),
+                      const Color(0xFFE8698A).withValues(alpha: 0.01),
                     ],
                   ),
                 ),
@@ -169,37 +169,40 @@ class _CommunityScreenState extends State<CommunityScreen>
                             size: 22,
                           ),
                         ),
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0F4),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Stack(
-                            children: [
-                              Center(
-                                child: Icon(
-                                  Icons.notifications_outlined,
-                                  color: const Color(
-                                    0xFFE8698A,
-                                  ).withValues(alpha: 0.8),
-                                  size: 22,
-                                ),
-                              ),
-                              Positioned(
-                                top: 10,
-                                right: 10,
-                                child: Container(
-                                  width: 7,
-                                  height: 7,
-                                  decoration: const BoxDecoration(
-                                    color: Color(0xFFFF6B6B),
-                                    shape: BoxShape.circle,
+                        GestureDetector(
+                          onTap: () => context.go('/notifications'),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF0F4),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Stack(
+                              children: [
+                                Center(
+                                  child: Icon(
+                                    Icons.notifications_outlined,
+                                    color: const Color(
+                                      0xFFE8698A,
+                                    ).withValues(alpha: 0.8),
+                                    size: 22,
                                   ),
                                 ),
-                              ),
-                            ],
+                                Positioned(
+                                  top: 10,
+                                  right: 10,
+                                  child: Container(
+                                    width: 7,
+                                    height: 7,
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFFF6B6B),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -334,7 +337,11 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon, {VoidCallback? onTap}) {
+  Widget _buildSectionHeader(
+    String title,
+    IconData icon, {
+    VoidCallback? onTap,
+  }) {
     return Row(
       children: [
         Container(
@@ -541,145 +548,9 @@ class _CommunityScreenState extends State<CommunityScreen>
   // NEWS
   // ──────────────────────────────────────────────────────────────────────────
 
-
   // ──────────────────────────────────────────────────────────────────────────
   // GROUPS
   // ──────────────────────────────────────────────────────────────────────────
-
-  Widget _buildPopularGroups() {
-    final groups = [
-      {
-        'name': 'Runners Urbanos',
-        'members': 247,
-        'location': 'Centro Histórico',
-        'level': 'Todos los niveles',
-        'color': const Color(0xFFE8698A),
-      },
-      {
-        'name': 'Trail Seekers',
-        'members': 189,
-        'location': 'Bosque de Chapultepec',
-        'level': 'Intermedio',
-        'color': const Color(0xFF7ED957),
-      },
-      {
-        'name': 'Maratón Team',
-        'members': 156,
-        'location': 'Polanco',
-        'level': 'Avanzado',
-        'color': const Color(0xFFFFB84D),
-      },
-    ];
-
-    return Column(
-      children: [
-        _buildSectionHeader(
-          'Grupos populares',
-          Icons.groups_rounded,
-          onTap: () => context.push('/community/groups'),
-        ),
-        const SizedBox(height: 16),
-        ...groups.map(
-          (group) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildGroupItem(group),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGroupItem(Map<String, dynamic> group) {
-    final color = group['color'] as Color;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: _cardDecoration(accentColor: color),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.15),
-                  color.withValues(alpha: 0.08),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Icon(
-              Icons.groups_rounded,
-              color: color.withValues(alpha: 0.8),
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  group['name'] as String,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A0A0A),
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${group['members']} miembros  ·  ${group['level']}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.location_on_rounded,
-                      color: color.withValues(alpha: 0.7),
-                      size: 13,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      group['location'] as String,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              'Unirse',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildEventsSection() {
     final events = [
@@ -687,9 +558,11 @@ class _CommunityScreenState extends State<CommunityScreen>
         'id': '1',
         'name': 'Carrera Nocturna 10K',
         'date': '15 Mar 2024 · 19:00',
-        'description': 'Corre bajo las luces de la ciudad en este evento especial.',
+        'description':
+            'Corre bajo las luces de la ciudad en este evento especial.',
         'participants': 156,
-        'image': 'https://images.unsplash.com/photo-1541252260730-0412e3e2104e?q=80&w=1000&auto=format&fit=crop',
+        'image':
+            'https://images.unsplash.com/photo-1541252260730-0412e3e2104e?q=80&w=1000&auto=format&fit=crop',
         'color': const Color(0xFFE8698A),
       },
       {
@@ -698,7 +571,8 @@ class _CommunityScreenState extends State<CommunityScreen>
         'date': '22 Mar 2024 · 07:00',
         'description': 'Desafía tus límites en los senderos más técnicos.',
         'participants': 89,
-        'image': 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000&auto=format&fit=crop',
+        'image':
+            'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000&auto=format&fit=crop',
         'color': const Color(0xFFE8698A),
       },
     ];
@@ -726,7 +600,10 @@ class _CommunityScreenState extends State<CommunityScreen>
   Widget _buildEventItem(Map<String, dynamic> event) {
     final color = event['color'] as Color;
     return GestureDetector(
-      onTap: () => context.pushNamed('event_detail', pathParameters: {'eventId': event['id'] as String}),
+      onTap: () => context.pushNamed(
+        'event_detail',
+        pathParameters: {'eventId': event['id'] as String},
+      ),
       child: Container(
         width: 280,
         decoration: BoxDecoration(
@@ -772,7 +649,10 @@ class _CommunityScreenState extends State<CommunityScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: color.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(8),
@@ -799,7 +679,11 @@ class _CommunityScreenState extends State<CommunityScreen>
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.people_alt_rounded, color: Colors.white.withValues(alpha: 0.8), size: 14),
+                        Icon(
+                          Icons.people_alt_rounded,
+                          color: Colors.white.withValues(alpha: 0.8),
+                          size: 14,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           '${event['participants']} participantes',
@@ -858,7 +742,10 @@ class _CommunityScreenState extends State<CommunityScreen>
           (rival) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: InkWell(
-              onTap: () => context.pushNamed('rival_profile', pathParameters: {'userId': rival['id'] as String}),
+              onTap: () => context.pushNamed(
+                'rival_profile',
+                pathParameters: {'userId': rival['id'] as String},
+              ),
               borderRadius: BorderRadius.circular(20),
               child: _buildRivalItem(rival),
             ),

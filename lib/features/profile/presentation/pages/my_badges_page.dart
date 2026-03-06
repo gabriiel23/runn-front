@@ -147,15 +147,15 @@ class MyBadgesPage extends StatelessWidget {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: unlocked ? color.withOpacity(0.1) : Colors.white,
+              color: unlocked ? color.withValues(alpha: 0.1) : Colors.white,
               shape: BoxShape.circle,
               border: Border.all(
-                color: unlocked ? color.withOpacity(0.3) : const Color(0xFFE0E0E0),
+                color: unlocked ? color.withValues(alpha: 0.3) : const Color(0xFFE0E0E0),
                 width: 2,
               ),
               boxShadow: unlocked ? [
                 BoxShadow(
-                  color: color.withOpacity(0.2),
+                  color: color.withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 )
@@ -210,9 +210,9 @@ class MyBadgesPage extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: color.withOpacity(0.3), width: 3),
+                border: Border.all(color: color.withValues(alpha: 0.3), width: 3),
               ),
               child: Icon(badge['icon'], size: 48, color: color),
             ),
@@ -240,7 +240,7 @@ class MyBadgesPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: const Color(0xFF0A0A0A).withOpacity(0.6),
+                color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
                 height: 1.5,
               ),
             ),
@@ -250,7 +250,7 @@ class MyBadgesPage extends StatelessWidget {
                 'Conseguido el ${badge['date']}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: const Color(0xFF0A0A0A).withOpacity(0.4),
+                  color: const Color(0xFF0A0A0A).withValues(alpha: 0.4),
                   fontWeight: FontWeight.w500,
                 ),
               )

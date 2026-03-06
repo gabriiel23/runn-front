@@ -87,7 +87,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFE8698A).withOpacity(0.2), width: 3),
+            border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.2), width: 3),
           ),
           child: const CircleAvatar(
             radius: 60,
@@ -131,13 +131,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
           keyboardType: keyboardType,
           style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: const Color(0xFF0A0A0A).withOpacity(0.4), size: 20),
+            prefixIcon: Icon(icon, color: const Color(0xFF0A0A0A).withValues(alpha: 0.4), size: 20),
             filled: true,
             fillColor: Colors.white,
             contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: const Color(0xFF0A0A0A).withOpacity(0.05)),
+              borderSide: BorderSide(color: const Color(0xFF0A0A0A).withValues(alpha: 0.05)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
@@ -152,7 +152,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Widget _buildDeleteAccountSection() {
     return Column(
       children: [
-        Divider(color: const Color(0xFF0A0A0A).withOpacity(0.05), height: 32),
+        Divider(color: const Color(0xFF0A0A0A).withValues(alpha: 0.05), height: 32),
         TextButton(
           onPressed: () {},
           child: const Text(

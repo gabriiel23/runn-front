@@ -97,10 +97,10 @@ class WearablesPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF0A0A0A).withOpacity(0.05)),
+        border: Border.all(color: const Color(0xFF0A0A0A).withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -112,7 +112,7 @@ class WearablesPage extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(brand['icon'], color: color, size: 26),
@@ -135,7 +135,7 @@ class WearablesPage extends StatelessWidget {
                   brand['status'],
                   style: TextStyle(
                     fontSize: 13,
-                    color: isConnected ? const Color(0xFF7ED957) : const Color(0xFF0A0A0A).withOpacity(0.4),
+                    color: isConnected ? const Color(0xFF7ED957) : const Color(0xFF0A0A0A).withValues(alpha: 0.4),
                     fontWeight: FontWeight.w600,
                   ),
                 ),

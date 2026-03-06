@@ -13,7 +13,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   final _nameController = TextEditingController();
   bool _inviteLinkEnabled = true;
   final List<String> _selectedMembers = [];
-  
+
   // Dummy data for members
   final List<Map<String, String>> _availableRunners = [
     {'name': 'María González', 'emoji': '🏃‍♀️'},
@@ -71,12 +71,12 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               const SizedBox(height: 16),
               _buildNameField(),
               const SizedBox(height: 32),
-              
+
               _buildSectionHeader('Agregar miembros'),
               const SizedBox(height: 16),
               _buildMemberSelector(),
               const SizedBox(height: 32),
-              
+
               _buildSectionHeader('Privacidad y Acceso'),
               const SizedBox(height: 16),
               _buildInviteLinkToggle(),
@@ -84,7 +84,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
                 const SizedBox(height: 16),
                 _buildGeneratedLinkField(),
               ],
-              
+
               const SizedBox(height: 48),
               _buildCreateButton(),
               const SizedBox(height: 40),
@@ -129,14 +129,21 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             color: const Color(0xFF1A1A1A).withValues(alpha: 0.3),
             fontWeight: FontWeight.w400,
           ),
-          prefixIcon: const Icon(Icons.edit_note_rounded, color: Color(0xFFE8698A)),
+          prefixIcon: const Icon(
+            Icons.edit_note_rounded,
+            color: Color(0xFFE8698A),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: const Color(0xFFE8698A).withValues(alpha: 0.1)),
+            borderSide: BorderSide(
+              color: const Color(0xFFE8698A).withValues(alpha: 0.1),
+            ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: const Color(0xFFE8698A).withValues(alpha: 0.1)),
+            borderSide: BorderSide(
+              color: const Color(0xFFE8698A).withValues(alpha: 0.1),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
@@ -160,7 +167,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.08)),
+        border: Border.all(
+          color: const Color(0xFFE8698A).withValues(alpha: 0.08),
+        ),
       ),
       child: Column(
         children: [
@@ -174,12 +183,17 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
               ),
               title: Text(
                 runner['name']!,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
               trailing: Checkbox(
                 value: isSelected,
                 activeColor: const Color(0xFFE8698A),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 onChanged: (_) => _toggleMember(runner['name']!),
               ),
             );
@@ -219,7 +233,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         ),
         Switch(
           value: _inviteLinkEnabled,
-          activeColor: const Color(0xFFE8698A),
+          activeThumbColor: const Color(0xFFE8698A),
           onChanged: (val) => setState(() => _inviteLinkEnabled = val),
         ),
       ],
@@ -232,7 +246,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       decoration: BoxDecoration(
         color: const Color(0xFFFFF0F4),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.1)),
+        border: Border.all(
+          color: const Color(0xFFE8698A).withValues(alpha: 0.1),
+        ),
       ),
       child: const Row(
         children: [
@@ -288,7 +304,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
         child: const Text(
           'Crear Grupo',

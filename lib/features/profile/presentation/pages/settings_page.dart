@@ -54,7 +54,7 @@ class SettingsPage extends StatelessWidget {
                   'Versión 1.0.0 (Build 1)',
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF0A0A0A).withOpacity(0.3),
+                    color: const Color(0xFF0A0A0A).withValues(alpha: 0.3),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -87,10 +87,10 @@ class SettingsPage extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE8698A).withOpacity(0.05)),
+        border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -132,7 +132,7 @@ class SettingsPage extends StatelessWidget {
                 trailing,
                 style: TextStyle(
                   fontSize: 14,
-                  color: const Color(0xFF0A0A0A).withOpacity(0.4),
+                  color: const Color(0xFF0A0A0A).withValues(alpha: 0.4),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -140,7 +140,7 @@ class SettingsPage extends StatelessWidget {
           Icon(
             Icons.arrow_forward_ios_rounded,
             size: 14,
-            color: const Color(0xFF0A0A0A).withOpacity(0.2),
+            color: const Color(0xFF0A0A0A).withValues(alpha: 0.2),
           ),
         ],
       ),
