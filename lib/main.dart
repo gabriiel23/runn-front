@@ -14,10 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Runn',
-      theme: ThemeData(
-        primarySwatch: Colors.pink,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(primarySwatch: Colors.pink, useMaterial3: true),
       routerConfig: appRouter,
     );
   }
