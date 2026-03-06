@@ -1,42 +1,44 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('Building ProfileScreen...');
     return Scaffold(
       backgroundColor: const Color(0xFFFFFBFC),
-      body: SingleChildScrollView(
+      body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildHeader(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  const SizedBox(height: 28),
-                  _buildProfileCard(),
-                  const SizedBox(height: 28),
-                  _buildAchievements(),
-                  const SizedBox(height: 28),
-                  _buildRecentRuns(),
-                  const SizedBox(height: 28),
-                  _buildMenuOptions(),
-                  const SizedBox(height: 28),
-                  _buildLogoutButton(),
-                  const SizedBox(height: 80),
-                ],
-              ),
+        slivers: [
+          SliverToBoxAdapter(
+            child: _buildHeader(context),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                const SizedBox(height: 28),
+                _buildStatsCard(context),
+                const SizedBox(height: 28),
+                _buildBadgesSection(context),
+                const SizedBox(height: 28),
+                _buildRecentActivity(context),
+                const SizedBox(height: 28),
+                _buildSettingsMenu(context),
+                const SizedBox(height: 40),
+                _buildLogoutButton(context),
+                const SizedBox(height: 100),
+              ]),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -49,767 +51,353 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: 40,
-            right: -40,
-            child: Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFE8698A).withValues(alpha: 0.04),
-                    const Color(0xFFE8698A).withValues(alpha: 0.01),
-                  ],
-                ),
-              ),
-            ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopBar(context),
+              const SizedBox(height: 24),
+              _buildUserInfo(),
+              const SizedBox(height: 28),
+              _buildMainStatsSummary(),
+            ],
           ),
-          Positioned(
-            bottom: 20,
-            left: -30,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [
-                    const Color(0xFFE8698A).withValues(alpha: 0.03),
-                    const Color(0xFFE8698A).withValues(alpha: 0.01),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(3),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: const Color(
-                              0xFFE8698A,
-                            ).withValues(alpha: 0.15),
-                            width: 2,
-                          ),
-                        ),
-                        child: CircleAvatar(
-                          radius: 24,
-                          backgroundColor: const Color(0xFFFFF0F4),
-                          backgroundImage: const NetworkImage(
-                            'https://images.unsplash.com/photo-1650452671134-28837b325586?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxhdGhsZXRpYyUyMHBlcnNvbiUyMHJ1bm5pbmd8ZW58MXx8fHwxNzYzNjA1NjQzfDA&ixlib=rb-4.1.0&q=80&w=1080',
-                          ),
-                        ),
-                      ),
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFF0F4),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          Icons.settings_outlined,
-                          color: const Color(0xFFE8698A).withValues(alpha: 0.8),
-                          size: 22,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'Alex Runner',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF0A0A0A),
-                      letterSpacing: -0.8,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFFFFB84D,
-                          ).withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: const Color(
-                              0xFFFFB84D,
-                            ).withValues(alpha: 0.25),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.emoji_events_rounded,
-                              color: const Color(
-                                0xFFFFB84D,
-                              ).withValues(alpha: 0.9),
-                              size: 13,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Nivel 8',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: const Color(
-                                  0xFFFFB84D,
-                                ).withValues(alpha: 0.9),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'runner@mail.com',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: const Color(
-                            0xFF1A1A1A,
-                          ).withValues(alpha: 0.45),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 28),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 20,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF5F8),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(
-                        color: const Color(0xFFE8698A).withValues(alpha: 0.08),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _buildHeaderStat(
-                          '47',
-                          'Carreras',
-                          Icons.directions_run_rounded,
-                        ),
-                        _buildHeaderDivider(),
-                        _buildHeaderStat(
-                          '352',
-                          'Kilómetros',
-                          Icons.location_on_rounded,
-                        ),
-                        _buildHeaderDivider(),
-                        _buildHeaderStat(
-                          '12',
-                          'Territorios',
-                          Icons.flag_outlined,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeaderStat(String value, String label, IconData icon) {
-    return Column(
+  Widget _buildTopBar(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Icon(
-          icon,
-          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
-          size: 22,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
-            letterSpacing: -0.5,
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: const Color(0xFFE8698A).withValues(alpha: 0.15),
+              width: 2,
+            ),
+          ),
+          child: CircleAvatar(
+            radius: 24,
+            backgroundColor: const Color(0xFFFFF0F4),
+            child: Icon(
+              Icons.person_rounded,
+              color: const Color(0xFFE8698A).withValues(alpha: 0.8),
+              size: 24,
+            ),
           ),
         ),
-        const SizedBox(height: 3),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
-            fontWeight: FontWeight.w500,
-            letterSpacing: -0.1,
+        GestureDetector(
+          onTap: () => context.pushNamed('profile_settings'),
+          child: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF0F4),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.settings_outlined,
+              color: Color(0xFFE8698A),
+              size: 22,
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildHeaderDivider() {
+  Widget _buildUserInfo() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Alex Runner',
+          style: TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0A0A0A),
+            letterSpacing: -1,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Corriendo por el mundo, un kilómetro a la vez. 🏃‍♂️💨',
+          style: TextStyle(
+            fontSize: 14,
+            color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+            height: 1.4,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            _buildNivelBadge(),
+            const SizedBox(width: 12),
+            Text(
+              'runner@mail.com',
+              style: TextStyle(
+                fontSize: 13,
+                color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNivelBadge() {
     return Container(
-      width: 1,
-      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFB84D).withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFFFB84D).withValues(alpha: 0.25)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.emoji_events_rounded, color: Color(0xFFFFB84D), size: 14),
+          SizedBox(width: 4),
+          Text(
+            'Nivel 8',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFFFFB84D),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainStatsSummary() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF5F8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildSummaryStat('47', 'Carreras', Icons.directions_run_rounded),
+          _buildSummaryDivider(),
+          _buildSummaryStat('352', 'km', Icons.location_on_rounded),
+          _buildSummaryDivider(),
+          _buildSummaryStat('12', 'Territorios', Icons.flag_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryStat(String value, String label, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: const Color(0xFFE8698A).withValues(alpha: 0.7), size: 20),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF0A0A0A),
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSummaryDivider() {
+    return Container(
+      width: 1.5,
+      height: 30,
       color: const Color(0xFFE8698A).withValues(alpha: 0.1),
     );
   }
 
-  Widget _buildProfileCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Progreso total',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF0A0A0A),
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Territorios conquistados',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: const Color(0xFF1A1A1A).withValues(alpha: 0.6),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Text(
-                '12/45 · 27%',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0A0A0A),
-                  letterSpacing: -0.2,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: 0.27,
-              minHeight: 12,
-              backgroundColor: const Color(0xFFFFF0F4),
-              valueColor: AlwaysStoppedAnimation<Color>(
-                const Color(0xFFE8698A).withValues(alpha: 0.8),
-              ),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildStatsCard(BuildContext context) {
+    return _buildNavigationCard(
+      context,
+      'Mis estadísticas',
+      'Ver gráficas de km, velocidad y ritmo',
+      Icons.analytics_rounded,
+      const Color(0xFFE8698A),
+      'profile_stats',
     );
   }
 
-  Widget _buildAchievements() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: _cardDecoration(),
-      child: Column(
-        children: [
-          _buildSectionTitle('Logros recientes'),
-          const SizedBox(height: 20),
-          _buildAchievementItem(
-            icon: Icons.emoji_events_rounded,
-            iconColor: const Color(0xFFFFB84D),
-            iconBgColor: const Color(0xFFFFF8F0),
-            title: 'Conquistador',
-            description: '10+ territorios dominados',
-          ),
-          const SizedBox(height: 12),
-          _buildAchievementItem(
-            icon: Icons.track_changes_rounded,
-            iconColor: const Color(0xFF7ED957),
-            iconBgColor: const Color(0xFFF4FDF0),
-            title: 'Meta alcanzada',
-            description: '100 km en un mes',
-          ),
-          const SizedBox(height: 12),
-          _buildAchievementItem(
-            icon: Icons.trending_up_rounded,
-            iconColor: const Color(0xFFE8698A),
-            iconBgColor: const Color(0xFFFFF0F4),
-            title: 'Mejor ritmo',
-            description: '4:30 min/km alcanzado',
-          ),
-        ],
-      ),
+  Widget _buildBadgesSection(BuildContext context) {
+    return _buildNavigationCard(
+      context,
+      'Mis insignias',
+      'Colección de logros y medallas',
+      Icons.workspace_premium_rounded,
+      const Color(0xFFFFB84D),
+      'profile_badges',
     );
   }
 
-  Widget _buildAchievementItem({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required String title,
-    required String description,
-  }) {
+  Widget _buildRecentActivity(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionTitle('Actividad reciente'),
+        const SizedBox(height: 20),
+        _buildActivityItem('Carrera matutina', 'Hoy, 07:30 AM', '8.5 km', '42:15'),
+        const SizedBox(height: 12),
+        _buildActivityItem('Entrenamiento urbano', 'Ayer, 06:45 PM', '5.2 km', '28:10'),
+      ],
+    );
+  }
+
+  Widget _buildActivityItem(String title, String date, String dist, String time) {
     return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF5F8),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: iconColor.withValues(alpha: 0.1)),
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: _cardDecoration(),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(12),
+              color: const Color(0xFFFFF0F4),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: iconColor, size: 22),
+            child: const Icon(Icons.directions_run_rounded, color: Color(0xFFE8698A), size: 24),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A0A0A),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
-                  ),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF0A0A0A))),
+                const SizedBox(height: 4),
+                Text(date, style: TextStyle(color: const Color(0xFF1A1A1A).withValues(alpha: 0.45), fontSize: 12)),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentRuns() {
-    final recentRuns = [
-      {
-        'date': '20 Nov 2024',
-        'time': '07:30 AM',
-        'distance': '8.5',
-        'duration': '42:15',
-        'pace': '4:58',
-        'calories': 520,
-      },
-      {
-        'date': '18 Nov 2024',
-        'time': '06:45 AM',
-        'distance': '10.2',
-        'duration': '58:30',
-        'pace': '5:44',
-        'calories': 645,
-      },
-      {
-        'date': '16 Nov 2024',
-        'time': '07:15 AM',
-        'distance': '5.8',
-        'duration': '31:20',
-        'pace': '5:24',
-        'calories': 380,
-      },
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: _cardDecoration(),
-      child: Column(
-        children: [
-          _buildSectionTitle('Historial de carreras'),
-          const SizedBox(height: 20),
-          ...recentRuns.map(
-            (run) => Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: _buildRunItem(run),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(dist, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: Color(0xFFE8698A))),
+              Text(time, style: TextStyle(color: const Color(0xFF1A1A1A).withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600)),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRunItem(Map<String, dynamic> run) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF5F8),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFFE8698A).withValues(alpha: 0.08),
-          width: 1,
+  Widget _buildSettingsMenu(BuildContext context) {
+    return Column(
+      children: [
+        _buildMenuOption(context, 'Editar perfil', Icons.person_outline_rounded, 'profile_edit'),
+        const SizedBox(height: 12),
+        _buildMenuOption(context, 'Conectar wearable', Icons.watch_rounded, 'profile_wearables'),
+      ],
+    );
+  }
+
+  Widget _buildMenuOption(BuildContext context, String title, IconData icon, String routeName) {
+    return ListTile(
+      onTap: () => context.pushNamed(routeName),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+      tileColor: Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: const Color(0xFFE8698A).withValues(alpha: 0.05)),
+      ),
+      leading: Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF0F4),
+          borderRadius: BorderRadius.circular(12),
         ),
+        child: Icon(icon, color: const Color(0xFFE8698A), size: 20),
       ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFE4EC),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Stack(
-                  children: [
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF7ED957),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      bottom: 8,
-                      right: 8,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF6B6B),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      run['date'],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF0A0A0A),
-                        letterSpacing: -0.2,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      run['time'],
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFB84D).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: const Color(0xFFFFB84D).withValues(alpha: 0.2),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.local_fire_department_rounded,
-                      color: const Color(0xFFFFB84D).withValues(alpha: 0.9),
-                      size: 13,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${run['calories']} kcal',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFFFFB84D).withValues(alpha: 0.9),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              _buildRunStat(
-                Icons.location_on_rounded,
-                'Distancia',
-                run['distance'],
-                'km',
-                const Color(0xFFE8698A),
-              ),
-              _buildRunStat(
-                Icons.access_time_rounded,
-                'Tiempo',
-                run['duration'],
-                '',
-                const Color(0xFF7ED957),
-              ),
-              _buildRunStat(
-                Icons.trending_up_rounded,
-                'Ritmo',
-                run['pace'],
-                'min/km',
-                const Color(0xFFFFB84D),
-              ),
-            ],
-          ),
-        ],
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Color(0xFF0A0A0A)),
       ),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFFE0E0E0)),
     );
   }
 
-  Widget _buildRunStat(
-    IconData icon,
-    String label,
-    dynamic value,
-    String unit,
-    Color color,
-  ) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLogoutButton(BuildContext context) {
+    return TextButton(
+      onPressed: () => context.go('/login'),
+      child: const Row(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: color.withValues(alpha: 0.6), size: 13),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
+          Icon(Icons.logout_rounded, color: Color(0xffFF3B30), size: 20),
+          SizedBox(width: 8),
           Text(
-            '$value',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF0A0A0A),
-              letterSpacing: -0.3,
-            ),
-          ),
-          if (unit.isNotEmpty)
-            Text(
-              unit,
-              style: TextStyle(
-                fontSize: 10,
-                color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuOptions() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: _cardDecoration(),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            icon: Icons.watch_rounded,
-            iconColor: const Color(0xFFE8698A),
-            iconBgColor: const Color(0xFFFFF0F4),
-            title: 'Dispositivos',
-            subtitle: 'Sin dispositivo conectado',
-            onTap: () {},
-          ),
-          _buildMenuItem(
-            icon: Icons.track_changes_rounded,
-            iconColor: const Color(0xFFE8698A),
-            iconBgColor: const Color(0xFFFFF0F4),
-            title: 'Objetivos',
-            onTap: () {},
-          ),
-          _buildMenuItem(
-            icon: Icons.location_on_rounded,
-            iconColor: const Color(0xFF7ED957),
-            iconBgColor: const Color(0xFFF4FDF0),
-            title: 'Rutas favoritas',
-            onTap: () {},
-          ),
-          _buildMenuItem(
-            icon: Icons.settings_outlined,
-            iconColor: const Color(0xFF1A1A1A),
-            iconBgColor: const Color(0xFFF5F5F5),
-            title: 'Configuración',
-            onTap: () {},
+            'Cerrar sesión',
+            style: TextStyle(color: Color(0xffFF3B30), fontWeight: FontWeight.w700, fontSize: 16),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMenuItem({
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBgColor,
-    required String title,
-    String? subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+  Widget _buildNavigationCard(
+    BuildContext context,
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    String routeName,
+  ) {
+    return GestureDetector(
+      onTap: () => context.pushNamed(routeName),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: _cardDecoration(),
         child: Row(
           children: [
             Container(
-              width: 42,
-              height: 42,
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: iconBgColor,
-                borderRadius: BorderRadius.circular(12),
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, color: iconColor, size: 20),
+              child: Icon(icon, color: color, size: 32),
             ),
-            const SizedBox(width: 14),
+            const SizedBox(width: 20),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0A0A0A), letterSpacing: -0.5)),
+                  const SizedBox(height: 4),
                   Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0A0A0A),
-                      letterSpacing: -0.2,
-                    ),
+                    subtitle,
+                    style: TextStyle(fontSize: 13, color: const Color(0xFF1A1A1A).withValues(alpha: 0.5), height: 1.2),
                   ),
-                  if (subtitle != null) ...[
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
-            Icon(
-              Icons.arrow_forward_rounded,
-              size: 16,
-              color: const Color(0xFFE8698A).withValues(alpha: 0.7),
-            ),
+            Icon(Icons.arrow_forward_ios_rounded, size: 16, color: color.withValues(alpha: 0.4)),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLogoutButton() {
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFFF6B6B).withValues(alpha: 0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF6B6B).withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(18),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.logout_rounded,
-                  color: const Color(0xFFFF6B6B).withValues(alpha: 0.85),
-                  size: 20,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Cerrar sesión',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.85),
-                    letterSpacing: -0.2,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -818,32 +406,26 @@ class ProfileScreen extends StatelessWidget {
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: const Color(0xFFE8698A).withValues(alpha: 0.1),
-        width: 1,
-      ),
+      borderRadius: BorderRadius.circular(24),
+      border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.05)),
       boxShadow: [
         BoxShadow(
           color: Colors.black.withValues(alpha: 0.02),
           blurRadius: 10,
-          offset: const Offset(0, 2),
+          offset: const Offset(0, 4),
         ),
       ],
     );
   }
 
   Widget _buildSectionTitle(String title) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-          color: Color(0xFF0A0A0A),
-          letterSpacing: -0.5,
-        ),
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        color: Color(0xFF0A0A0A),
+        letterSpacing: -0.5,
       ),
     );
   }
