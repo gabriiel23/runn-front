@@ -6,9 +6,18 @@ import 'package:runn_front/features/login/register/presentation/pages/login_page
 import 'package:runn_front/features/login/register/presentation/pages/register_page.dart';
 import 'package:runn_front/features/home/presentation/pages/home_page.dart';
 import 'package:runn_front/features/community/presentation/pages/community_page.dart';
+import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
+import 'package:runn_front/features/community/presentation/pages/create_group_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/challenges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/rival_profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/wearables_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -39,6 +48,9 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
 
+    // Sub-routes (Global) - Pushed over Bottom Bar
+
+
     // Shell — main navigation with bottom bar
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) {
@@ -65,6 +77,36 @@ final GoRouter appRouter = GoRouter(
               name: 'community',
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: CommunityScreen()),
+              routes: [
+                GoRoute(
+                  path: 'groups',
+                  name: 'groups',
+                  builder: (context, state) => const GroupsPage(),
+                  routes: [
+                    GoRoute(
+                      path: 'create',
+                      name: 'create_group',
+                      builder: (context, state) => const CreateGroupPage(),
+                    ),
+                  ],
+                ),
+                GoRoute(
+                  path: 'rival-profile/:userId',
+                  name: 'rival_profile',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId']!;
+                    return RivalProfilePage(userId: userId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId',
+                  name: 'event_detail',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventDetailPage(eventId: eventId);
+                  },
+                ),
+              ],
             ),
           ],
         ),
@@ -101,6 +143,33 @@ final GoRouter appRouter = GoRouter(
               name: 'profile',
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: ProfileScreen()),
+              routes: [
+                GoRoute(
+                  path: 'stats',
+                  name: 'profile_stats',
+                  builder: (context, state) => const MyStatisticsPage(),
+                ),
+                GoRoute(
+                  path: 'badges',
+                  name: 'profile_badges',
+                  builder: (context, state) => const MyBadgesPage(),
+                ),
+                GoRoute(
+                  path: 'settings',
+                  name: 'profile_settings',
+                  builder: (context, state) => const SettingsPage(),
+                ),
+                GoRoute(
+                  path: 'edit',
+                  name: 'profile_edit',
+                  builder: (context, state) => const EditProfilePage(),
+                ),
+                GoRoute(
+                  path: 'wearables',
+                  name: 'profile_wearables',
+                  builder: (context, state) => const WearablesPage(),
+                ),
+              ],
             ),
           ],
         ),

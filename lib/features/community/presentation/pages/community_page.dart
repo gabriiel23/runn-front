@@ -1,4 +1,5 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -72,9 +73,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                           const SizedBox(height: 24),
                           _buildQuickActions(),
                           const SizedBox(height: 32),
-                          _buildNewsSection(),
-                          const SizedBox(height: 32),
-                          _buildPopularGroups(),
+                          _buildEventsSection(),
                           const SizedBox(height: 32),
                           _buildNearbyRunners(),
                           const SizedBox(height: 40),
@@ -139,8 +138,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFF7ED957).withValues(alpha: 0.04),
-                      const Color(0xFF7ED957).withValues(alpha: 0.01),
+                      const Color(0xFFE8698A).withOpacity(0.04),
+                      const Color(0xFFE8698A).withOpacity(0.01),
                     ],
                   ),
                 ),
@@ -335,7 +334,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(String title, IconData icon, {VoidCallback? onTap}) {
     return Row(
       children: [
         Container(
@@ -362,27 +361,28 @@ class _CommunityScreenState extends State<CommunityScreen>
           ),
         ),
         const Spacer(),
-        GestureDetector(
-          onTap: () {},
-          child: Row(
-            children: [
-              Text(
-                'Ver más',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+        if (onTap != null)
+          GestureDetector(
+            onTap: onTap,
+            child: Row(
+              children: [
+                Text(
+                  'Ver más',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFFE8698A).withValues(alpha: 0.9),
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
                   color: const Color(0xFFE8698A).withValues(alpha: 0.9),
                 ),
-              ),
-              const SizedBox(width: 2),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 14,
-                color: const Color(0xFFE8698A).withValues(alpha: 0.9),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -468,15 +468,17 @@ class _CommunityScreenState extends State<CommunityScreen>
             iconColor: const Color(0xFFE8698A),
             iconBgColor: const Color(0xFFFFF0F4),
             label: 'Ver Grupos',
+            onTap: () => context.push('/community/groups'),
           ),
         ),
         const SizedBox(width: 14),
         Expanded(
           child: _buildQuickActionCard(
             icon: Icons.person_add_rounded,
-            iconColor: const Color(0xFF7ED957),
-            iconBgColor: const Color(0xFFF4FDF0),
+            iconColor: const Color(0xFFE8698A),
+            iconBgColor: const Color(0xFFFFF0F4),
             label: 'Invitar Amigos',
+            onTap: () {},
           ),
         ),
       ],
@@ -488,44 +490,49 @@ class _CommunityScreenState extends State<CommunityScreen>
     required Color iconColor,
     required Color iconBgColor,
     required String label,
+    required VoidCallback onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: iconColor.withValues(alpha: 0.1)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              borderRadius: BorderRadius.circular(16),
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: iconColor.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
             ),
-            child: Icon(icon, color: iconColor, size: 28),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF0A0A0A),
-              letterSpacing: -0.2,
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: iconColor, size: 28),
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF0A0A0A),
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -534,99 +541,6 @@ class _CommunityScreenState extends State<CommunityScreen>
   // NEWS
   // ──────────────────────────────────────────────────────────────────────────
 
-  Widget _buildNewsSection() {
-    final newsList = [
-      {
-        'emoji': '🏆',
-        'title': 'Runners Urbanos ganó el reto de marzo',
-        'time': 'Hace 1h',
-        'color': const Color(0xFFFFB84D),
-      },
-      {
-        'emoji': '📍',
-        'title': 'Nueva zona habilitada en el Centro Histórico',
-        'time': 'Hace 3h',
-        'color': const Color(0xFFE8698A),
-      },
-      {
-        'emoji': '🔥',
-        'title': 'Carlos M. está en racha — 7 días seguidos',
-        'time': 'Hace 5h',
-        'color': const Color(0xFFFF6B6B),
-      },
-    ];
-
-    return Column(
-      children: [
-        _buildSectionHeader('Noticias', Icons.newspaper_rounded),
-        const SizedBox(height: 16),
-        ...newsList.map(
-          (news) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: _buildNewsItem(news),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNewsItem(Map<String, dynamic> news) {
-    final color = news['color'] as Color;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(accentColor: color),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Center(
-              child: Text(
-                news['emoji'] as String,
-                style: const TextStyle(fontSize: 22),
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  news['title'] as String,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A0A0A),
-                    letterSpacing: -0.2,
-                    height: 1.3,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  news['time'] as String,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.25),
-            size: 20,
-          ),
-        ],
-      ),
-    );
-  }
 
   // ──────────────────────────────────────────────────────────────────────────
   // GROUPS
@@ -659,7 +573,11 @@ class _CommunityScreenState extends State<CommunityScreen>
 
     return Column(
       children: [
-        _buildSectionHeader('Grupos populares', Icons.groups_rounded),
+        _buildSectionHeader(
+          'Grupos populares',
+          Icons.groups_rounded,
+          onTap: () => context.push('/community/groups'),
+        ),
         const SizedBox(height: 16),
         ...groups.map(
           (group) => Padding(
@@ -763,47 +681,194 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // NEARBY RUNNERS
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Widget _buildNearbyRunners() {
-    final runners = [
+  Widget _buildEventsSection() {
+    final events = [
       {
-        'name': 'María González',
-        'level': 12,
-        'distance': '2.3 km',
-        'avgPace': '5:15',
+        'id': '1',
+        'name': 'Carrera Nocturna 10K',
+        'date': '15 Mar 2024 · 19:00',
+        'description': 'Corre bajo las luces de la ciudad en este evento especial.',
+        'participants': 156,
+        'image': 'https://images.unsplash.com/photo-1541252260730-0412e3e2104e?q=80&w=1000&auto=format&fit=crop',
+        'color': const Color(0xFFE8698A),
       },
       {
-        'name': 'Carlos Ruiz',
-        'level': 9,
-        'distance': '1.8 km',
-        'avgPace': '4:52',
-      },
-      {
-        'name': 'Ana Martínez',
-        'level': 15,
-        'distance': '3.1 km',
-        'avgPace': '5:30',
+        'id': '2',
+        'name': 'Trail de la Montaña',
+        'date': '22 Mar 2024 · 07:00',
+        'description': 'Desafía tus límites en los senderos más técnicos.',
+        'participants': 89,
+        'image': 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000&auto=format&fit=crop',
+        'color': const Color(0xFFE8698A),
       },
     ];
 
     return Column(
       children: [
-        _buildSectionHeader('Corredores cerca de ti', Icons.pin_drop_rounded),
+        _buildSectionHeader('Eventos próximos', Icons.event_available_rounded),
         const SizedBox(height: 16),
-        ...runners.map(
-          (runner) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildRunnerItem(runner),
+        SizedBox(
+          height: 190,
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            scrollDirection: Axis.horizontal,
+            itemCount: events.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 16),
+            itemBuilder: (context, index) {
+              return _buildEventItem(events[index]);
+            },
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRunnerItem(Map<String, dynamic> runner) {
+  Widget _buildEventItem(Map<String, dynamic> event) {
+    final color = event['color'] as Color;
+    return GestureDetector(
+      onTap: () => context.pushNamed('event_detail', pathParameters: {'eventId': event['id'] as String}),
+      child: Container(
+        width: 280,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: color.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(23),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: Image.network(
+                  event['image'] as String,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.1),
+                        Colors.black.withValues(alpha: 0.8),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        event['date'] as String,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      event['name'] as String,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.people_alt_rounded, color: Colors.white.withValues(alpha: 0.8), size: 14),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${event['participants']} participantes',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.8),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // NEARBY RUNNERS
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildNearbyRunners() {
+    final rivals = [
+      {
+        'id': '1',
+        'name': 'María González',
+        'level': 12,
+        'challenges': 5,
+        'territoriesLost': 2,
+      },
+      {
+        'id': '2',
+        'name': 'Carlos Ruiz',
+        'level': 9,
+        'challenges': 3,
+        'territoriesLost': 1,
+      },
+      {
+        'id': '3',
+        'name': 'Ana Martínez',
+        'level': 15,
+        'challenges': 7,
+        'territoriesLost': 4,
+      },
+    ];
+
+    return Column(
+      children: [
+        _buildSectionHeader('Rivales', Icons.bolt_rounded),
+        const SizedBox(height: 16),
+        ...rivals.map(
+          (rival) => Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: InkWell(
+              onTap: () => context.pushNamed('rival_profile', pathParameters: {'userId': rival['id'] as String}),
+              borderRadius: BorderRadius.circular(20),
+              child: _buildRivalItem(rival),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRivalItem(Map<String, dynamic> rival) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: _cardDecoration(),
@@ -849,7 +914,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                     border: Border.all(color: Colors.white, width: 1.5),
                   ),
                   child: Text(
-                    '${runner['level']}',
+                    '${rival['level']}',
                     style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
@@ -866,7 +931,7 @@ class _CommunityScreenState extends State<CommunityScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  runner['name'] as String,
+                  rival['name'] as String,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -877,33 +942,41 @@ class _CommunityScreenState extends State<CommunityScreen>
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(
-                      Icons.location_on_rounded,
-                      color: const Color(0xFFE8698A).withValues(alpha: 0.6),
-                      size: 13,
-                    ),
-                    const SizedBox(width: 3),
                     Text(
-                      runner['distance'] as String,
+                      'Te ha retado: ',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Icon(
-                      Icons.trending_up_rounded,
-                      color: const Color(0xFF7ED957).withValues(alpha: 0.7),
-                      size: 13,
-                    ),
-                    const SizedBox(width: 3),
                     Text(
-                      '${runner['avgPace']} min/km',
+                      '${rival['challenges']} veces',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFE8698A),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Row(
+                  children: [
+                    Text(
+                      'Territorios quitados: ',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
                         fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '${rival['territoriesLost']}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFE8698A),
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -911,20 +984,9 @@ class _CommunityScreenState extends State<CommunityScreen>
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFF0F4),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              'Seguir',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFFE8698A),
-              ),
-            ),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: const Color(0xFF1A1A1A).withValues(alpha: 0.2),
           ),
         ],
       ),
