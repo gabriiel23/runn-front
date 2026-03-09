@@ -117,7 +117,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           children: [
             // ── Header ──────────────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+              padding: const EdgeInsets.fromLTRB(24, 52, 24, 20),
               decoration: BoxDecoration(
                 color: context.colors.card,
                 boxShadow: [

@@ -106,7 +106,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            padding: const EdgeInsets.fromLTRB(24, 52, 24, 20),
             decoration: BoxDecoration(
               color: c.surface,
               boxShadow: [
