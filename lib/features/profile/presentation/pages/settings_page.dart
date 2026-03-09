@@ -1,24 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
   @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: context.colors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: context.colors.textPrimary,
+          ),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Configuración',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -27,39 +36,81 @@ class SettingsPage extends StatelessWidget {
       body: SingleChildScrollView(
         physics: const BouncingScrollPhysics(),
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle('Cuenta'),
-              _buildSettingsGroup([
-                _buildSettingsItem(Icons.person_outline_rounded, 'Información personal', () {}),
-                _buildSettingsItem(Icons.notifications_none_rounded, 'Notificaciones', () {}),
-                _buildSettingsItem(Icons.lock_outline_rounded, 'Privacidad', () {}),
-                _buildSettingsItem(Icons.security_rounded, 'Seguridad', () {}),
+              _buildSectionTitle(context, 'Cuenta'),
+              _buildSettingsGroup(context, [
+                _buildSettingsItem(
+                  context,
+                  Icons.person_outline_rounded,
+                  'Información personal',
+                  () {},
+                ),
+                _buildSettingsItem(
+                  context,
+                  Icons.notifications_none_rounded,
+                  'Notificaciones',
+                  () {},
+                ),
+                _buildSettingsItem(
+                  context,
+                  Icons.lock_outline_rounded,
+                  'Privacidad',
+                  () {},
+                ),
+                _buildSettingsItem(
+                  context,
+                  Icons.security_rounded,
+                  'Seguridad',
+                  () {},
+                ),
               ]),
-              const SizedBox(height: 32),
-              _buildSectionTitle('Aplicación'),
-              _buildSettingsGroup([
-                _buildSettingsItem(Icons.language_rounded, 'Idioma', () {}, trailing: 'Español'),
-                _buildSettingsItem(Icons.dark_mode_outlined, 'Tema', () {}, trailing: 'Claro'),
-                _buildSettingsItem(Icons.help_outline_rounded, 'Ayuda y soporte', () {}),
-                _buildSettingsItem(Icons.info_outline_rounded, 'Sobre la app', () {}),
+              SizedBox(height: 32),
+              _buildSectionTitle(context, 'Aplicación'),
+              _buildSettingsGroup(context, [
+                _buildSettingsItem(
+                  context,
+                  Icons.language_rounded,
+                  'Idioma',
+                  () {},
+                  trailing: 'Español',
+                ),
+                _buildSettingsItem(
+                  context,
+                  Icons.dark_mode_outlined,
+                  'Tema',
+                  () {},
+                  trailing: 'Claro',
+                ),
+                _buildSettingsItem(
+                  context,
+                  Icons.help_outline_rounded,
+                  'Ayuda y soporte',
+                  () {},
+                ),
+                _buildSettingsItem(
+                  context,
+                  Icons.info_outline_rounded,
+                  'Sobre la app',
+                  () {},
+                ),
               ]),
-              const SizedBox(height: 48),
+              SizedBox(height: 48),
               _buildLogoutButton(context),
-              const SizedBox(height: 24),
+              SizedBox(height: 24),
               Center(
                 child: Text(
                   'Versión 1.0.0 (Build 1)',
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF0A0A0A).withValues(alpha: 0.3),
+                    color: context.colors.textPrimary.withValues(alpha: 0.3),
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              SizedBox(height: 40),
             ],
           ),
         ),
@@ -67,59 +118,65 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title) {
+  Widget _buildSectionTitle(BuildContext context, String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4, bottom: 16),
+      padding: EdgeInsets.only(left: 4, bottom: 16),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w800,
-          color: Color(0xFF0A0A0A),
+          color: context.colors.textPrimary,
           letterSpacing: -0.3,
         ),
       ),
     );
   }
 
-  Widget _buildSettingsGroup(List<Widget> items) {
+  Widget _buildSettingsGroup(BuildContext context, List<Widget> items) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.05)),
+        border: Border.all(
+          color: context.colors.primary.withValues(alpha: 0.05),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        children: items,
-      ),
+      child: Column(children: items),
     );
   }
 
-  Widget _buildSettingsItem(IconData icon, String title, VoidCallback onTap, {String? trailing}) {
+  Widget _buildSettingsItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    String? trailing,
+  }) {
     return ListTile(
       onTap: onTap,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       leading: Container(
-        padding: const EdgeInsets.all(10),
+        padding: EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF0F4),
+          color: context.colors.primaryLight,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: const Color(0xFFE8698A), size: 20),
+        child: Icon(icon, color: context.colors.primary, size: 20),
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w600,
-          color: Color(0xFF0A0A0A),
+          color: context.colors.textPrimary,
         ),
       ),
       trailing: Row(
@@ -127,12 +184,12 @@ class SettingsPage extends StatelessWidget {
         children: [
           if (trailing != null)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: EdgeInsets.only(right: 8),
               child: Text(
                 trailing,
                 style: TextStyle(
                   fontSize: 14,
-                  color: const Color(0xFF0A0A0A).withValues(alpha: 0.4),
+                  color: context.colors.textPrimary.withValues(alpha: 0.4),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -140,7 +197,7 @@ class SettingsPage extends StatelessWidget {
           Icon(
             Icons.arrow_forward_ios_rounded,
             size: 14,
-            color: const Color(0xFF0A0A0A).withValues(alpha: 0.2),
+            color: context.colors.textPrimary.withValues(alpha: 0.2),
           ),
         ],
       ),
@@ -153,26 +210,23 @@ class SettingsPage extends StatelessWidget {
       child: ElevatedButton(
         onPressed: () => _showLogoutDialog(context),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFFFF0F4),
-          foregroundColor: const Color(0xffFF3B30),
+          backgroundColor: context.colors.primaryLight,
+          foregroundColor: Color(0xffFF3B30),
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: EdgeInsets.symmetric(vertical: 18),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFFFFE5EA)),
+            side: BorderSide(color: context.colors.primaryMid),
           ),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(Icons.logout_rounded, size: 20),
             SizedBox(width: 8),
             Text(
               'Cerrar sesión',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
           ],
         ),
@@ -184,20 +238,36 @@ class SettingsPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        backgroundColor: context.colors.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('Cerrar sesión'),
-        content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
+        title: Text(
+          'Cerrar sesión',
+          style: TextStyle(color: context.colors.textPrimary),
+        ),
+        content: Text(
+          '¿Estás seguro de que quieres cerrar sesión?',
+          style: TextStyle(color: context.colors.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar', style: TextStyle(color: Color(0xFF9E9E9E))),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(color: context.colors.textHint),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               context.go('/login');
             },
-            child: const Text('Cerrar sesión', style: TextStyle(color: Color(0xffFF3B30), fontWeight: FontWeight.bold)),
+            child: Text(
+              'Cerrar sesión',
+              style: TextStyle(
+                color: Color(0xffFF3B30),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),

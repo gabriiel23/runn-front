@@ -56,7 +56,6 @@ final GoRouter appRouter = GoRouter(
 
     // Sub-routes (Global) - Pushed over Bottom Bar
 
-
     // Start Career (outside shell — full screen)
     GoRoute(
       path: '/start_career',
@@ -205,7 +204,7 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'settings',
                   name: 'profile_settings',
-                  builder: (context, state) => const SettingsPage(),
+                  builder: (context, state) => SettingsPage(),
                 ),
                 GoRoute(
                   path: 'edit',
@@ -215,7 +214,7 @@ final GoRouter appRouter = GoRouter(
                 GoRoute(
                   path: 'wearables',
                   name: 'profile_wearables',
-                  builder: (context, state) => const WearablesPage(),
+                  builder: (context, state) => WearablesPage(),
                 ),
               ],
             ),

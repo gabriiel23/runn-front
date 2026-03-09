@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class ChallengesPage extends StatefulWidget {
   const ChallengesPage({super.key});
@@ -40,8 +41,9 @@ class _ChallengesPageState extends State<ChallengesPage>
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -87,12 +89,13 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildHeader() {
+    final c = context.colors;
     return FadeTransition(
       opacity: _headerAnimation,
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: c.surface,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -151,14 +154,11 @@ class _ChallengesPageState extends State<ChallengesPage>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF8F0),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
                             Icons.emoji_events_rounded,
-                            color: const Color(
-                              0xFFFFB84D,
-                            ).withValues(alpha: 0.85),
+                            color: context.colors.primaryDeepWithAlpha(0.8),
                             size: 22,
                           ),
                         ),
@@ -168,7 +168,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF0F4),
+                              color: c.primaryLight,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Stack(
@@ -176,9 +176,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                                 Center(
                                   child: Icon(
                                     Icons.notifications_outlined,
-                                    color: const Color(
-                                      0xFFE8698A,
-                                    ).withValues(alpha: 0.8),
+                                    color: c.primaryDeepWithAlpha(0.8),
                                     size: 22,
                                   ),
                                 ),
@@ -201,12 +199,12 @@ class _ChallengesPageState extends State<ChallengesPage>
                       ],
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Retos',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0A0A0A),
+                        color: c.textPrimary,
                         letterSpacing: -0.8,
                       ),
                     ),
@@ -215,7 +213,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                       'Supera tus límites cada día',
                       style: TextStyle(
                         fontSize: 15,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w400,
                         letterSpacing: -0.2,
                         height: 1.4,
@@ -229,29 +227,32 @@ class _ChallengesPageState extends State<ChallengesPage>
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF5F8),
+                        color: c.primaryLight,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(
-                            0xFFE8698A,
-                          ).withValues(alpha: 0.08),
-                        ),
+                        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildHeaderStat('3', 'Activos', Icons.bolt_rounded),
+                          _buildHeaderStat(
+                            '3',
+                            'Activos',
+                            Icons.bolt_rounded,
+                            context,
+                          ),
                           _buildHeaderDivider(),
                           _buildHeaderStat(
                             '18.5',
                             'km hoy',
                             Icons.location_on_rounded,
+                            context,
                           ),
                           _buildHeaderDivider(),
                           _buildHeaderStat(
                             '4',
                             'Insignias',
                             Icons.emoji_events_rounded,
+                            context,
                           ),
                         ],
                       ),
@@ -266,22 +267,24 @@ class _ChallengesPageState extends State<ChallengesPage>
     );
   }
 
-  Widget _buildHeaderStat(String value, String label, IconData icon) {
+  Widget _buildHeaderStat(
+    String value,
+    String label,
+    IconData icon,
+    BuildContext context,
+  ) {
+    final c = context.colors;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
-          size: 20,
-        ),
+        Icon(icon, color: c.primaryDeepWithAlpha(0.7), size: 20),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             letterSpacing: -0.3,
           ),
         ),
@@ -290,7 +293,7 @@ class _ChallengesPageState extends State<ChallengesPage>
           label,
           style: TextStyle(
             fontSize: 11,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
+            color: c.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -299,11 +302,8 @@ class _ChallengesPageState extends State<ChallengesPage>
   }
 
   Widget _buildHeaderDivider() {
-    return Container(
-      width: 1,
-      height: 40,
-      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
-    );
+    final c = context.colors;
+    return Container(width: 1, height: 40, color: c.primaryDeepWithAlpha(0.1));
   }
 
   // ──────────────────────────────────────────────────────────────────────────
@@ -311,11 +311,12 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   BoxDecoration _cardDecoration({Color? accentColor}) {
+    final c = context.colors;
     return BoxDecoration(
-      color: Colors.white,
+      color: c.card,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: (accentColor ?? const Color(0xFFE8698A)).withValues(alpha: 0.10),
+        color: (accentColor ?? c.primaryDeep).withValues(alpha: 0.10),
       ),
       boxShadow: [
         BoxShadow(
@@ -327,29 +328,30 @@ class _ChallengesPageState extends State<ChallengesPage>
     );
   }
 
-  Widget _buildSectionHeader(String title, IconData icon) {
+  Widget _buildSectionHeader(
+    String title,
+    IconData icon,
+    BuildContext context,
+  ) {
+    final c = context.colors;
     return Row(
       children: [
         Container(
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: const Color(0xFFE8698A).withValues(alpha: 0.08),
+            color: c.primaryDeepWithAlpha(0.08),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: const Color(0xFFE8698A).withValues(alpha: 0.8),
-          ),
+          child: Icon(icon, size: 18, color: c.primaryDeepWithAlpha(0.8)),
         ),
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -363,14 +365,14 @@ class _ChallengesPageState extends State<ChallengesPage>
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFFE8698A).withValues(alpha: 0.9),
+                  color: c.primaryDeepWithAlpha(0.9),
                 ),
               ),
               const SizedBox(width: 2),
               Icon(
                 Icons.arrow_forward_rounded,
                 size: 14,
-                color: const Color(0xFFE8698A).withValues(alpha: 0.9),
+                color: c.primaryDeepWithAlpha(0.9),
               ),
             ],
           ),
@@ -384,26 +386,31 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildWeeklyChallenge() {
+    final c = context.colors;
     const progress = 18.5;
     const target = 30.0;
     const progressRatio = progress / target;
 
     return Column(
       children: [
-        _buildSectionHeader('Reto de la semana', Icons.emoji_events_rounded),
+        _buildSectionHeader(
+          'Reto de la semana',
+          Icons.emoji_events_rounded,
+          context,
+        ),
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFFC94070), Color(0xFFA8295A)],
+            gradient: LinearGradient(
+              colors: [c.primaryDeep, c.primaryDark],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFC94070).withValues(alpha: 0.3),
+                color: c.primaryDeepWithAlpha(0.3),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -534,11 +541,12 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildDailyChallenges() {
+    final c = context.colors;
     final challenges = [
       {
         'icon': Icons.directions_run_rounded,
-        'iconColor': const Color(0xFFE8698A),
-        'iconBgColor': const Color(0xFFFFF0F4),
+        'iconColor': c.primaryDeep,
+        'iconBgColor': c.primaryLight,
         'title': 'Carrera matutina',
         'description': 'Corre 5 km antes de las 9 AM',
         'reward': '+50 pts',
@@ -566,27 +574,28 @@ class _ChallengesPageState extends State<ChallengesPage>
 
     return Column(
       children: [
-        _buildSectionHeader('Desafíos diarios', Icons.bolt_rounded),
+        _buildSectionHeader('Desafíos diarios', Icons.bolt_rounded, context),
         const SizedBox(height: 16),
         ...challenges.map(
-          (c) => Padding(
+          (challenge) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildDailyChallengeItem(c),
+            child: _buildDailyChallengeItem(challenge),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDailyChallengeItem(Map<String, dynamic> c) {
-    final isDone = c['done'] as bool;
-    final iconColor = c['iconColor'] as Color;
-    final iconBgColor = c['iconBgColor'] as Color;
+  Widget _buildDailyChallengeItem(Map<String, dynamic> challenge) {
+    final c = context.colors;
+    final isDone = challenge['done'] as bool;
+    final iconColor = challenge['iconColor'] as Color;
+    final iconBgColor = challenge['iconBgColor'] as Color;
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDone ? const Color(0xFFF4FDF0) : Colors.white,
+        color: isDone ? const Color(0xFFF4FDF0) : c.card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDone
@@ -613,7 +622,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              isDone ? Icons.check_rounded : c['icon'] as IconData,
+              isDone ? Icons.check_rounded : challenge['icon'] as IconData,
               color: isDone ? const Color(0xFF7ED957) : iconColor,
               size: 24,
             ),
@@ -624,13 +633,11 @@ class _ChallengesPageState extends State<ChallengesPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  c['title'] as String,
+                  challenge['title'] as String,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDone
-                        ? const Color(0xFF7ED957)
-                        : const Color(0xFF0A0A0A),
+                    color: isDone ? const Color(0xFF7ED957) : c.textPrimary,
                     letterSpacing: -0.2,
                     decoration: isDone
                         ? TextDecoration.lineThrough
@@ -639,10 +646,10 @@ class _ChallengesPageState extends State<ChallengesPage>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  c['description'] as String,
+                  challenge['description'] as String,
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                    color: c.textSecondary,
                     height: 1.3,
                   ),
                 ),
@@ -659,7 +666,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              isDone ? '✓' : c['reward'] as String,
+              isDone ? '✓' : challenge['reward'] as String,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -677,6 +684,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildCommunityRaces() {
+    final c = context.colors;
     final races = [
       {
         'name': '5K Matutino',
@@ -684,7 +692,7 @@ class _ChallengesPageState extends State<ChallengesPage>
         'date': '28 Nov',
         'participants': 42,
         'distance': 5,
-        'color': const Color(0xFFE8698A),
+        'color': c.primaryDeep,
       },
       {
         'name': 'Desafío 10K',
@@ -706,7 +714,11 @@ class _ChallengesPageState extends State<ChallengesPage>
 
     return Column(
       children: [
-        _buildSectionHeader('Carreras de la comunidad', Icons.flag_rounded),
+        _buildSectionHeader(
+          'Carreras de la comunidad',
+          Icons.flag_rounded,
+          context,
+        ),
         const SizedBox(height: 16),
         ...races.map(
           (race) => Padding(
@@ -719,6 +731,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   }
 
   Widget _buildRaceItem(Map<String, dynamic> race) {
+    final c = context.colors;
     final color = race['color'] as Color;
     return Container(
       padding: const EdgeInsets.all(18),
@@ -758,20 +771,17 @@ class _ChallengesPageState extends State<ChallengesPage>
               children: [
                 Text(
                   race['name'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A0A0A),
+                    color: c.textPrimary,
                     letterSpacing: -0.2,
                   ),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   'Por ${race['creator']}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
-                  ),
+                  style: TextStyle(fontSize: 12, color: c.textSecondary),
                 ),
                 const SizedBox(height: 6),
                 Row(
@@ -779,29 +789,25 @@ class _ChallengesPageState extends State<ChallengesPage>
                     Icon(
                       Icons.calendar_today_rounded,
                       size: 12,
-                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+                      color: c.textHint,
                     ),
                     const SizedBox(width: 4),
                     Text(
                       race['date'] as String,
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Icon(
-                      Icons.people_rounded,
-                      size: 12,
-                      color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
-                    ),
+                    Icon(Icons.people_rounded, size: 12, color: c.textHint),
                     const SizedBox(width: 4),
                     Text(
                       '${race['participants']} inscritos',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -835,6 +841,7 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildBadges() {
+    final c = context.colors;
     final badges = [
       {'name': 'Velocista', 'icon': '⚡', 'unlocked': true},
       {'name': 'Maratonista', 'icon': '🏃', 'unlocked': true},
@@ -847,7 +854,11 @@ class _ChallengesPageState extends State<ChallengesPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Mis insignias', Icons.workspace_premium_rounded),
+        _buildSectionHeader(
+          'Mis insignias',
+          Icons.workspace_premium_rounded,
+          context,
+        ),
         const SizedBox(height: 16),
         GridView.builder(
           shrinkWrap: true,
@@ -866,12 +877,12 @@ class _ChallengesPageState extends State<ChallengesPage>
               decoration: BoxDecoration(
                 color: unlocked
                     ? const Color(0xFFFFD700).withValues(alpha: 0.12)
-                    : const Color(0xFFF5F5F5),
+                    : c.surface,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: unlocked
                       ? const Color(0xFFFFD700).withValues(alpha: 0.35)
-                      : const Color(0xFFD1D1D1).withValues(alpha: 0.5),
+                      : c.textHint.withValues(alpha: 0.2),
                   width: 1.5,
                 ),
                 boxShadow: unlocked
@@ -891,7 +902,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                     badge['icon'] as String,
                     style: TextStyle(
                       fontSize: 30,
-                      color: unlocked ? Colors.black : Colors.black45,
+                      color: unlocked ? c.textPrimary : c.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 6),
@@ -901,9 +912,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: unlocked
-                          ? const Color(0xFF0A0A0A)
-                          : const Color(0xFF1A1A1A).withValues(alpha: 0.35),
+                      color: unlocked ? c.textPrimary : c.textSecondary,
                     ),
                   ),
                 ],

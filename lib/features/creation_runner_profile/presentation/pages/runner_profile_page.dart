@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kBgLight = Color(0xFFF8F5F6);
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class _Level {
   final String id;
@@ -42,8 +36,9 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: kBgLight,
+      backgroundColor: c.bg,
       body: SafeArea(
         child: Column(
           children: [
@@ -60,17 +55,17 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                   IconButton(
                     onPressed: () => context.go('/physical_metrics'),
                     icon: const Icon(Icons.arrow_back_rounded),
-                    color: const Color(0xFF1A1A1A),
+                    color: c.textPrimary,
                     iconSize: 24,
                   ),
-                  const Expanded(
+                  Expanded(
                     child: Text(
                       'Perfil de Corredor',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF1A1A1A),
+                        color: c.textPrimary,
                         letterSpacing: -0.3,
                       ),
                     ),
@@ -80,7 +75,7 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
               ),
             ),
 
-            Divider(),
+            const Divider(),
 
             // ── Scrollable body ───────────────────────────────────────
             Expanded(
@@ -94,12 +89,12 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        const Text(
+                        Text(
                           'Paso 3 de 3',
                           style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                           ),
                         ),
                         Text(
@@ -107,7 +102,7 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
-                            color: Colors.grey[500],
+                            color: c.textSecondary,
                           ),
                         ),
                       ],
@@ -118,8 +113,8 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                       child: LinearProgressIndicator(
                         value: 1.0,
                         minHeight: 10,
-                        backgroundColor: kPink.withValues(alpha: 0.25),
-                        valueColor: const AlwaysStoppedAnimation<Color>(kPink),
+                        backgroundColor: c.primary.withValues(alpha: 0.25),
+                        valueColor: AlwaysStoppedAnimation<Color>(c.primary),
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -128,18 +123,18 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: Colors.grey[600],
+                        color: c.textSecondary,
                       ),
                     ),
                     const SizedBox(height: 28),
 
                     // ── Header ────────────────────────────────────────
-                    const Text(
+                    Text(
                       '¿Cuál es tu nivel?',
                       style: TextStyle(
                         fontSize: 30,
                         fontWeight: FontWeight.w800,
-                        color: Color(0xFF1A1A1A),
+                        color: c.textPrimary,
                         letterSpacing: -0.5,
                         height: 1.15,
                       ),
@@ -149,7 +144,7 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                       'Personalizaremos tu plan de entrenamiento basado en tu experiencia actual.',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.grey[500],
+                        color: c.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -171,26 +166,26 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: isSelected
-                                  ? kPink.withValues(alpha: 0.08)
-                                  : Colors.white,
+                                  ? c.primary.withValues(alpha: 0.08)
+                                  : c.card,
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
                                 color: isSelected
-                                    ? kPinkDeep
-                                    : kPink.withValues(alpha: 0.35),
+                                    ? c.primaryDeep
+                                    : c.primary.withValues(alpha: 0.35),
                                 width: isSelected ? 2 : 1.5,
                               ),
                               boxShadow: isSelected
                                   ? [
                                       BoxShadow(
-                                        color: kPink.withValues(alpha: 0.3),
+                                        color: c.primary.withValues(alpha: 0.3),
                                         blurRadius: 16,
                                         offset: const Offset(0, 4),
                                       ),
                                     ]
                                   : [
                                       BoxShadow(
-                                        color: Colors.black.withValues(
+                                        color: c.textPrimary.withValues(
                                           alpha: 0.04,
                                         ),
                                         blurRadius: 8,
@@ -212,8 +207,8 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                                           fontSize: 17,
                                           fontWeight: FontWeight.w700,
                                           color: isSelected
-                                              ? kPinkDeep
-                                              : const Color(0xFF1A1A1A),
+                                              ? c.primaryDeep
+                                              : c.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -221,7 +216,7 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                                         level.subtitle,
                                         style: TextStyle(
                                           fontSize: 13,
-                                          color: Colors.grey[500],
+                                          color: c.textSecondary,
                                         ),
                                       ),
                                     ],
@@ -236,17 +231,19 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color: isSelected
-                                        ? kPinkDeep
+                                        ? c.primaryDeep
                                         : Colors.transparent,
                                     border: Border.all(
-                                      color: isSelected ? kPinkDeep : kPinkMid,
+                                      color: isSelected
+                                          ? c.primaryDeep
+                                          : c.primaryMid,
                                       width: 2,
                                     ),
                                   ),
                                   child: isSelected
-                                      ? const Icon(
+                                      ? Icon(
                                           Icons.check_rounded,
-                                          color: Colors.white,
+                                          color: c.card,
                                           size: 14,
                                         )
                                       : null,
@@ -266,10 +263,10 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
             Container(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
               decoration: BoxDecoration(
-                color: kBgLight.withValues(alpha: 0.95),
+                color: c.bg.withValues(alpha: 0.95),
                 border: Border(
                   top: BorderSide(
-                    color: kPink.withValues(alpha: 0.2),
+                    color: c.primary.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -280,17 +277,17 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                   width: double.infinity,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: kPink,
+                    color: c.primary,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: kPink.withValues(alpha: 0.5),
+                        color: c.primary.withValues(alpha: 0.5),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
                     ],
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
@@ -298,13 +295,13 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          color: Color(0xFF1A1A1A),
+                          color: c.textPrimary,
                         ),
                       ),
-                      SizedBox(width: 8),
+                      const SizedBox(width: 8),
                       Icon(
                         Icons.check_circle_outline_rounded,
-                        color: Color(0xFF1A1A1A),
+                        color: c.textPrimary,
                         size: 22,
                       ),
                     ],

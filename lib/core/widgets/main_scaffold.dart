@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class MainScaffold extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
@@ -22,6 +23,7 @@ class MainScaffold extends StatelessWidget {
   }
 
   Widget _buildBottomNavigationBar(BuildContext context) {
+    final colors = context.colors;
     final navItems = [
       {'label': 'Inicio', 'icon': Icons.home_rounded},
       {'label': 'Comunidad', 'icon': Icons.people_rounded},
@@ -34,7 +36,7 @@ class MainScaffold extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: colors.navBg,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
@@ -61,6 +63,7 @@ class MainScaffold extends StatelessWidget {
                 label: label,
                 icon: icon,
                 isActive: isActive,
+                colors: colors,
               );
             }),
           ),
@@ -75,6 +78,7 @@ class MainScaffold extends StatelessWidget {
     required String label,
     required IconData icon,
     required bool isActive,
+    required colors,
   }) {
     return InkWell(
       onTap: () => _onNavigate(context, index),
@@ -88,7 +92,7 @@ class MainScaffold extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: isActive
-              ? const Color(0xFFC94070).withValues(alpha: 0.1)
+              ? colors.navActive.withValues(alpha: 0.1)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(30),
         ),
@@ -98,18 +102,16 @@ class MainScaffold extends StatelessWidget {
             Icon(
               icon,
               size: 22,
-              color: isActive
-                  ? const Color(0xFFC94070)
-                  : const Color(0xFF6B6B6B),
+              color: isActive ? colors.navActive : colors.navInactive,
             ),
             if (isActive) ...[
               const SizedBox(width: 5),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFFC94070),
+                  color: colors.navActive,
                 ),
               ),
             ],

@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -49,7 +50,7 @@ class _CommunityScreenState extends State<CommunityScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: context.colors.bg,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -100,7 +101,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.card,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -121,8 +122,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFE8698A).withValues(alpha: 0.05),
-                      const Color(0xFFE8698A).withValues(alpha: 0.01),
+                      context.colors.primaryDeepWithAlpha(0.05),
+                      context.colors.primaryDeepWithAlpha(0.01),
                     ],
                   ),
                 ),
@@ -138,8 +139,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFE8698A).withValues(alpha: 0.04),
-                      const Color(0xFFE8698A).withValues(alpha: 0.01),
+                      context.colors.primaryDeepWithAlpha(0.04),
+                      context.colors.primaryDeepWithAlpha(0.01),
                     ],
                   ),
                 ),
@@ -158,14 +159,12 @@ class _CommunityScreenState extends State<CommunityScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: const Color(0xFFFFF0F4),
+                            color: context.colors.primaryLight,
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: Icon(
-                            Icons.menu_rounded,
-                            color: const Color(
-                              0xFFE8698A,
-                            ).withValues(alpha: 0.8),
+                            Icons.groups_rounded,
+                            color: context.colors.primaryDeepWithAlpha(0.8),
                             size: 22,
                           ),
                         ),
@@ -175,7 +174,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                             width: 44,
                             height: 44,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFFF0F4),
+                              color: context.colors.primaryLight,
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: Stack(
@@ -183,9 +182,9 @@ class _CommunityScreenState extends State<CommunityScreen>
                                 Center(
                                   child: Icon(
                                     Icons.notifications_outlined,
-                                    color: const Color(
-                                      0xFFE8698A,
-                                    ).withValues(alpha: 0.8),
+                                    color: context.colors.primaryDeepWithAlpha(
+                                      0.8,
+                                    ),
                                     size: 22,
                                   ),
                                 ),
@@ -208,12 +207,12 @@ class _CommunityScreenState extends State<CommunityScreen>
                       ],
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Comunidad',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: Color(0xFF0A0A0A),
+                        color: context.colors.textPrimary,
                         letterSpacing: -0.8,
                       ),
                     ),
@@ -222,7 +221,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                       'Conecta con runners cerca de ti',
                       style: TextStyle(
                         fontSize: 15,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w400,
                         letterSpacing: -0.2,
                         height: 1.4,
@@ -235,12 +234,10 @@ class _CommunityScreenState extends State<CommunityScreen>
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFF5F8),
+                        color: context.colors.primaryLight,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: const Color(
-                            0xFFE8698A,
-                          ).withValues(alpha: 0.08),
+                          color: context.colors.primaryDeepWithAlpha(0.08),
                         ),
                       ),
                       child: Row(
@@ -280,18 +277,14 @@ class _CommunityScreenState extends State<CommunityScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          icon,
-          color: const Color(0xFFE8698A).withValues(alpha: 0.7),
-          size: 20,
-        ),
+        Icon(icon, color: context.colors.primaryDeepWithAlpha(0.7), size: 20),
         const SizedBox(height: 6),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: context.colors.textPrimary,
             letterSpacing: -0.3,
           ),
         ),
@@ -300,7 +293,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           label,
           style: TextStyle(
             fontSize: 11,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
+            color: context.colors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -312,7 +305,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     return Container(
       width: 1,
       height: 40,
-      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
+      color: context.colors.primaryDeepWithAlpha(0.1),
     );
   }
 
@@ -320,12 +313,14 @@ class _CommunityScreenState extends State<CommunityScreen>
   // HELPERS
   // ──────────────────────────────────────────────────────────────────────────
 
-  BoxDecoration _cardDecoration({Color? accentColor}) {
+  BoxDecoration _cardDecoration(BuildContext context, {Color? accentColor}) {
     return BoxDecoration(
-      color: Colors.white,
+      color: context.colors.card,
       borderRadius: BorderRadius.circular(20),
       border: Border.all(
-        color: (accentColor ?? const Color(0xFFE8698A)).withValues(alpha: 0.10),
+        color: (accentColor ?? context.colors.primaryDeep).withValues(
+          alpha: 0.10,
+        ),
       ),
       boxShadow: [
         BoxShadow(
@@ -348,22 +343,22 @@ class _CommunityScreenState extends State<CommunityScreen>
           width: 34,
           height: 34,
           decoration: BoxDecoration(
-            color: const Color(0xFFE8698A).withValues(alpha: 0.08),
+            color: context.colors.primaryDeepWithAlpha(0.08),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             icon,
             size: 18,
-            color: const Color(0xFFE8698A).withValues(alpha: 0.8),
+            color: context.colors.primaryDeepWithAlpha(0.8),
           ),
         ),
         const SizedBox(width: 10),
         Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: context.colors.textPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -378,14 +373,14 @@ class _CommunityScreenState extends State<CommunityScreen>
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFFE8698A).withValues(alpha: 0.9),
+                    color: context.colors.primaryDeepWithAlpha(0.9),
                   ),
                 ),
                 const SizedBox(width: 2),
                 Icon(
                   Icons.arrow_forward_rounded,
                   size: 14,
-                  color: const Color(0xFFE8698A).withValues(alpha: 0.9),
+                  color: context.colors.primaryDeepWithAlpha(0.9),
                 ),
               ],
             ),
@@ -402,18 +397,18 @@ class _CommunityScreenState extends State<CommunityScreen>
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isSearchFocused
-              ? const Color(0xFFE8698A).withValues(alpha: 0.3)
-              : const Color(0xFFE8698A).withValues(alpha: 0.08),
+              ? context.colors.primaryDeepWithAlpha(0.3)
+              : context.colors.primaryDeepWithAlpha(0.08),
           width: _isSearchFocused ? 2 : 1,
         ),
         boxShadow: [
           BoxShadow(
             color: _isSearchFocused
-                ? const Color(0xFFE8698A).withValues(alpha: 0.08)
+                ? context.colors.primaryDeepWithAlpha(0.08)
                 : Colors.black.withValues(alpha: 0.02),
             blurRadius: _isSearchFocused ? 16 : 8,
             offset: const Offset(0, 2),
@@ -423,29 +418,29 @@ class _CommunityScreenState extends State<CommunityScreen>
       child: TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 15,
-          color: Color(0xFF1A1A1A),
+          color: context.colors.textPrimary,
           fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
           hintText: 'Buscar grupos, runners...',
           hintStyle: TextStyle(
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+            color: context.colors.textHint,
             fontWeight: FontWeight.w400,
           ),
           prefixIcon: Icon(
             Icons.search_rounded,
             color: _isSearchFocused
-                ? const Color(0xFFE8698A).withValues(alpha: 0.8)
-                : const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+                ? context.colors.primaryDeepWithAlpha(0.8)
+                : context.colors.textHint,
             size: 22,
           ),
           suffixIcon: _searchController.text.isNotEmpty
               ? IconButton(
                   icon: Icon(
                     Icons.clear_rounded,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+                    color: context.colors.textPrimary.withValues(alpha: 0.4),
                     size: 20,
                   ),
                   onPressed: () => setState(() => _searchController.clear()),
@@ -472,8 +467,8 @@ class _CommunityScreenState extends State<CommunityScreen>
         Expanded(
           child: _buildQuickActionCard(
             icon: Icons.group_add_rounded,
-            iconColor: const Color(0xFFE8698A),
-            iconBgColor: const Color(0xFFFFF0F4),
+            iconColor: context.colors.primaryDeep,
+            iconBgColor: context.colors.primaryLight,
             label: 'Ver Grupos',
             onTap: () => context.push('/community/groups'),
           ),
@@ -482,8 +477,8 @@ class _CommunityScreenState extends State<CommunityScreen>
         Expanded(
           child: _buildQuickActionCard(
             icon: Icons.person_add_rounded,
-            iconColor: const Color(0xFFE8698A),
-            iconBgColor: const Color(0xFFFFF0F4),
+            iconColor: context.colors.primaryDeep,
+            iconBgColor: context.colors.primaryLight,
             label: 'Invitar Amigos',
             onTap: () {},
           ),
@@ -505,7 +500,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: iconColor.withValues(alpha: 0.1)),
           boxShadow: [
@@ -531,10 +526,10 @@ class _CommunityScreenState extends State<CommunityScreen>
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF0A0A0A),
+                color: context.colors.textPrimary,
                 letterSpacing: -0.2,
               ),
             ),
@@ -548,10 +543,6 @@ class _CommunityScreenState extends State<CommunityScreen>
   // NEWS
   // ──────────────────────────────────────────────────────────────────────────
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // GROUPS
-  // ──────────────────────────────────────────────────────────────────────────
-
   Widget _buildEventsSection() {
     final events = [
       {
@@ -562,8 +553,10 @@ class _CommunityScreenState extends State<CommunityScreen>
             'Corre bajo las luces de la ciudad en este evento especial.',
         'participants': 156,
         'image':
-            'https://images.unsplash.com/photo-1541252260730-0412e3e2104e?q=80&w=1000&auto=format&fit=crop',
-        'color': const Color(0xFFE8698A),
+            'https://imagenes.primicias.ec/files/content_image_simple_414_238/uploads/2024/05/26/6653b8ee9764c.jpeg',
+        'color': context.colors.primaryDeep,
+        'emoji': '🏃',
+        'icon': Icons.event_available_rounded,
       },
       {
         'id': '2',
@@ -573,7 +566,9 @@ class _CommunityScreenState extends State<CommunityScreen>
         'participants': 89,
         'image':
             'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000&auto=format&fit=crop',
-        'color': const Color(0xFFE8698A),
+        'color': context.colors.primaryDeep,
+        'emoji': '🏃',
+        'icon': Icons.event_available_rounded,
       },
     ];
 
@@ -607,7 +602,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       child: Container(
         width: 280,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.card,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: color.withValues(alpha: 0.1)),
           boxShadow: [
@@ -747,7 +742,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                 pathParameters: {'userId': rival['id'] as String},
               ),
               borderRadius: BorderRadius.circular(20),
-              child: _buildRivalItem(rival),
+              child: _buildRivalItem(rival, context),
             ),
           ),
         ),
@@ -755,10 +750,10 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 
-  Widget _buildRivalItem(Map<String, dynamic> rival) {
+  Widget _buildRivalItem(Map<String, dynamic> rival, BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
+      decoration: _cardDecoration(context),
       child: Row(
         children: [
           Stack(
@@ -779,7 +774,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                 ),
                 child: Icon(
                   Icons.person_rounded,
-                  color: const Color(0xFFE8698A).withValues(alpha: 0.7),
+                  color: context.colors.primaryDeepWithAlpha(0.7),
                   size: 26,
                 ),
               ),
@@ -798,7 +793,10 @@ class _CommunityScreenState extends State<CommunityScreen>
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white, width: 1.5),
+                    border: Border.all(
+                      color: context.colors.surface,
+                      width: 1.5,
+                    ),
                   ),
                   child: Text(
                     '${rival['level']}',
@@ -819,10 +817,10 @@ class _CommunityScreenState extends State<CommunityScreen>
               children: [
                 Text(
                   rival['name'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0A0A0A),
+                    color: context.colors.textPrimary,
                     letterSpacing: -0.2,
                   ),
                 ),
@@ -833,15 +831,15 @@ class _CommunityScreenState extends State<CommunityScreen>
                       'Te ha retado: ',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       '${rival['challenges']} veces',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFE8698A),
+                        color: context.colors.primaryDeep,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -854,15 +852,15 @@ class _CommunityScreenState extends State<CommunityScreen>
                       'Territorios quitados: ',
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     Text(
                       '${rival['territoriesLost']}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFFE8698A),
+                        color: context.colors.primaryDeep,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -873,7 +871,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           ),
           Icon(
             Icons.chevron_right_rounded,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.2),
+            color: context.colors.textPrimary.withValues(alpha: 0.2),
           ),
         ],
       ),

@@ -1,12 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kBgLight = Color(0xFFFCF8F9);
+import 'package:runn_front/core/theme/app_theme.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class _OnboardingPage {
   final String title;
@@ -44,6 +39,13 @@ const _pages = [
     imageUrl: 'assets/estadisticas.jpg',
     fallbackIcon: Icons.bar_chart_rounded,
   ),
+  // Slide 4: theme selector (special)
+  _OnboardingPage(
+    title: 'Elige tu estilo',
+    description: 'Selecciona el tema visual que quieres usar en la app.',
+    imageUrl: '',
+    fallbackIcon: Icons.palette_rounded,
+  ),
 ];
 
 class OnboardingScreen extends StatefulWidget {
@@ -59,13 +61,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   int _currentPage = 0;
   late AnimationController _timerController;
 
-  // ============================================================
-  // TIEMPO DE CAMBIO AUTOMÁTICO DE DIAPOSITIVA
-  // Cambia este valor para ajustar cuántos segundos dura cada slide.
-  // Ejemplo: Duration(seconds: 3) para 3 segundos,
-  //          Duration(seconds: 8) para 8 segundos.
-  // ============================================================
   static const _slideDuration = Duration(seconds: 5);
+  // Index of the theme-picker slide (last one)
+  static const _themeSlideIndex = 3;
 
   @override
   void initState() {
@@ -81,7 +79,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _nextPage() {
-    final next = (_currentPage + 1) % _pages.length;
+    if (_currentPage >= _pages.length - 1) return; // stay on last
+    final next = _currentPage + 1;
     _pageController.animateToPage(
       next,
       duration: const Duration(milliseconds: 500),
@@ -100,8 +99,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void _onPageChanged(int index) {
     setState(() => _currentPage = index);
     _timerController.reset();
-    _timerController.forward();
+    // Don't auto-advance from the theme selector slide
+    if (index < _themeSlideIndex) {
+      _timerController.forward();
+    }
   }
+
+  bool get _isThemeSlide => _currentPage == _themeSlideIndex;
 
   @override
   void dispose() {
@@ -112,27 +116,33 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return Scaffold(
-      backgroundColor: kBgLight,
+      backgroundColor: colors.bg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Carousel ─────────────────────────────────────────────────
+            // ── Carousel ──────────────────────────────────────────────────
             Expanded(
               child: PageView.builder(
                 controller: _pageController,
                 onPageChanged: _onPageChanged,
                 itemCount: _pages.length,
-                itemBuilder: (context, index) => _buildPage(_pages[index]),
+                itemBuilder: (context, index) {
+                  if (index == _themeSlideIndex) {
+                    return _buildThemeSelectorSlide(context);
+                  }
+                  return _buildPage(_pages[index], colors);
+                },
               ),
             ),
 
-            // ── Bottom section ────────────────────────────────────────────
+            // ── Bottom section ─────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 36),
               child: Column(
                 children: [
-                  // Page indicators
+                  // Progress dots
                   Padding(
                     padding: const EdgeInsets.only(bottom: 24),
                     child: Row(
@@ -148,8 +158,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                             height: 8,
                             decoration: BoxDecoration(
                               color: isActive
-                                  ? kPink
-                                  : kPink.withValues(alpha: 0.3),
+                                  ? colors.primary
+                                  : colors.primaryWithAlpha(0.3),
                               borderRadius: BorderRadius.circular(50),
                             ),
                           ),
@@ -158,18 +168,24 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
                   ),
 
-                  // Button
+                  // CTA button
                   GestureDetector(
-                    onTap: () => context.go('/login'),
+                    onTap: () {
+                      if (_isThemeSlide) {
+                        context.go('/login');
+                      } else {
+                        _nextPage();
+                      }
+                    },
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 18),
                       decoration: BoxDecoration(
-                        color: kPink,
+                        color: colors.primary,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
-                            color: kPink.withValues(alpha: 0.5),
+                            color: colors.primaryWithAlpha(0.5),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -179,21 +195,19 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            _currentPage == _pages.length - 1
-                                ? 'Comenzar'
-                                : 'Siguiente',
-                            style: const TextStyle(
+                            _isThemeSlide ? 'Comenzar' : 'Siguiente',
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFF1A1A1A),
+                              color: colors.textPrimary,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Icon(
-                            _currentPage == _pages.length - 1
+                            _isThemeSlide
                                 ? Icons.rocket_launch_rounded
                                 : Icons.arrow_forward_rounded,
-                            color: const Color(0xFF1A1A1A),
+                            color: colors.textPrimary,
                             size: 20,
                           ),
                         ],
@@ -209,13 +223,13 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  Widget _buildPage(_OnboardingPage page) {
+  // ── Standard info slide ────────────────────────────────────────────────────
+  Widget _buildPage(_OnboardingPage page, AppColors colors) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(24, 64, 24, 0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Image — tamaño fijo, no ocupa toda la pantalla
           ClipRRect(
             borderRadius: BorderRadius.circular(20),
             child: SizedBox(
@@ -230,50 +244,45 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          kPink.withValues(alpha: 0.25),
-                          kPinkMid.withValues(alpha: 0.45),
+                          colors.primaryWithAlpha(0.25),
+                          colors.primaryMidWithAlpha(0.45),
                         ],
                       ),
                     ),
                   ),
                   page.imageUrl.isNotEmpty
-                      ? Image.network(
+                      ? Image.asset(
                           page.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildFallback(page),
+                          errorBuilder: (_, __, ___) =>
+                              _buildFallback(page, colors),
                         )
-                      : _buildFallback(page),
+                      : _buildFallback(page, colors),
                   Container(color: Colors.black.withValues(alpha: 0.04)),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 72),
-
-          // Title
           Text(
             page.title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 32,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1A1A1A),
+              color: colors.textPrimary,
               letterSpacing: -0.5,
               height: 1.15,
             ),
           ),
-
           const SizedBox(height: 14),
-
-          // Description
           Text(
             page.description,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w400,
-              color: Color(0xFF64748B),
+              color: colors.textSecondary,
               height: 1.6,
             ),
           ),
@@ -282,7 +291,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  Widget _buildFallback(_OnboardingPage page) {
+  Widget _buildFallback(_OnboardingPage page, AppColors colors) {
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -296,8 +305,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           itemCount: 64,
           itemBuilder: (_, i) => Container(
             color: i % 3 == 0
-                ? kPink.withValues(alpha: 0.18)
-                : kPinkLight.withValues(alpha: 0.5),
+                ? colors.primaryWithAlpha(0.18)
+                : colors.primaryLight.withValues(alpha: 0.5),
           ),
         ),
         Center(
@@ -305,19 +314,214 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.85),
+              color: colors.card.withValues(alpha: 0.85),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: kPinkDeep.withValues(alpha: 0.25),
+                  color: colors.primaryDeepWithAlpha(0.25),
                   blurRadius: 24,
                 ),
               ],
             ),
-            child: Icon(page.fallbackIcon, color: kPinkDeep, size: 44),
+            child: Icon(page.fallbackIcon, color: colors.primaryDeep, size: 44),
           ),
         ),
       ],
     );
   }
+
+  // ── Theme selector slide ───────────────────────────────────────────────────
+  Widget _buildThemeSelectorSlide(BuildContext context) {
+    final notifier = context.themeNotifier;
+    final colors = context.colors;
+
+    final themes = [
+      _ThemeOption(
+        label: 'Rosa Claro',
+        emoji: '🌸',
+        scheme: AppColorScheme.pink,
+        brightness: AppBrightness.light,
+        swatch: const Color(0xFFFFD3E0),
+        swatchDeep: const Color(0xFFC4607A),
+        isDarkCard: false,
+      ),
+      _ThemeOption(
+        label: 'Rosa Oscuro',
+        emoji: '🌙',
+        scheme: AppColorScheme.pink,
+        brightness: AppBrightness.dark,
+        swatch: const Color(0xFFFFD3E0),
+        swatchDeep: const Color(0xFFF08AAA),
+        isDarkCard: true,
+      ),
+      _ThemeOption(
+        label: 'Azul Claro',
+        emoji: '🩵',
+        scheme: AppColorScheme.blue,
+        brightness: AppBrightness.light,
+        swatch: const Color(0xFF84DEFA),
+        swatchDeep: const Color(0xFF0A8FAD),
+        isDarkCard: false,
+      ),
+      _ThemeOption(
+        label: 'Azul Oscuro',
+        emoji: '🌑',
+        scheme: AppColorScheme.blue,
+        brightness: AppBrightness.dark,
+        swatch: const Color(0xFF84DEFA),
+        swatchDeep: const Color(0xFF4DD4F2),
+        isDarkCard: true,
+      ),
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
+      child: Column(
+        children: [
+          Icon(Icons.palette_rounded, color: colors.primaryDeep, size: 56),
+          const SizedBox(height: 20),
+          Text(
+            'Elige tu estilo',
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              color: colors.textPrimary,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Puedes cambiarlo después desde Perfil → Ajustes',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: colors.textSecondary),
+          ),
+          const SizedBox(height: 36),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.15,
+              children: themes.map((opt) {
+                final isSelected =
+                    notifier.scheme == opt.scheme &&
+                    notifier.brightness == opt.brightness;
+                return GestureDetector(
+                  onTap: () async {
+                    await notifier.setTheme(opt.scheme, opt.brightness);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    decoration: BoxDecoration(
+                      color: opt.isDarkCard
+                          ? const Color(0xFF1A1A2E)
+                          : Colors.white,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(
+                        color: isSelected
+                            ? opt.swatchDeep
+                            : opt.swatch.withValues(alpha: 0.3),
+                        width: isSelected ? 3 : 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isSelected
+                              ? opt.swatchDeep.withValues(alpha: 0.3)
+                              : Colors.black.withValues(alpha: 0.05),
+                          blurRadius: isSelected ? 20 : 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Color preview circles
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _colorDot(opt.swatch),
+                            const SizedBox(width: 6),
+                            _colorDot(opt.swatchDeep),
+                            if (opt.isDarkCard) ...[
+                              const SizedBox(width: 6),
+                              _colorDot(const Color(0xFF1A1A1A)),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Text(opt.emoji, style: const TextStyle(fontSize: 28)),
+                        const SizedBox(height: 8),
+                        Text(
+                          opt.label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: opt.isDarkCard
+                                ? Colors.white
+                                : const Color(0xFF1A1A1A),
+                          ),
+                        ),
+                        if (isSelected) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: opt.swatchDeep,
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            child: const Text(
+                              'Activo',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _colorDot(Color color) => Container(
+    width: 16,
+    height: 16,
+    decoration: BoxDecoration(
+      color: color,
+      shape: BoxShape.circle,
+      border: Border.all(color: Colors.white, width: 1.5),
+    ),
+  );
+}
+
+class _ThemeOption {
+  final String label;
+  final String emoji;
+  final AppColorScheme scheme;
+  final AppBrightness brightness;
+  final Color swatch;
+  final Color swatchDeep;
+  final bool isDarkCard;
+
+  const _ThemeOption({
+    required this.label,
+    required this.emoji,
+    required this.scheme,
+    required this.brightness,
+    required this.swatch,
+    required this.swatchDeep,
+    required this.isDarkCard,
+  });
 }

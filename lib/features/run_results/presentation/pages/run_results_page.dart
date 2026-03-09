@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kPinkBg = Color(0xFFFAF0F4);
+import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/core/theme/app_theme.dart';
 
 class RunResultsScreen extends StatelessWidget {
   const RunResultsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     const runData = (
       distance: 5.47,
       time: '32:15',
@@ -23,20 +19,19 @@ class RunResultsScreen extends StatelessWidget {
       endTime: '19:07',
       avgSpeed: '10.2',
     );
-
     return Scaffold(
-      backgroundColor: kPinkBg,
+      backgroundColor: c.bg,
       body: SingleChildScrollView(
         child: Column(
           children: [
             // ── Success Header ──────────────────────────────────────────
             Container(
               width: double.infinity,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [kPinkDeep, kPinkDark],
+                  colors: [c.primaryDeep, c.primaryDark],
                 ),
               ),
               padding: const EdgeInsets.fromLTRB(24, 64, 24, 36),
@@ -84,11 +79,11 @@ class RunResultsScreen extends StatelessWidget {
                   // ── Route Map ─────────────────────────────────────────
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.card,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: kPink.withValues(alpha: 0.3),
+                          color: c.primaryWithAlpha(0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -98,12 +93,12 @@ class RunResultsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Tu ruta',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -114,7 +109,7 @@ class RunResultsScreen extends StatelessWidget {
                             child: Stack(
                               children: [
                                 // Grid background
-                                Container(color: kPinkLight),
+                                Container(color: c.primaryLight),
                                 GridView.builder(
                                   physics: const NeverScrollableScrollPhysics(),
                                   gridDelegate:
@@ -130,14 +125,13 @@ class RunResultsScreen extends StatelessWidget {
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: i % 3 == 0
-                                            ? const [
-                                                Color(0xFFFFF0F5),
-                                                Color(0xFFFFD3E0),
+                                            ? [
+                                                c.primaryLight.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                c.primary,
                                               ]
-                                            : const [
-                                                Color(0xFFFFF8FB),
-                                                Color(0xFFFFF0F5),
-                                              ],
+                                            : [c.bg, c.primaryLight],
                                       ),
                                     ),
                                   ),
@@ -146,7 +140,7 @@ class RunResultsScreen extends StatelessWidget {
                                 // Route path
                                 CustomPaint(
                                   size: Size.infinite,
-                                  painter: _RouteResultPainter(),
+                                  painter: _RouteResultPainter(c),
                                 ),
 
                                 // Start marker
@@ -160,16 +154,14 @@ class RunResultsScreen extends StatelessWidget {
                                         height: 22,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: kPinkMid,
+                                          color: c.primaryMid,
                                           border: Border.all(
                                             color: Colors.white,
                                             width: 2.5,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: kPinkMid.withValues(
-                                                alpha: 0.5,
-                                              ),
+                                              color: c.primaryMidWithAlpha(0.5),
                                               blurRadius: 8,
                                             ),
                                           ],
@@ -194,9 +186,7 @@ class RunResultsScreen extends StatelessWidget {
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: kPink.withValues(
-                                                alpha: 0.3,
-                                              ),
+                                              color: c.primaryWithAlpha(0.3),
                                               blurRadius: 4,
                                             ),
                                           ],
@@ -206,7 +196,7 @@ class RunResultsScreen extends StatelessWidget {
                                           style: TextStyle(
                                             fontSize: 9,
                                             fontWeight: FontWeight.w700,
-                                            color: kPinkDeep,
+                                            color: c.primaryDeep,
                                           ),
                                         ),
                                       ),
@@ -233,9 +223,7 @@ class RunResultsScreen extends StatelessWidget {
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: kPink.withValues(
-                                                alpha: 0.3,
-                                              ),
+                                              color: c.primaryWithAlpha(0.3),
                                               blurRadius: 4,
                                             ),
                                           ],
@@ -245,7 +233,7 @@ class RunResultsScreen extends StatelessWidget {
                                           style: TextStyle(
                                             fontSize: 9,
                                             fontWeight: FontWeight.w700,
-                                            color: kPinkDeep,
+                                            color: c.primaryDeep,
                                           ),
                                         ),
                                       ),
@@ -255,24 +243,24 @@ class RunResultsScreen extends StatelessWidget {
                                         height: 22,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
-                                          color: kPinkDeep,
+                                          color: c.primaryDeep,
                                           border: Border.all(
-                                            color: Colors.white,
+                                            color: c.surface,
                                             width: 2.5,
                                           ),
                                           boxShadow: [
                                             BoxShadow(
-                                              color: kPinkDeep.withValues(
-                                                alpha: 0.5,
+                                              color: c.primaryDeepWithAlpha(
+                                                0.5,
                                               ),
                                               blurRadius: 8,
                                             ),
                                           ],
                                         ),
-                                        child: const Center(
+                                        child: Center(
                                           child: CircleAvatar(
                                             radius: 3,
-                                            backgroundColor: Colors.white,
+                                            backgroundColor: c.surface,
                                           ),
                                         ),
                                       ),
@@ -293,10 +281,11 @@ class RunResultsScreen extends StatelessWidget {
                     children: [
                       Expanded(
                         child: _buildMainStatCard(
+                          c: c,
                           icon: Icons.location_on,
-                          iconColor: kPinkDeep,
-                          bgColor: kPink.withValues(alpha: 0.2),
-                          borderColor: kPink.withValues(alpha: 0.5),
+                          iconColor: c.primaryDeep,
+                          bgColor: c.primaryWithAlpha(0.2),
+                          borderColor: c.primaryWithAlpha(0.5),
                           label: 'Distancia total',
                           value: '${runData.distance}',
                           unit: 'kilómetros',
@@ -305,10 +294,11 @@ class RunResultsScreen extends StatelessWidget {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildMainStatCard(
+                          c: c,
                           icon: Icons.access_time_rounded,
-                          iconColor: kPinkDark,
-                          bgColor: kPinkMid.withValues(alpha: 0.2),
-                          borderColor: kPinkMid.withValues(alpha: 0.5),
+                          iconColor: c.primaryDark,
+                          bgColor: c.primaryMidWithAlpha(0.2),
+                          borderColor: c.primaryMidWithAlpha(0.5),
                           label: 'Tiempo total',
                           value: runData.time,
                           unit: 'minutos',
@@ -321,11 +311,11 @@ class RunResultsScreen extends StatelessWidget {
                   // ── Additional Stats ──────────────────────────────────
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.card,
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color: kPink.withValues(alpha: 0.3),
+                          color: c.primaryWithAlpha(0.3),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -335,12 +325,12 @@ class RunResultsScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Estadísticas',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -348,9 +338,10 @@ class RunResultsScreen extends StatelessWidget {
                           children: [
                             Expanded(
                               child: _buildMiniStatRow(
+                                c: c,
                                 icon: Icons.trending_up,
-                                iconColor: kPinkDark,
-                                iconBg: kPinkDark.withValues(alpha: 0.12),
+                                iconColor: c.primaryDark,
+                                iconBg: c.primaryDark.withValues(alpha: 0.12),
                                 label: 'Ritmo promedio',
                                 value: runData.pace,
                                 unit: 'min/km',
@@ -358,9 +349,10 @@ class RunResultsScreen extends StatelessWidget {
                             ),
                             Expanded(
                               child: _buildMiniStatRow(
+                                c: c,
                                 icon: Icons.local_fire_department,
-                                iconColor: kPinkDeep,
-                                iconBg: kPinkDeep.withValues(alpha: 0.12),
+                                iconColor: c.primaryDeep,
+                                iconBg: c.primaryDeepWithAlpha(0.12),
                                 label: 'Calorías',
                                 value: '${runData.calories}',
                                 unit: 'kcal',
@@ -369,21 +361,19 @@ class RunResultsScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 20),
-                        Divider(
-                          color: kPink.withValues(alpha: 0.4),
-                          thickness: 1,
-                        ),
+                        Divider(color: c.primaryWithAlpha(0.4), thickness: 1),
                         const SizedBox(height: 16),
                         _buildDetailRow(
+                          c,
                           'Velocidad promedio',
                           '${runData.avgSpeed} km/h',
                         ),
                         const SizedBox(height: 12),
-                        _buildDetailRow('Fecha', runData.date),
+                        _buildDetailRow(c, 'Fecha', runData.date),
                         const SizedBox(height: 12),
-                        _buildDetailRow('Hora de inicio', runData.startTime),
+                        _buildDetailRow(c, 'Hora de inicio', runData.startTime),
                         const SizedBox(height: 12),
-                        _buildDetailRow('Hora de fin', runData.endTime),
+                        _buildDetailRow(c, 'Hora de fin', runData.endTime),
                       ],
                     ),
                   ),
@@ -396,13 +386,13 @@ class RunResultsScreen extends StatelessWidget {
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [kPinkDeep, kPinkDark],
+                        gradient: LinearGradient(
+                          colors: [c.primaryDeep, c.primaryDark],
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: kPinkDeep.withValues(alpha: 0.4),
+                            color: c.primaryDeepWithAlpha(0.4),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -439,25 +429,28 @@ class RunResultsScreen extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: c.card,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: kPinkMid, width: 1.5),
+                              border: Border.all(
+                                color: c.primaryMid,
+                                width: 1.5,
+                              ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.download_rounded,
                                   size: 18,
-                                  color: Color(0xFF1A1A1A),
+                                  color: c.textPrimary,
                                 ),
-                                SizedBox(width: 6),
+                                const SizedBox(width: 6),
                                 Text(
                                   'Guardar',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
-                                    color: Color(0xFF1A1A1A),
+                                    color: c.textPrimary,
                                   ),
                                 ),
                               ],
@@ -472,25 +465,28 @@ class RunResultsScreen extends StatelessWidget {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: c.card,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: kPinkMid, width: 1.5),
+                              border: Border.all(
+                                color: c.primaryMid,
+                                width: 1.5,
+                              ),
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(
                                   Icons.home_rounded,
                                   size: 18,
-                                  color: Color(0xFF1A1A1A),
+                                  color: c.textPrimary,
                                 ),
-                                SizedBox(width: 6),
+                                const SizedBox(width: 6),
                                 Text(
                                   'Inicio',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w600,
                                     fontSize: 14,
-                                    color: Color(0xFF1A1A1A),
+                                    color: c.textPrimary,
                                   ),
                                 ),
                               ],
@@ -511,6 +507,7 @@ class RunResultsScreen extends StatelessWidget {
   }
 
   Widget _buildMainStatCard({
+    required AppColors c,
     required IconData icon,
     required Color iconColor,
     required Color bgColor,
@@ -543,31 +540,26 @@ class RunResultsScreen extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 24),
           ),
           const SizedBox(height: 14),
-          Text(
-            label,
-            style: const TextStyle(color: Color(0xFF6B6B6B), fontSize: 13),
-          ),
+          Text(label, style: TextStyle(color: c.textSecondary, fontSize: 13)),
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 30,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1A1A1A),
+              color: c.textPrimary,
               height: 1,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            unit,
-            style: const TextStyle(color: Color(0xFF6B6B6B), fontSize: 13),
-          ),
+          Text(unit, style: TextStyle(color: c.textSecondary, fontSize: 13)),
         ],
       ),
     );
   }
 
   Widget _buildMiniStatRow({
+    required AppColors c,
     required IconData icon,
     required Color iconColor,
     required Color iconBg,
@@ -590,42 +582,33 @@ class RunResultsScreen extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: const TextStyle(color: Color(0xFF6B6B6B), fontSize: 12),
-            ),
+            Text(label, style: TextStyle(color: c.textSecondary, fontSize: 12)),
             Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF1A1A1A),
+                color: c.textPrimary,
               ),
             ),
-            Text(
-              unit,
-              style: const TextStyle(color: Color(0xFF6B6B6B), fontSize: 11),
-            ),
+            Text(unit, style: TextStyle(color: c.textSecondary, fontSize: 11)),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(AppColors c, String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF6B6B6B)),
-        ),
+        Text(label, style: TextStyle(fontSize: 14, color: c.textSecondary)),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF1A1A1A),
+            color: c.textPrimary,
           ),
         ),
       ],
@@ -634,10 +617,13 @@ class RunResultsScreen extends StatelessWidget {
 }
 
 class _RouteResultPainter extends CustomPainter {
+  final AppColors c;
+  _RouteResultPainter(this.c);
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = kPinkDeep
+      ..color = c.primaryDeep
       ..strokeWidth = 5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
@@ -675,14 +661,14 @@ class _RouteResultPainter extends CustomPainter {
       path,
       paint
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5)
-        ..color = kPinkMid.withValues(alpha: 0.5),
+        ..color = c.primaryMidWithAlpha(0.5),
     );
     // Line
     canvas.drawPath(
       path,
       paint
         ..maskFilter = null
-        ..color = kPinkDeep,
+        ..color = c.primaryDeep,
     );
   }
 
