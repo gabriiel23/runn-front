@@ -860,63 +860,75 @@ class _ChallengesPageState extends State<ChallengesPage>
           context,
         ),
         const SizedBox(height: 16),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: badges.length,
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemBuilder: (context, index) {
-            final badge = badges[index];
-            final unlocked = badge['unlocked'] as bool;
-            return Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: unlocked
-                    ? const Color(0xFFFFD700).withValues(alpha: 0.12)
-                    : c.surface,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: unlocked
-                      ? const Color(0xFFFFD700).withValues(alpha: 0.35)
-                      : c.textHint.withValues(alpha: 0.2),
-                  width: 1.5,
-                ),
-                boxShadow: unlocked
-                    ? [
-                        BoxShadow(
-                          color: const Color(0xFFFFD700).withValues(alpha: 0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isWide = constraints.maxWidth > 500;
+            final cols = isWide ? 6 : 3;
+            final ratio = isWide ? 1.1 : 1.0;
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: badges.length,
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: cols,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: ratio,
+              ),
+              itemBuilder: (context, index) {
+                final badge = badges[index];
+                final unlocked = badge['unlocked'] as bool;
+                return Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: unlocked
+                        ? const Color(0xFFFFD700).withValues(alpha: 0.12)
+                        : c.surface,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: unlocked
+                          ? const Color(0xFFFFD700).withValues(alpha: 0.35)
+                          : c.textHint.withValues(alpha: 0.2),
+                      width: 1.5,
+                    ),
+                    boxShadow: unlocked
+                        ? [
+                            BoxShadow(
+                              color: const Color(
+                                0xFFFFD700,
+                              ).withValues(alpha: 0.1),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        badge['icon'] as String,
+                        style: TextStyle(
+                          fontSize: isWide ? 22 : 30,
+                          color: unlocked ? c.textPrimary : c.textSecondary,
                         ),
-                      ]
-                    : [],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    badge['icon'] as String,
-                    style: TextStyle(
-                      fontSize: 30,
-                      color: unlocked ? c.textPrimary : c.textSecondary,
-                    ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        badge['name'] as String,
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: unlocked ? c.textPrimary : c.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    badge['name'] as String,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: unlocked ? c.textPrimary : c.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         ),
