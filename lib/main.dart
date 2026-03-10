@@ -34,13 +34,6 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-<<<<<<< HEAD
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Runn',
-      theme: ThemeData(primarySwatch: Colors.pink, useMaterial3: true),
-      routerConfig: appRouter,
-=======
     final colors = widget.themeNotifier.colors;
     return ThemeScope(
       notifier: widget.themeNotifier,
@@ -50,7 +43,6 @@ class _MyAppState extends State<MyApp> {
         theme: colors.toMaterialTheme(),
         routerConfig: appRouter,
       ),
->>>>>>> main
     );
   }
 }
