@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class WearablesPage extends StatelessWidget {
   const WearablesPage({super.key});
@@ -44,19 +45,20 @@ class WearablesPage extends StatelessWidget {
       },
     ];
 
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.surface,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Conectar wearable',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -69,16 +71,16 @@ class WearablesPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Sincroniza tus carreras automáticamente desde tus dispositivos favoritos.',
                 style: TextStyle(
                   fontSize: 15,
-                  color: Color(0xFF666666),
+                  color: c.textSecondary,
                   height: 1.5,
                 ),
               ),
               const SizedBox(height: 32),
-              ...brands.map((brand) => _buildBrandItem(brand)),
+              ...brands.map((brand) => _buildBrandItem(context, brand)),
               const SizedBox(height: 40),
             ],
           ),
@@ -87,7 +89,8 @@ class WearablesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBrandItem(Map<String, dynamic> brand) {
+  Widget _buildBrandItem(BuildContext context, Map<String, dynamic> brand) {
+    final c = context.colors;
     final isConnected = brand['status'] == 'Conectado';
     final Color color = brand['color'];
 
@@ -95,12 +98,12 @@ class WearablesPage extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF0A0A0A).withValues(alpha: 0.05)),
+        border: Border.all(color: c.textPrimary.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -124,10 +127,10 @@ class WearablesPage extends StatelessWidget {
               children: [
                 Text(
                   brand['name'],
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0A0A0A),
+                    color: c.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -135,7 +138,7 @@ class WearablesPage extends StatelessWidget {
                   brand['status'],
                   style: TextStyle(
                     fontSize: 13,
-                    color: isConnected ? const Color(0xFF7ED957) : const Color(0xFF0A0A0A).withValues(alpha: 0.4),
+                    color: isConnected ? c.primaryDeep : c.textSecondary,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -145,11 +148,13 @@ class WearablesPage extends StatelessWidget {
           ElevatedButton(
             onPressed: () {},
             style: ElevatedButton.styleFrom(
-              backgroundColor: isConnected ? const Color(0xFFFFF0F4) : const Color(0xFFE8698A),
-              foregroundColor: isConnected ? const Color(0xFFE8698A) : Colors.white,
+              backgroundColor: isConnected ? c.primaryLight : c.primaryDeep,
+              foregroundColor: isConnected ? c.primaryDeep : c.surface,
               elevation: 0,
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: Text(
               isConnected ? 'Desvincular' : 'Vincular',

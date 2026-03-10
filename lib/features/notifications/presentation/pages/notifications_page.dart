@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kPinkBg = Color(0xFFFAF0F4);
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -116,19 +110,19 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: kPinkBg,
+      backgroundColor: context.colors.bg,
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: Column(
           children: [
             // ── Header ──────────────────────────────────────────────────
             Container(
-              padding: const EdgeInsets.fromLTRB(24, 56, 24, 20),
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.colors.card,
                 boxShadow: [
                   BoxShadow(
-                    color: kPink.withValues(alpha: 0.35),
+                    color: context.colors.primary.withValues(alpha: 0.1),
                     blurRadius: 16,
                     offset: const Offset(0, 4),
                   ),
@@ -141,14 +135,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     child: Container(
                       width: 40,
                       height: 40,
-                      decoration: const BoxDecoration(
-                        color: kPinkLight,
+                      decoration: BoxDecoration(
+                        color: context.colors.primaryLight,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.arrow_back_rounded,
                         size: 20,
-                        color: Color(0xFF1A1A1A),
+                        color: context.colors.textPrimary,
                       ),
                     ),
                   ),
@@ -157,12 +151,12 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Notificaciones',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A1A),
+                            color: context.colors.textPrimary,
                           ),
                         ),
                         if (_unreadCount > 0)
@@ -170,7 +164,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                             '$_unreadCount sin leer',
                             style: TextStyle(
                               fontSize: 13,
-                              color: kPinkDeep,
+                              color: context.colors.primaryDeep,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -186,16 +180,19 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: kPinkLight,
+                          color: context.colors.primaryLight,
                           borderRadius: BorderRadius.circular(50),
-                          border: Border.all(color: kPinkMid, width: 1.5),
+                          border: Border.all(
+                            color: context.colors.primaryMid,
+                            width: 1.5,
+                          ),
                         ),
                         child: Text(
                           'Leer todo',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: kPinkDeep,
+                            color: context.colors.primaryDeep,
                           ),
                         ),
                       ),
@@ -218,13 +215,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      kPinkDeep.withValues(alpha: 0.15),
-                      kPink.withValues(alpha: 0.1),
+                      context.colors.primaryDeep.withValues(alpha: 0.15),
+                      context.colors.primary.withValues(alpha: 0.1),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(
-                    color: kPinkMid.withValues(alpha: 0.5),
+                    color: context.colors.primaryMid.withValues(alpha: 0.5),
                     width: 1.5,
                   ),
                 ),
@@ -234,7 +231,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: kPinkDeep,
+                        color: context.colors.primaryDeep,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -247,9 +244,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                     Expanded(
                       child: Text(
                         'Tienes $_unreadCount notificaciones nuevas desde tu última visita.',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF1A1A1A),
+                          color: context.colors.textPrimary,
                           height: 1.4,
                         ),
                       ),
@@ -291,12 +288,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       background: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: kPinkDeep.withValues(alpha: 0.15),
+          color: context.colors.primaryDeep.withValues(alpha: 0.15),
           borderRadius: BorderRadius.circular(20),
         ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 24),
-        child: Icon(Icons.delete_outline_rounded, color: kPinkDeep, size: 24),
+        child: Icon(
+          Icons.delete_outline_rounded,
+          color: context.colors.primaryDeep,
+          size: 24,
+        ),
       ),
       child: GestureDetector(
         onTap: () {
@@ -307,19 +308,21 @@ class _NotificationsScreenState extends State<NotificationsScreen>
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: notif.isRead ? Colors.white : kPinkLight,
+            color: notif.isRead
+                ? context.colors.card
+                : context.colors.primaryLight.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: notif.isRead
                   ? Colors.transparent
-                  : kPinkMid.withValues(alpha: 0.6),
+                  : context.colors.primaryMid.withValues(alpha: 0.2),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: notif.isRead
                     ? Colors.black.withValues(alpha: 0.04)
-                    : kPink.withValues(alpha: 0.3),
+                    : context.colors.primary.withValues(alpha: 0.1),
                 blurRadius: notif.isRead ? 8 : 16,
                 offset: const Offset(0, 4),
               ),
@@ -359,7 +362,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                               fontWeight: notif.isRead
                                   ? FontWeight.w600
                                   : FontWeight.w800,
-                              color: const Color(0xFF1A1A1A),
+                              color: context.colors.textPrimary,
                             ),
                           ),
                         ),
@@ -367,9 +370,9 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: kPinkDeep,
+                              color: context.colors.primaryDeep,
                             ),
                           ),
                       ],
@@ -380,8 +383,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                       style: TextStyle(
                         fontSize: 13,
                         color: notif.isRead
-                            ? const Color(0xFF8A8A8A)
-                            : const Color(0xFF4A4A4A),
+                            ? context.colors.textHint
+                            : context.colors.textSecondary,
                         height: 1.4,
                       ),
                     ),
@@ -391,14 +394,14 @@ class _NotificationsScreenState extends State<NotificationsScreen>
                         Icon(
                           Icons.access_time_rounded,
                           size: 12,
-                          color: const Color(0xFFAAAAAA),
+                          color: context.colors.textHint,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           notif.time,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFFAAAAAA),
+                            color: context.colors.textHint,
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -441,23 +444,23 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             width: 90,
             height: 90,
             decoration: BoxDecoration(
-              color: kPinkLight,
+              color: context.colors.primaryLight,
               shape: BoxShape.circle,
-              border: Border.all(color: kPinkMid, width: 2),
+              border: Border.all(color: context.colors.primaryMid, width: 2),
             ),
             child: Icon(
               Icons.notifications_off_rounded,
               size: 40,
-              color: kPinkDark,
+              color: context.colors.primaryDark,
             ),
           ),
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Sin notificaciones',
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF1A1A1A),
+              color: context.colors.textPrimary,
             ),
           ),
           const SizedBox(height: 8),
@@ -466,7 +469,7 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: context.colors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -493,13 +496,13 @@ class _NotificationsScreenState extends State<NotificationsScreen>
   Color _iconColor(_NotifType type) {
     switch (type) {
       case _NotifType.achievement:
-        return kPinkDeep;
+        return context.colors.primaryDeep;
       case _NotifType.social:
-        return kPinkDark;
+        return context.colors.primaryDark;
       case _NotifType.challenge:
         return const Color(0xFFB05070);
       case _NotifType.run:
-        return kPinkMid;
+        return context.colors.primaryMid;
     }
   }
 

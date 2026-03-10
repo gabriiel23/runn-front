@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class RivalProfilePage extends StatelessWidget {
   final String userId;
@@ -10,8 +11,16 @@ class RivalProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Mock data for the rival
     final rival = {
-      'name': userId == '1' ? 'María González' : userId == '2' ? 'Carlos Ruiz' : 'Ana Martínez',
-      'level': userId == '1' ? 12 : userId == '2' ? 9 : 15,
+      'name': userId == '1'
+          ? 'María González'
+          : userId == '2'
+          ? 'Carlos Ruiz'
+          : 'Ana Martínez',
+      'level': userId == '1'
+          ? 12
+          : userId == '2'
+          ? 9
+          : 15,
       'runs': 124,
       'km': 842,
       'territories': 18,
@@ -45,19 +54,20 @@ class RivalProfilePage extends StatelessWidget {
       },
     ];
 
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Perfil del Rival',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
             letterSpacing: -0.5,
@@ -68,15 +78,15 @@ class RivalProfilePage extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            _buildProfileHeader(rival),
+            _buildProfileHeader(rival, context),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
                   const SizedBox(height: 28),
-                  _buildRivalStats(rival),
+                  _buildRivalStats(rival, context),
                   const SizedBox(height: 32),
-                  _buildConfrontationHistory(confrontations),
+                  _buildConfrontationHistory(confrontations, context),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -87,12 +97,13 @@ class RivalProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(Map<String, dynamic> rival) {
+  Widget _buildProfileHeader(Map<String, dynamic> rival, BuildContext context) {
+    final c = context.colors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -107,28 +118,25 @@ class RivalProfilePage extends StatelessWidget {
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(
-                color: const Color(0xFFE8698A).withValues(alpha: 0.2),
-                width: 2,
-              ),
+              border: Border.all(color: c.primaryDeepWithAlpha(0.2), width: 2),
             ),
             child: CircleAvatar(
               radius: 50,
-              backgroundColor: const Color(0xFFFFF0F4),
+              backgroundColor: c.primaryLight,
               child: Icon(
                 Icons.person_rounded,
                 size: 50,
-                color: const Color(0xFFE8698A).withValues(alpha: 0.7),
+                color: c.primaryDeepWithAlpha(0.7),
               ),
             ),
           ),
           const SizedBox(height: 16),
           Text(
             rival['name'] as String,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF0A0A0A),
+              color: c.textPrimary,
               letterSpacing: -0.5,
             ),
           ),
@@ -158,10 +166,13 @@ class RivalProfilePage extends StatelessWidget {
               icon: const Icon(Icons.person_add_rounded, size: 18),
               label: const Text('Seguir'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFE8698A),
+                backgroundColor: c.primaryDeep,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 40,
+                  vertical: 14,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -173,13 +184,14 @@ class RivalProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildRivalStats(Map<String, dynamic> rival) {
+  Widget _buildRivalStats(Map<String, dynamic> rival, BuildContext context) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.08)),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.03),
@@ -191,34 +203,55 @@ class RivalProfilePage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildStatItem('${rival['runs']}', 'Carreras', Icons.directions_run_rounded),
-          _buildStatDivider(),
-          _buildStatItem('${rival['km']}', 'Kilómetros', Icons.location_on_rounded),
-          _buildStatDivider(),
-          _buildStatItem('${rival['territories']}', 'Territorios', Icons.flag_rounded),
+          _buildStatItem(
+            '${rival['runs']}',
+            'Carreras',
+            Icons.directions_run_rounded,
+            context,
+          ),
+          _buildStatDivider(context),
+          _buildStatItem(
+            '${rival['km']}',
+            'Kilómetros',
+            Icons.location_on_rounded,
+            context,
+          ),
+          _buildStatDivider(context),
+          _buildStatItem(
+            '${rival['territories']}',
+            'Territorios',
+            Icons.flag_rounded,
+            context,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String value, String label, IconData icon) {
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon,
+    BuildContext context,
+  ) {
+    final c = context.colors;
     return Column(
       children: [
-        Icon(icon, color: const Color(0xFFE8698A).withValues(alpha: 0.7), size: 20),
+        Icon(icon, color: c.primaryDeepWithAlpha(0.7), size: 20),
         const SizedBox(height: 8),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
           ),
         ),
         Text(
           label,
           style: TextStyle(
             fontSize: 11,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
+            color: c.textHint,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -226,24 +259,25 @@ class RivalProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildStatDivider() {
-    return Container(
-      width: 1,
-      height: 40,
-      color: const Color(0xFFE8698A).withValues(alpha: 0.1),
-    );
+  Widget _buildStatDivider(BuildContext context) {
+    final c = context.colors;
+    return Container(width: 1, height: 40, color: c.primaryDeepWithAlpha(0.1));
   }
 
-  Widget _buildConfrontationHistory(List<Map<String, dynamic>> confrontations) {
+  Widget _buildConfrontationHistory(
+    List<Map<String, dynamic>> confrontations,
+    BuildContext context,
+  ) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Historial de Enfrentamientos',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             letterSpacing: -0.4,
           ),
         ),
@@ -259,10 +293,10 @@ class RivalProfilePage extends StatelessWidget {
             return Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: c.card,
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
-                  color: (won ? const Color(0xFF7ED957) : const Color(0xFFE8698A))
+                  color: (won ? const Color(0xFF7ED957) : c.primaryDeep)
                       .withValues(alpha: 0.1),
                 ),
               ),
@@ -272,12 +306,14 @@ class RivalProfilePage extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: (won ? const Color(0xFFF4FDF0) : const Color(0xFFFFF0F4)),
+                      color: (won
+                          ? const Color(0xFF7ED957).withValues(alpha: 0.1)
+                          : c.primaryDeepWithAlpha(0.1)),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       won ? Icons.emoji_events_rounded : Icons.close_rounded,
-                      color: won ? const Color(0xFF7ED957) : const Color(0xFFE8698A),
+                      color: won ? const Color(0xFF7ED957) : c.primaryDeep,
                       size: 24,
                     ),
                   ),
@@ -288,18 +324,15 @@ class RivalProfilePage extends StatelessWidget {
                       children: [
                         Text(
                           item['territory'] as String,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: Color(0xFF0A0A0A),
+                            color: c.textPrimary,
                           ),
                         ),
                         Text(
                           item['date'] as String,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: const Color(0xFF1A1A1A).withValues(alpha: 0.4),
-                          ),
+                          style: TextStyle(fontSize: 12, color: c.textHint),
                         ),
                       ],
                     ),
@@ -312,15 +345,12 @@ class RivalProfilePage extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: won ? const Color(0xFF7ED957) : const Color(0xFFE8698A),
+                          color: won ? const Color(0xFF7ED957) : c.primaryDeep,
                         ),
                       ),
                       Text(
                         'Ganó: ${item['winner']}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
-                        ),
+                        style: TextStyle(fontSize: 11, color: c.textSecondary),
                       ),
                     ],
                   ),

@@ -1,16 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-// Color palette based on #ffd3e0 (pink)
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kDarkBg = Color(0xFF2A1520);
-const kDarkCard = Color(0xFF3D1F2A);
-const kDarkSurface = Color(0xFF4F2535);
+import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/core/theme/app_theme.dart';
 
 class StartCareerScreen extends StatefulWidget {
   const StartCareerScreen({super.key});
@@ -21,6 +13,8 @@ class StartCareerScreen extends StatefulWidget {
 
 class _StartCareerScreenState extends State<StartCareerScreen>
     with TickerProviderStateMixin {
+  AppColors get c => context.colors;
+
   bool _isStarted = false;
   bool _isRunning = false;
   int _time = 0;
@@ -107,17 +101,17 @@ class _StartCareerScreenState extends State<StartCareerScreen>
 
   Widget _buildPreStartScreen() {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: c.bg,
       body: Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 56, 24, 20),
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: c.surface,
               boxShadow: [
                 BoxShadow(
-                  color: kPink.withValues(alpha: 0.3),
+                  color: c.primary.withValues(alpha: 0.3),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
@@ -132,23 +126,23 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: kPinkLight,
+                      color: c.primaryLight,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.arrow_back,
                       size: 20,
-                      color: Color(0xFF1A1A1A),
+                      color: c.textPrimary,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
+                Text(
                   'Iniciar carrera',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF1A1A1A),
+                    color: c.textPrimary,
                   ),
                 ),
               ],
@@ -158,7 +152,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
           // Map Preview
           Expanded(
             child: Container(
-              color: kPinkLight,
+              color: c.primaryLight,
               child: Stack(
                 children: [
                   // Grid pattern
@@ -202,7 +196,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                             height: 64 + (_pulseController.value * 16),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: kPinkDeep.withValues(
+                              color: c.primaryDeep.withValues(
                                 alpha: 0.15 - _pulseController.value * 0.1,
                               ),
                             ),
@@ -212,11 +206,11 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                             height: 24,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: kPinkDeep,
+                              color: c.primaryDeep,
                               border: Border.all(color: Colors.white, width: 4),
                               boxShadow: [
                                 BoxShadow(
-                                  color: kPinkDeep.withValues(alpha: 0.5),
+                                  color: c.primaryDeep.withValues(alpha: 0.5),
                                   blurRadius: 12,
                                 ),
                               ],
@@ -235,11 +229,11 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: c.card,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: kPink.withValues(alpha: 0.4),
+                            color: Colors.black.withValues(alpha: 0.1),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -251,12 +245,12 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                             width: 40,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: kPinkDeep.withValues(alpha: 0.12),
+                              color: c.primaryDeep.withValues(alpha: 0.12),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
                               Icons.location_on,
-                              color: kPinkDeep,
+                              color: c.primaryDeep,
                               size: 20,
                             ),
                           ),
@@ -264,19 +258,19 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Ubicación actual',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1A1A1A),
+                                  color: c.textPrimary,
                                 ),
                               ),
                               Text(
                                 'GPS listo • Señal fuerte',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.grey[500],
+                                  color: c.textSecondary,
                                 ),
                               ),
                             ],
@@ -293,7 +287,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
           // Bottom controls
           Container(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-            color: Colors.white,
+            color: c.surface,
             child: Column(
               children: [
                 // Info Card
@@ -304,13 +298,13 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        kPink.withValues(alpha: 0.25),
-                        kPink.withValues(alpha: 0.1),
+                        c.primary.withValues(alpha: 0.6),
+                        c.primary.withValues(alpha: 0.1),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: kPinkMid.withValues(alpha: 0.5),
+                      color: c.primaryMid.withValues(alpha: 0.5),
                       width: 1.5,
                     ),
                   ),
@@ -321,7 +315,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                         width: 32,
                         height: 32,
                         decoration: BoxDecoration(
-                          color: kPinkDeep,
+                          color: c.primaryDeep,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -331,12 +325,12 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Esta función registrará tu ruta, distancia, tiempo y calorías en tiempo real. Presiona Iniciar cuando estés listo.',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                             height: 1.5,
                           ),
                         ),
@@ -353,13 +347,15 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 20),
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [kPinkDeep, kPinkDark]),
+                      gradient: LinearGradient(
+                        colors: [c.primaryDeep, c.primaryDark],
+                      ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: kPinkDeep.withValues(alpha: 0.45),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          color: c.primary.withValues(alpha: 0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
@@ -393,15 +389,15 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: c.card,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: kPinkMid, width: 1.5),
+                      border: Border.all(color: c.primaryMid, width: 1.5),
                     ),
-                    child: const Center(
+                    child: Center(
                       child: Text(
                         'Cancelar',
                         style: TextStyle(
-                          color: Color(0xFF6B6B6B),
+                          color: c.textSecondary,
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
                         ),
@@ -421,17 +417,21 @@ class _StartCareerScreenState extends State<StartCareerScreen>
 
   Widget _buildRunningScreen() {
     return Scaffold(
-      backgroundColor: kDarkBg,
+      backgroundColor: c.bg,
       body: Column(
         children: [
           // Map area
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF4A1530), Color(0xFF2F1020), kDarkBg],
+                  colors: [
+                    c.primaryDeep.withValues(alpha: 0.3),
+                    c.primaryDark.withValues(alpha: 0.2),
+                    c.bg,
+                  ],
                 ),
               ),
               child: Stack(
@@ -459,7 +459,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                   // Route SVG
                   CustomPaint(
                     size: Size.infinite,
-                    painter: _RoutePainter(color: kPinkMid),
+                    painter: _RoutePainter(color: c.primaryMid),
                   ),
 
                   // Start pin
@@ -470,12 +470,12 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                       width: 14,
                       height: 14,
                       decoration: BoxDecoration(
-                        color: kPink,
+                        color: c.primary,
                         shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
+                        border: Border.all(color: c.surface, width: 2),
                         boxShadow: [
                           BoxShadow(
-                            color: kPink.withValues(alpha: 0.6),
+                            color: c.primary.withValues(alpha: 0.6),
                             blurRadius: 8,
                           ),
                         ],
@@ -497,7 +497,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                             height: 48 + (_pulseController.value * 12),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: kPinkDeep.withValues(
+                              color: c.primaryDeep.withValues(
                                 alpha: 0.2 - _pulseController.value * 0.1,
                               ),
                             ),
@@ -507,11 +507,11 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                             height: 18,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: kPinkDeep,
+                              color: c.primaryDeep,
                               border: Border.all(color: Colors.white, width: 3),
                               boxShadow: [
                                 BoxShadow(
-                                  color: kPinkDeep.withValues(alpha: 0.6),
+                                  color: c.primaryDeep.withValues(alpha: 0.6),
                                   blurRadius: 10,
                                 ),
                               ],
@@ -535,7 +535,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                         ),
                         decoration: BoxDecoration(
                           color: _isRunning
-                              ? kPinkDeep.withValues(alpha: 0.25)
+                              ? c.primaryDeep.withValues(alpha: 0.25)
                               : Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(50),
                           border: Border.all(
@@ -553,20 +553,20 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   color: _isRunning
-                                      ? kPink.withValues(
+                                      ? c.primary.withValues(
                                           alpha:
                                               0.6 +
                                               _pulseController.value * 0.4,
                                         )
-                                      : Colors.white.withValues(alpha: 0.5),
+                                      : c.textPrimary.withValues(alpha: 0.5),
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
                             Text(
                               _isRunning ? 'En progreso' : 'Pausado',
-                              style: const TextStyle(
-                                color: Colors.white,
+                              style: TextStyle(
+                                color: c.textPrimary,
                                 fontSize: 13,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -608,14 +608,14 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                         height: 40,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.12),
+                          color: c.surface.withValues(alpha: 0.12),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: c.textPrimary.withValues(alpha: 0.2),
                           ),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.arrow_back,
-                          color: Colors.white,
+                          color: c.textPrimary,
                           size: 20,
                         ),
                       ),
@@ -628,7 +628,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
 
           // Stats Panel
           Container(
-            color: kDarkBg,
+            color: c.bg,
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
             child: Column(
               children: [
@@ -637,16 +637,13 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                   children: [
                     Text(
                       'Tiempo',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 13,
-                      ),
+                      style: TextStyle(color: c.textSecondary, fontSize: 13),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       _formatTime(_time),
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: c.textPrimary,
                         fontSize: 52,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -1,
@@ -663,7 +660,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     Expanded(
                       child: _buildStatCard(
                         icon: Icons.location_on,
-                        iconColor: kPinkMid,
+                        iconColor: c.primaryMid,
                         label: 'Distancia',
                         value: _distance.toStringAsFixed(2),
                         unit: 'km',
@@ -673,7 +670,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     Expanded(
                       child: _buildStatCard(
                         icon: Icons.trending_up,
-                        iconColor: kPink,
+                        iconColor: c.primary,
                         label: 'Ritmo',
                         value: _currentPace > 0
                             ? _currentPace.toStringAsFixed(1)
@@ -689,10 +686,10 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.05),
+                    color: c.surface.withValues(alpha: 0.5),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
+                      color: c.textPrimary.withValues(alpha: 0.05),
                     ),
                   ),
                   child: Row(
@@ -700,7 +697,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                     children: [
                       _buildMiniStat(
                         icon: Icons.local_fire_department,
-                        iconColor: kPinkDark,
+                        iconColor: c.primaryDark,
                         label: 'Calorías',
                         value: '${(_distance * 60).round()}',
                       ),
@@ -711,7 +708,7 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                       ),
                       _buildMiniStat(
                         icon: Icons.favorite,
-                        iconColor: kPinkDeep,
+                        iconColor: c.primaryDeep,
                         label: 'BPM',
                         value: '142',
                       ),
@@ -731,14 +728,15 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: _isRunning
-                                  ? [kPinkDark, kPinkMid]
-                                  : [kPinkDeep, kPinkDark],
+                                  ? [c.primaryDark, c.primaryMid]
+                                  : [c.primaryDeep, c.primaryDark],
                             ),
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
-                                color: (_isRunning ? kPinkMid : kPinkDeep)
-                                    .withValues(alpha: 0.4),
+                                color:
+                                    (_isRunning ? c.primaryMid : c.primaryDeep)
+                                        .withValues(alpha: 0.4),
                                 blurRadius: 16,
                                 offset: const Offset(0, 6),
                               ),
@@ -777,16 +775,16 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                           vertical: 16,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.08),
+                          color: c.surface.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15),
+                            color: c.textPrimary.withValues(alpha: 0.1),
                           ),
                         ),
-                        child: const Text(
+                        child: Text(
                           'Finalizar',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: c.textPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 15,
                           ),
@@ -813,9 +811,9 @@ class _StartCareerScreenState extends State<StartCareerScreen>
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.05),
+        color: c.surface.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: c.textPrimary.withValues(alpha: 0.08)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -826,31 +824,22 @@ class _StartCareerScreenState extends State<StartCareerScreen>
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: c.textSecondary, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 10),
           Text(
             value,
-            style: const TextStyle(
-              color: Colors.white,
+            style: TextStyle(
+              color: c.textPrimary,
               fontSize: 30,
               fontWeight: FontWeight.w800,
               height: 1,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            unit,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
-              fontSize: 12,
-            ),
-          ),
+          Text(unit, style: TextStyle(color: c.textSecondary, fontSize: 12)),
         ],
       ),
     );
@@ -869,20 +858,14 @@ class _StartCareerScreenState extends State<StartCareerScreen>
           children: [
             Icon(icon, color: iconColor, size: 16),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 11,
-              ),
-            ),
+            Text(label, style: TextStyle(color: c.textSecondary, fontSize: 11)),
           ],
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: c.textPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w700,
           ),

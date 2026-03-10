@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -10,25 +11,28 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _nameController = TextEditingController(text: 'Alex Runner');
-  final _bioController = TextEditingController(text: 'Corriendo por el mundo, un kilómetro a la vez. 🏃‍♂️💨');
+  final _bioController = TextEditingController(
+    text: 'Corriendo por el mundo, un kilómetro a la vez. 🏃‍♂️💨',
+  );
   final _weightController = TextEditingController(text: '72');
   final _heightController = TextEditingController(text: '178');
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.close_rounded, color: c.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Editar perfil',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -36,10 +40,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text(
+            child: Text(
               'Guardar',
               style: TextStyle(
-                color: Color(0xFFE8698A),
+                color: c.primary,
                 fontWeight: FontWeight.w700,
                 fontSize: 16,
               ),
@@ -54,25 +58,48 @@ class _EditProfilePageState extends State<EditProfilePage> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              _buildPhotoPicker(),
+              _buildPhotoPicker(context),
               const SizedBox(height: 32),
-              _buildTextField('Nombre completo', _nameController, Icons.person_outline_rounded),
+              _buildTextField(
+                context,
+                'Nombre completo',
+                _nameController,
+                Icons.person_outline_rounded,
+              ),
               const SizedBox(height: 20),
-              _buildTextField('Biografía', _bioController, Icons.edit_note_rounded, maxLines: 3),
+              _buildTextField(
+                context,
+                'Biografía',
+                _bioController,
+                Icons.edit_note_rounded,
+                maxLines: 3,
+              ),
               const SizedBox(height: 20),
               Row(
                 children: [
                   Expanded(
-                    child: _buildTextField('Peso (kg)', _weightController, Icons.monitor_weight_outlined, keyboardType: TextInputType.number),
+                    child: _buildTextField(
+                      context,
+                      'Peso (kg)',
+                      _weightController,
+                      Icons.monitor_weight_outlined,
+                      keyboardType: TextInputType.number,
+                    ),
                   ),
                   const SizedBox(width: 20),
                   Expanded(
-                    child: _buildTextField('Altura (cm)', _heightController, Icons.height_rounded, keyboardType: TextInputType.number),
+                    child: _buildTextField(
+                      context,
+                      'Altura (cm)',
+                      _heightController,
+                      Icons.height_rounded,
+                      keyboardType: TextInputType.number,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 40),
-              _buildDeleteAccountSection(),
+              _buildDeleteAccountSection(context),
             ],
           ),
         ),
@@ -80,14 +107,15 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildPhotoPicker() {
+  Widget _buildPhotoPicker(BuildContext context) {
+    final c = context.colors;
     return Stack(
       children: [
         Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFFE8698A).withValues(alpha: 0.2), width: 3),
+            border: Border.all(color: c.primaryWithAlpha(0.2), width: 3),
           ),
           child: const CircleAvatar(
             radius: 60,
@@ -101,27 +129,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
           right: 0,
           child: Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFE8698A),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 20),
+            decoration: BoxDecoration(color: c.primary, shape: BoxShape.circle),
+            child: Icon(Icons.camera_alt_rounded, color: c.surface, size: 20),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, IconData icon, {int maxLines = 1, TextInputType keyboardType = TextInputType.text}) {
+  Widget _buildTextField(
+    BuildContext context,
+    String label,
+    TextEditingController controller,
+    IconData icon, {
+    int maxLines = 1,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
           ),
         ),
         const SizedBox(height: 10),
@@ -129,19 +162,26 @@ class _EditProfilePageState extends State<EditProfilePage> {
           controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w500,
+            color: c.textPrimary,
+          ),
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: const Color(0xFF0A0A0A).withValues(alpha: 0.4), size: 20),
+            prefixIcon: Icon(icon, color: c.textHint, size: 20),
             filled: true,
-            fillColor: Colors.white,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            fillColor: c.inputFill,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 16,
+            ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: const Color(0xFF0A0A0A).withValues(alpha: 0.05)),
+              borderSide: BorderSide(color: c.primaryDeepWithAlpha(0.05)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFFE8698A), width: 1.5),
+              borderSide: BorderSide(color: c.primary, width: 1.5),
             ),
           ),
         ),
@@ -149,10 +189,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildDeleteAccountSection() {
+  Widget _buildDeleteAccountSection(BuildContext context) {
+    final c = context.colors;
     return Column(
       children: [
-        Divider(color: const Color(0xFF0A0A0A).withValues(alpha: 0.05), height: 32),
+        Divider(color: c.primaryDeepWithAlpha(0.05), height: 32),
         TextButton(
           onPressed: () {},
           child: const Text(

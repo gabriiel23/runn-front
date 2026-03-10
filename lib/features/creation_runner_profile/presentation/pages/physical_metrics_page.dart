@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kBgLight = Color(0xFFF8F5F6);
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class PhysicalMetricsScreen extends StatefulWidget {
   const PhysicalMetricsScreen({super.key});
@@ -19,11 +13,8 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
   double _height = 175;
   double _weight = 68.5;
 
-  // Altura: 140 – 230 cm
   final double _minHeight = 140;
   final double _maxHeight = 230;
-
-  // Peso: 40 – 150 kg
   final double _minWeight = 40;
   final double _maxWeight = 150;
 
@@ -42,8 +33,9 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: kBgLight,
+      backgroundColor: c.bg,
       body: Stack(
         children: [
           // ── Decorative gradient bottom ─────────────────────────────
@@ -57,7 +49,10 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [kPink.withValues(alpha: 0.15), Colors.transparent],
+                  colors: [
+                    c.primary.withValues(alpha: 0.15),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -79,17 +74,17 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                       IconButton(
                         onPressed: () => context.go('/profile_setup'),
                         icon: const Icon(Icons.arrow_back_rounded),
-                        color: const Color(0xFF1A1A1A),
+                        color: c.textPrimary,
                         iconSize: 24,
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Métricas físicas',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -99,7 +94,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                   ),
                 ),
 
-                Divider(),
+                const Divider(),
 
                 // ── Scrollable body ───────────────────────────────────
                 Expanded(
@@ -117,7 +112,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.grey[600],
+                                color: c.textSecondary,
                               ),
                             ),
                             Container(
@@ -126,15 +121,15 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: kPink.withValues(alpha: 0.35),
+                                color: c.primary.withValues(alpha: 0.35),
                                 borderRadius: BorderRadius.circular(50),
                               ),
-                              child: const Text(
+                              child: Text(
                                 'Paso 2 de 3',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF1A1A1A),
+                                  color: c.textPrimary,
                                 ),
                               ),
                             ),
@@ -146,21 +141,21 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                           child: LinearProgressIndicator(
                             value: 2 / 3,
                             minHeight: 10,
-                            backgroundColor: kPink.withValues(alpha: 0.25),
-                            valueColor: const AlwaysStoppedAnimation<Color>(
-                              kPink,
+                            backgroundColor: c.primary.withValues(alpha: 0.25),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              c.primary,
                             ),
                           ),
                         ),
                         const SizedBox(height: 28),
 
                         // ── Header ──────────────────────────────────
-                        const Text(
+                        Text(
                           'Configura tu perfil',
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                             letterSpacing: -0.5,
                             height: 1.15,
                           ),
@@ -170,7 +165,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                           'Estos datos nos ayudan a calcular tu ritmo y quema de calorías de forma precisa.',
                           style: TextStyle(
                             fontSize: 15,
-                            color: Colors.grey[600],
+                            color: c.textSecondary,
                             height: 1.5,
                           ),
                         ),
@@ -184,16 +179,16 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                               children: [
                                 Icon(
                                   Icons.height_rounded,
-                                  color: kPinkDeep,
+                                  color: c.primaryDeep,
                                   size: 22,
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   'Altura',
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1A1A1A),
+                                    color: c.textPrimary,
                                   ),
                                 ),
                               ],
@@ -203,17 +198,17 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                 children: [
                                   TextSpan(
                                     text: '${_height.round()}',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.w800,
-                                      color: kPinkDeep,
+                                      color: c.primaryDeep,
                                     ),
                                   ),
                                   TextSpan(
                                     text: ' cm',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.grey[500],
+                                      color: c.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -224,11 +219,16 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                         const SizedBox(height: 12),
                         SliderTheme(
                           data: SliderTheme.of(context).copyWith(
-                            activeTrackColor: kPink,
-                            inactiveTrackColor: kPink.withValues(alpha: 0.25),
-                            thumbColor: Colors.white,
-                            overlayColor: kPink.withValues(alpha: 0.2),
-                            thumbShape: const _PinkThumbShape(),
+                            activeTrackColor: c.primary,
+                            inactiveTrackColor: c.primary.withValues(
+                              alpha: 0.25,
+                            ),
+                            thumbColor: c.card,
+                            overlayColor: c.primary.withValues(alpha: 0.2),
+                            thumbShape: _ThumbShape(
+                              borderColor: c.primaryDeep,
+                              fillColor: c.surface,
+                            ),
                             trackHeight: 6,
                           ),
                           child: Slider(
@@ -248,7 +248,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                     t,
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.grey[400],
+                                      color: c.textSecondary,
                                     ),
                                   ),
                                 )
@@ -265,16 +265,16 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                               children: [
                                 Icon(
                                   Icons.monitor_weight_outlined,
-                                  color: kPinkDeep,
+                                  color: c.primaryDeep,
                                   size: 22,
                                 ),
                                 const SizedBox(width: 8),
-                                const Text(
+                                Text(
                                   'Peso',
                                   style: TextStyle(
                                     fontSize: 17,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1A1A1A),
+                                    color: c.textPrimary,
                                   ),
                                 ),
                               ],
@@ -284,17 +284,17 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                 children: [
                                   TextSpan(
                                     text: _weight.toStringAsFixed(1),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 24,
                                       fontWeight: FontWeight.w800,
-                                      color: kPinkDeep,
+                                      color: c.primaryDeep,
                                     ),
                                   ),
                                   TextSpan(
                                     text: ' kg',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.grey[500],
+                                      color: c.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -310,6 +310,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                           min: _minWeight,
                           max: _maxWeight,
                           onChanged: (v) => setState(() => _weight = v),
+                          primaryDeep: c.primaryDeep,
                         ),
                         const SizedBox(height: 36),
 
@@ -317,10 +318,10 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                         Container(
                           padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
-                            color: kPink.withValues(alpha: 0.12),
+                            color: c.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: kPinkMid.withValues(alpha: 0.35),
+                              color: c.primaryMid.withValues(alpha: 0.35),
                               width: 1.5,
                             ),
                           ),
@@ -331,8 +332,11 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                 height: 60,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  border: Border.all(color: kPinkMid, width: 2),
-                                  color: Colors.white,
+                                  border: Border.all(
+                                    color: c.primaryMid,
+                                    width: 2,
+                                  ),
+                                  color: c.card,
                                 ),
                                 child: ClipOval(
                                   child: Image.network(
@@ -340,7 +344,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                     fit: BoxFit.cover,
                                     errorBuilder: (_, __, ___) => Icon(
                                       Icons.person_rounded,
-                                      color: kPinkDeep,
+                                      color: c.primaryDeep,
                                       size: 30,
                                     ),
                                   ),
@@ -350,12 +354,12 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
+                                  Text(
                                     'Casi listo, Elena',
                                     style: TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,
-                                      color: Color(0xFF1A1A1A),
+                                      color: c.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 4),
@@ -363,7 +367,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                     'Tu IMC estimado: ${_bmi.toStringAsFixed(1)} ($_bmiLabel)',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[500],
+                                      color: c.textSecondary,
                                     ),
                                   ),
                                 ],
@@ -380,17 +384,17 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                             width: double.infinity,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: kPink,
+                              color: c.primary,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: kPink.withValues(alpha: 0.5),
+                                  color: c.primary.withValues(alpha: 0.5),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
@@ -398,13 +402,13 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1A1A1A),
+                                    color: c.textPrimary,
                                   ),
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_forward_rounded,
-                                  color: Color(0xFF1A1A1A),
+                                  color: c.textPrimary,
                                   size: 20,
                                 ),
                               ],
@@ -416,7 +420,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                         // ── Skip button ───────────────────────────────
                         GestureDetector(
                           onTap: () => context.go('/home'),
-                          child: const SizedBox(
+                          child: SizedBox(
                             width: double.infinity,
                             height: 44,
                             child: Center(
@@ -425,7 +429,7 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
-                                  color: Color(0xFF94A3B8),
+                                  color: c.textSecondary,
                                 ),
                               ),
                             ),
@@ -446,8 +450,10 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
 
 // ── Custom thumb para el Slider ───────────────────────────────────────────────
 
-class _PinkThumbShape extends SliderComponentShape {
-  const _PinkThumbShape();
+class _ThumbShape extends SliderComponentShape {
+  final Color borderColor;
+  final Color fillColor;
+  const _ThumbShape({required this.borderColor, required this.fillColor});
 
   @override
   Size getPreferredSize(bool isEnabled, bool isDiscrete) => const Size(24, 24);
@@ -474,19 +480,19 @@ class _PinkThumbShape extends SliderComponentShape {
       center + const Offset(0, 2),
       12,
       Paint()
-        ..color = kPinkDeep.withValues(alpha: 0.25)
+        ..color = borderColor.withValues(alpha: 0.25)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
 
-    // White fill
-    canvas.drawCircle(center, 12, Paint()..color = Colors.white);
+    // Fill
+    canvas.drawCircle(center, 12, Paint()..color = fillColor);
 
-    // Pink border
+    // Border
     canvas.drawCircle(
       center,
       12,
       Paint()
-        ..color = kPinkDeep
+        ..color = borderColor
         ..style = PaintingStyle.stroke
         ..strokeWidth = 3,
     );
@@ -500,12 +506,14 @@ class _WeightRuler extends StatefulWidget {
   final double min;
   final double max;
   final ValueChanged<double> onChanged;
+  final Color primaryDeep;
 
   const _WeightRuler({
     required this.value,
     required this.min,
     required this.max,
     required this.onChanged,
+    required this.primaryDeep,
   });
 
   @override
@@ -552,6 +560,8 @@ class _WeightRulerState extends State<_WeightRuler> {
   @override
   Widget build(BuildContext context) {
     final totalTicks = ((widget.max - widget.min) * 2).round() + 1;
+    final deep = widget.primaryDeep;
+    final c = context.colors;
 
     return SizedBox(
       height: 80,
@@ -590,7 +600,7 @@ class _WeightRulerState extends State<_WeightRuler> {
                           '${tickVal.round()}',
                           style: TextStyle(
                             fontSize: 9,
-                            color: isCurrent ? kPinkDeep : Colors.grey[400],
+                            color: isCurrent ? deep : c.textHint,
                             fontWeight: isCurrent
                                 ? FontWeight.w700
                                 : FontWeight.w400,
@@ -603,7 +613,9 @@ class _WeightRulerState extends State<_WeightRuler> {
                       width: isCurrent ? 3 : 1.5,
                       height: isWhole ? 32 : 20,
                       decoration: BoxDecoration(
-                        color: isCurrent ? kPinkDeep : Colors.grey[300],
+                        color: isCurrent
+                            ? deep
+                            : c.textHint.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -621,7 +633,7 @@ class _WeightRulerState extends State<_WeightRuler> {
               width: 3,
               height: 44,
               decoration: BoxDecoration(
-                color: kPinkDeep,
+                color: deep,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -631,10 +643,7 @@ class _WeightRulerState extends State<_WeightRuler> {
             child: Container(
               width: 10,
               height: 10,
-              decoration: const BoxDecoration(
-                color: kPinkDeep,
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: deep, shape: BoxShape.circle),
             ),
           ),
         ],

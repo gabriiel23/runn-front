@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class GroupsPage extends StatelessWidget {
   const GroupsPage({super.key});
@@ -7,13 +8,14 @@ class GroupsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Hardcoded groups for demonstration, matching existing UI style
+    final c = context.colors;
     final groups = [
       {
         'name': 'Runners Urbanos',
         'members': 247,
         'location': 'Centro Histórico',
         'level': 'Todos los niveles',
-        'color': const Color(0xFFE8698A),
+        'color': c.primaryDeep,
       },
       {
         'name': 'Trail Seekers',
@@ -53,18 +55,18 @@ class GroupsPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Explorar Grupos',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
             letterSpacing: -0.5,
@@ -72,7 +74,7 @@ class GroupsPage extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search_rounded, color: Color(0xFF0A0A0A)),
+            icon: Icon(Icons.search_rounded, color: c.textPrimary),
             onPressed: () {},
           ),
         ],
@@ -88,7 +90,7 @@ class GroupsPage extends StatelessWidget {
               itemCount: groups.length,
               separatorBuilder: (context, index) => const SizedBox(height: 16),
               itemBuilder: (context, index) {
-                return _buildGroupItem(groups[index]);
+                return _buildGroupItem(groups[index], context);
               },
             ),
           ),
@@ -99,7 +101,7 @@ class GroupsPage extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/community/groups/create'),
-        backgroundColor: const Color(0xFFE8698A),
+        backgroundColor: c.primaryDeep,
         elevation: 4,
         highlightElevation: 8,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -117,20 +119,21 @@ class GroupsPage extends StatelessWidget {
   }
 
   Widget _buildCreateGroupBanner(BuildContext context) {
+    final c = context.colors;
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE8698A), Color(0xFFC94070)],
+        gradient: LinearGradient(
+          colors: [c.primaryDeep, c.primaryMid],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE8698A).withValues(alpha: 0.3),
+            color: c.primaryDeepWithAlpha(0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -162,7 +165,7 @@ class GroupsPage extends StatelessWidget {
             onPressed: () => context.push('/community/groups/create'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFFE8698A),
+              foregroundColor: c.primaryDeep,
               elevation: 0,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -179,12 +182,13 @@ class GroupsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildGroupItem(Map<String, dynamic> group) {
+  Widget _buildGroupItem(Map<String, dynamic> group, BuildContext context) {
+    final c = context.colors;
     final color = group['color'] as Color;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withValues(alpha: 0.10)),
         boxShadow: [
@@ -224,10 +228,10 @@ class GroupsPage extends StatelessWidget {
               children: [
                 Text(
                   group['name'] as String,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF0A0A0A),
+                    color: c.textPrimary,
                     letterSpacing: -0.3,
                   ),
                 ),
@@ -236,7 +240,7 @@ class GroupsPage extends StatelessWidget {
                   '${group['members']} miembros  ·  ${group['level']}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                    color: c.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -253,7 +257,7 @@ class GroupsPage extends StatelessWidget {
                       group['location'] as String,
                       style: TextStyle(
                         fontSize: 12,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -264,7 +268,7 @@ class GroupsPage extends StatelessWidget {
           ),
           Icon(
             Icons.chevron_right_rounded,
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.2),
+            color: c.textPrimary.withValues(alpha: 0.2),
           ),
         ],
       ),

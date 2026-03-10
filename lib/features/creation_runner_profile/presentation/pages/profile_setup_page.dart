@@ -1,12 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kBgLight = Color(0xFFF8F5F6);
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -26,6 +20,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   ];
 
   Future<void> _pickDate() async {
+    final c = context.colors;
     final picked = await showDatePicker(
       context: context,
       initialDate: DateTime(1995),
@@ -35,10 +30,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: ColorScheme.light(
-              primary: kPinkDeep,
+              primary: c.primaryDeep,
               onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: const Color(0xFF1A1A1A),
+              surface: c.card,
+              onSurface: c.textPrimary,
             ),
           ),
           child: child!,
@@ -56,8 +51,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: kBgLight,
+      backgroundColor: c.bg,
       body: Stack(
         children: [
           // ── Decorative gradient bottom ───────────────────────────────
@@ -71,7 +67,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [kPink.withValues(alpha: 0.15), Colors.transparent],
+                  colors: [
+                    c.primary.withValues(alpha: 0.15),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -93,17 +92,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       IconButton(
                         onPressed: () => context.go('/register'),
                         icon: const Icon(Icons.arrow_back_rounded),
-                        color: const Color(0xFF1A1A1A),
+                        color: c.textPrimary,
                         iconSize: 24,
                       ),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'Configura tu perfil',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                             letterSpacing: -0.3,
                           ),
                         ),
@@ -113,7 +112,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                   ),
                 ),
 
-                Divider(),
+                const Divider(),
 
                 // ── Progress bar ───────────────────────────────────────
                 Padding(
@@ -123,19 +122,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text(
+                          Text(
                             'Paso 1 de 3',
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF334155),
+                              color: c.textPrimary,
                             ),
                           ),
                           Text(
                             '33% completado',
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.grey[500],
+                              color: c.textSecondary,
                             ),
                           ),
                         ],
@@ -146,10 +145,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         child: LinearProgressIndicator(
                           value: 1 / 3,
                           minHeight: 8,
-                          backgroundColor: kPink.withValues(alpha: 0.25),
-                          valueColor: const AlwaysStoppedAnimation<Color>(
-                            kPink,
-                          ),
+                          backgroundColor: c.primary.withValues(alpha: 0.25),
+                          valueColor: AlwaysStoppedAnimation<Color>(c.primary),
                         ),
                       ),
                     ],
@@ -164,12 +161,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header
-                        const Text(
+                        Text(
                           'Háblanos de ti',
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                             letterSpacing: -0.5,
                             height: 1.15,
                           ),
@@ -179,19 +176,19 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           'Necesitamos estos datos para personalizar tu plan de entrenamiento.',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: c.textSecondary,
                             height: 1.5,
                           ),
                         ),
                         const SizedBox(height: 32),
 
                         // ── Gender selector ────────────────────────────
-                        const Text(
+                        Text(
                           'Género',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -199,10 +196,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                           height: 52,
                           padding: const EdgeInsets.all(5),
                           decoration: BoxDecoration(
-                            color: kPink.withValues(alpha: 0.15),
+                            color: c.primary.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
-                              color: kPinkMid.withValues(alpha: 0.3),
+                              color: c.primaryMid.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                           ),
@@ -218,13 +215,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                     duration: const Duration(milliseconds: 200),
                                     decoration: BoxDecoration(
                                       color: isSelected
-                                          ? Colors.white
+                                          ? c.card
                                           : Colors.transparent,
                                       borderRadius: BorderRadius.circular(10),
                                       boxShadow: isSelected
                                           ? [
                                               BoxShadow(
-                                                color: kPink.withValues(
+                                                color: c.primary.withValues(
                                                   alpha: 0.4,
                                                 ),
                                                 blurRadius: 8,
@@ -242,8 +239,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                               ? FontWeight.w700
                                               : FontWeight.w500,
                                           color: isSelected
-                                              ? const Color(0xFF1A1A1A)
-                                              : Colors.grey[500],
+                                              ? c.textPrimary
+                                              : c.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -256,12 +253,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                         const SizedBox(height: 32),
 
                         // ── Date of birth ──────────────────────────────
-                        const Text(
+                        Text(
                           'Fecha de nacimiento',
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF1A1A1A),
+                            color: c.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 14),
@@ -271,10 +268,10 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             height: 56,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: kPink.withValues(alpha: 0.1),
+                              color: c.primary.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: kPinkMid.withValues(alpha: 0.4),
+                                color: c.primaryMid.withValues(alpha: 0.4),
                                 width: 1.5,
                               ),
                             ),
@@ -288,14 +285,14 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: _selectedDate != null
-                                          ? const Color(0xFF1A1A1A)
-                                          : Colors.grey[400],
+                                          ? c.textPrimary
+                                          : c.textSecondary,
                                     ),
                                   ),
                                 ),
                                 Icon(
                                   Icons.calendar_today_rounded,
-                                  color: Colors.grey[400],
+                                  color: c.textSecondary,
                                   size: 20,
                                 ),
                               ],
@@ -312,13 +309,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                kPink.withValues(alpha: 0.35),
-                                kPink.withValues(alpha: 0.12),
+                                c.primary.withValues(alpha: 0.35),
+                                c.primary.withValues(alpha: 0.12),
                               ],
                             ),
                             borderRadius: BorderRadius.circular(18),
                             border: Border.all(
-                              color: kPinkMid.withValues(alpha: 0.3),
+                              color: c.primaryMid.withValues(alpha: 0.3),
                               width: 1.5,
                             ),
                           ),
@@ -327,18 +324,18 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                               Container(
                                 width: 52,
                                 height: 52,
-                                decoration: const BoxDecoration(
-                                  color: Colors.white,
+                                decoration: BoxDecoration(
+                                  color: c.card,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.directions_run_rounded,
-                                  color: kPinkDeep,
+                                  color: c.primaryDeep,
                                   size: 28,
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              const Expanded(
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -347,15 +344,15 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w700,
-                                        color: Color(0xFF1A1A1A),
+                                        color: c.textPrimary,
                                       ),
                                     ),
-                                    SizedBox(height: 4),
+                                    const SizedBox(height: 4),
                                     Text(
                                       'Tu edad y género nos ayudan a calcular el ritmo ideal para tu corazón.',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Color(0xFF475569),
+                                        color: c.textSecondary,
                                         height: 1.5,
                                       ),
                                     ),
@@ -374,17 +371,17 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             width: double.infinity,
                             height: 56,
                             decoration: BoxDecoration(
-                              color: kPink,
+                              color: c.primary,
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: kPink.withValues(alpha: 0.5),
+                                  color: c.primary.withValues(alpha: 0.5),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
                               ],
                             ),
-                            child: const Row(
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
@@ -392,13 +389,13 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: Color(0xFF1A1A1A),
+                                    color: c.textPrimary,
                                   ),
                                 ),
-                                SizedBox(width: 8),
+                                const SizedBox(width: 8),
                                 Icon(
                                   Icons.arrow_forward_rounded,
-                                  color: Color(0xFF1A1A1A),
+                                  color: c.textPrimary,
                                   size: 20,
                                 ),
                               ],

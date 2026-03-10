@@ -1,12 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-
-const kPink = Color(0xFFFFD3E0);
-const kPinkDark = Color(0xFFE8A0B8);
-const kPinkDeep = Color(0xFFC4607A);
-const kPinkLight = Color(0xFFFFF0F5);
-const kPinkMid = Color(0xFFFFB8CE);
-const kBgLight = Color(0xFFF8F5F6);
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -29,11 +23,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: kBgLight,
+      backgroundColor: c.bg,
       body: Stack(
         children: [
-          // ── Decorative gradient bottom ───────────────────────────────
+          // Decorative gradient bottom
           Positioned(
             bottom: 0,
             left: 0,
@@ -44,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [kPink.withValues(alpha: 0.15), Colors.transparent],
+                  colors: [c.primaryWithAlpha(0.15), Colors.transparent],
                 ),
               ),
             ),
@@ -53,7 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
             child: Column(
               children: [
-                // ── Top bar ────────────────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -64,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       IconButton(
                         onPressed: () => context.go('/onboarding'),
                         icon: const Icon(Icons.arrow_back_rounded),
-                        color: const Color(0xFF1A1A1A),
+                        color: c.textPrimary,
                         iconSize: 24,
                       ),
                       const SizedBox(width: 48),
@@ -72,23 +66,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // ── Contenido centrado verticalmente ──────────────────
                 Expanded(
                   child: SingleChildScrollView(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(
-                        // Altura mínima = pantalla disponible menos el topbar
                         minHeight:
                             MediaQuery.of(context).size.height -
                             MediaQuery.of(context).padding.top -
                             MediaQuery.of(context).padding.bottom -
-                            72, // altura aprox del topbar
+                            72,
                       ),
                       child: IntrinsicHeight(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // ── Logo & hero ──────────────────────────
                             Padding(
                               padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
                               child: Column(
@@ -97,29 +88,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                     width: 88,
                                     height: 88,
                                     decoration: BoxDecoration(
-                                      color: kPink,
+                                      color: c.primary,
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: kPink.withValues(alpha: 0.5),
+                                          color: c.primaryWithAlpha(0.5),
                                           blurRadius: 20,
                                           offset: const Offset(0, 8),
                                         ),
                                       ],
                                     ),
-                                    child: const Icon(
+                                    child: Icon(
                                       Icons.explore_rounded,
                                       size: 48,
-                                      color: Color(0xFF1A1A1A),
+                                      color: c.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(height: 24),
-                                  const Text(
+                                  Text(
                                     '¡Hola de nuevo!',
                                     style: TextStyle(
                                       fontSize: 30,
                                       fontWeight: FontWeight.w800,
-                                      color: Color(0xFF1A1A1A),
+                                      color: c.textPrimary,
                                       letterSpacing: -0.5,
                                     ),
                                   ),
@@ -128,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     'Conquista nuevos territorios hoy',
                                     style: TextStyle(
                                       fontSize: 15,
-                                      color: Colors.grey[600],
+                                      color: c.textSecondary,
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
@@ -136,7 +127,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
 
-                            // ── Form ─────────────────────────────────
                             Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 24,
@@ -147,23 +137,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Email
-                                  _buildLabel('Email'),
+                                  _buildLabel('Email', c),
                                   const SizedBox(height: 8),
                                   _buildTextField(
                                     controller: _emailController,
                                     hint: 'tu@email.com',
                                     keyboardType: TextInputType.emailAddress,
+                                    c: c,
                                   ),
                                   const SizedBox(height: 20),
 
-                                  // Password
-                                  _buildLabel('Contraseña'),
+                                  _buildLabel('Contraseña', c),
                                   const SizedBox(height: 8),
-                                  _buildPasswordField(),
+                                  _buildPasswordField(c),
                                   const SizedBox(height: 12),
 
-                                  // Forgot password
                                   Align(
                                     alignment: Alignment.centerRight,
                                     child: GestureDetector(
@@ -173,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
-                                          color: Colors.grey[600],
+                                          color: c.textSecondary,
                                         ),
                                       ),
                                     ),
@@ -189,23 +177,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                         vertical: 18,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: kPink,
+                                        color: c.primary,
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: kPink.withValues(alpha: 0.5),
+                                            color: c.primaryWithAlpha(0.5),
                                             blurRadius: 20,
                                             offset: const Offset(0, 8),
                                           ),
                                         ],
                                       ),
-                                      child: const Center(
+                                      child: Center(
                                         child: Text(
                                           'Iniciar Sesión',
                                           style: TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
-                                            color: Color(0xFF1A1A1A),
+                                            color: c.textPrimary,
                                           ),
                                         ),
                                       ),
@@ -213,12 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   const SizedBox(height: 28),
 
-                                  // Divider
                                   Row(
                                     children: [
                                       Expanded(
                                         child: Divider(
-                                          color: Colors.grey[300],
+                                          color: c.primaryMidWithAlpha(0.4),
                                           thickness: 1,
                                         ),
                                       ),
@@ -231,14 +218,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                           style: TextStyle(
                                             fontSize: 11,
                                             fontWeight: FontWeight.w700,
-                                            color: Colors.grey[400],
+                                            color: c.textHint,
                                             letterSpacing: 1.5,
                                           ),
                                         ),
                                       ),
                                       Expanded(
                                         child: Divider(
-                                          color: Colors.grey[300],
+                                          color: c.primaryMidWithAlpha(0.4),
                                           thickness: 1,
                                         ),
                                       ),
@@ -246,7 +233,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   const SizedBox(height: 24),
 
-                                  // Register link
                                   Center(
                                     child: GestureDetector(
                                       onTap: () => context.go('/register'),
@@ -255,7 +241,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           text: '¿No tienes una cuenta? ',
                                           style: TextStyle(
                                             fontSize: 14,
-                                            color: Colors.grey[600],
+                                            color: c.textSecondary,
                                             fontWeight: FontWeight.w400,
                                           ),
                                           children: [
@@ -264,10 +250,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF1A1A1A),
+                                                color: c.textPrimary,
                                                 decoration:
                                                     TextDecoration.underline,
-                                                decorationColor: kPinkMid,
+                                                decorationColor: c.primaryMid,
                                                 decorationThickness: 2,
                                               ),
                                             ),
@@ -293,72 +279,71 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 13,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF1E293B),
-      ),
-    );
-  }
+  Widget _buildLabel(String text, colors) => Text(
+    text,
+    style: TextStyle(
+      fontSize: 13,
+      fontWeight: FontWeight.w600,
+      color: colors.textPrimary,
+    ),
+  );
 
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
     TextInputType keyboardType = TextInputType.text,
+    required c,
   }) {
     return TextField(
       controller: controller,
       keyboardType: keyboardType,
-      style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
+      style: TextStyle(fontSize: 15, color: c.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: TextStyle(
-          color: Colors.grey[400],
+          color: c.textHint,
           fontSize: 15,
           fontWeight: FontWeight.w400,
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: c.inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: kPinkMid, width: 1.5),
+          borderSide: BorderSide(color: c.inputBorder, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: kPinkDeep, width: 2),
+          borderSide: BorderSide(color: c.inputBorderFocused, width: 2),
         ),
       ),
     );
   }
 
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField(c) {
     return TextField(
       controller: _passwordController,
       obscureText: _obscurePassword,
-      style: const TextStyle(fontSize: 15, color: Color(0xFF1A1A1A)),
+      style: TextStyle(fontSize: 15, color: c.textPrimary),
       decoration: InputDecoration(
         hintText: '••••••••',
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
+        hintStyle: TextStyle(color: c.textHint, fontSize: 15),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: c.inputFill,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 18,
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: kPinkMid, width: 1.5),
+          borderSide: BorderSide(color: c.inputBorder, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: kPinkDeep, width: 2),
+          borderSide: BorderSide(color: c.inputBorderFocused, width: 2),
         ),
         suffixIcon: GestureDetector(
           onTap: () => setState(() => _obscurePassword = !_obscurePassword),
@@ -366,7 +351,7 @@ class _LoginScreenState extends State<LoginScreen> {
             _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: Colors.grey[500],
+            color: c.textHint,
             size: 22,
           ),
         ),

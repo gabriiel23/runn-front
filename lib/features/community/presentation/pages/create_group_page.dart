@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class CreateGroupPage extends StatefulWidget {
   const CreateGroupPage({super.key});
@@ -42,18 +43,18 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: context.colors.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.colors.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.close_rounded, color: context.colors.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Nuevo Grupo',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: context.colors.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
             letterSpacing: -0.5,
@@ -98,10 +99,10 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Widget _buildSectionHeader(String title) {
     return Text(
       title,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 16,
         fontWeight: FontWeight.w700,
-        color: Color(0xFF0A0A0A),
+        color: context.colors.textPrimary,
         letterSpacing: -0.2,
       ),
     );
@@ -110,7 +111,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Widget _buildNameField() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.inputFill,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -122,32 +123,38 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       ),
       child: TextFormField(
         controller: _nameController,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: TextStyle(
+          color: context.colors.textPrimary,
+          fontWeight: FontWeight.w600,
+        ),
         decoration: InputDecoration(
           hintText: 'Nombre del grupo...',
           hintStyle: TextStyle(
-            color: const Color(0xFF1A1A1A).withValues(alpha: 0.3),
+            color: context.colors.textHint,
             fontWeight: FontWeight.w400,
           ),
-          prefixIcon: const Icon(
+          prefixIcon: Icon(
             Icons.edit_note_rounded,
-            color: Color(0xFFE8698A),
+            color: context.colors.primaryDeep,
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: const Color(0xFFE8698A).withValues(alpha: 0.1),
+              color: context.colors.primaryDeepWithAlpha(0.1),
             ),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: const Color(0xFFE8698A).withValues(alpha: 0.1),
+              color: context.colors.primaryDeepWithAlpha(0.1),
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Color(0xFFE8698A), width: 1.5),
+            borderSide: BorderSide(
+              color: context.colors.primaryDeep,
+              width: 1.5,
+            ),
           ),
           contentPadding: const EdgeInsets.all(18),
         ),
@@ -165,11 +172,9 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE8698A).withValues(alpha: 0.08),
-        ),
+        border: Border.all(color: context.colors.primaryDeepWithAlpha(0.08)),
       ),
       child: Column(
         children: [
@@ -178,19 +183,20 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             return ListTile(
               contentPadding: EdgeInsets.zero,
               leading: CircleAvatar(
-                backgroundColor: const Color(0xFFFFF0F4),
+                backgroundColor: context.colors.primaryLight,
                 child: Text(runner['emoji']!),
               ),
               title: Text(
                 runner['name']!,
-                style: const TextStyle(
+                style: TextStyle(
+                  color: context.colors.textPrimary,
                   fontWeight: FontWeight.w600,
                   fontSize: 14,
                 ),
               ),
               trailing: Checkbox(
                 value: isSelected,
-                activeColor: const Color(0xFFE8698A),
+                activeColor: context.colors.primaryDeep,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(4),
                 ),
@@ -204,7 +210,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             icon: const Icon(Icons.person_search_rounded, size: 18),
             label: const Text('Buscar más personas'),
             style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFFE8698A),
+              foregroundColor: context.colors.primaryDeep,
               textStyle: const TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
@@ -216,24 +222,31 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
   Widget _buildInviteLinkToggle() {
     return Row(
       children: [
-        const Expanded(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Enlace de invitación',
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: TextStyle(
+                  color: context.colors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
               ),
               Text(
                 'Permite que otros se unan mediante un link.',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
+                style: TextStyle(
+                  color: context.colors.textSecondary,
+                  fontSize: 12,
+                ),
               ),
             ],
           ),
         ),
         Switch(
           value: _inviteLinkEnabled,
-          activeThumbColor: const Color(0xFFE8698A),
+          activeThumbColor: context.colors.primaryDeep,
           onChanged: (val) => setState(() => _inviteLinkEnabled = val),
         ),
       ],
@@ -244,27 +257,25 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF0F4),
+        color: context.colors.primaryLight,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: const Color(0xFFE8698A).withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: context.colors.primaryDeepWithAlpha(0.1)),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.link_rounded, color: Color(0xFFE8698A), size: 18),
-          SizedBox(width: 10),
+          Icon(Icons.link_rounded, color: context.colors.primaryDeep, size: 18),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'runn.app/join/urbanos-2024',
               style: TextStyle(
-                color: Color(0xFFE8698A),
+                color: context.colors.primaryDeep,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
             ),
           ),
-          Icon(Icons.copy_rounded, color: Color(0xFFE8698A), size: 18),
+          Icon(Icons.copy_rounded, color: context.colors.primaryDeep, size: 18),
         ],
       ),
     );
@@ -276,14 +287,14 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
       height: 56,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFE8698A), Color(0xFFC94070)],
+        gradient: LinearGradient(
+          colors: [context.colors.primaryDeep, context.colors.primaryMid],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFE8698A).withValues(alpha: 0.3),
+            color: context.colors.primaryDeepWithAlpha(0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -308,7 +319,7 @@ class _CreateGroupPageState extends State<CreateGroupPage> {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        child: const Text(
+        child: Text(
           'Crear Grupo',
           style: TextStyle(
             color: Colors.white,

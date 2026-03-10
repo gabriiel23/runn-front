@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class MyBadgesPage extends StatelessWidget {
   const MyBadgesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     final unlockedBadges = [
       {
         'id': '1',
@@ -67,18 +69,18 @@ class MyBadgesPage extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Mis insignias',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
@@ -87,9 +89,15 @@ class MyBadgesPage extends StatelessWidget {
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
-          _buildSectionHeader('Desbloqueadas (${unlockedBadges.length})'),
+          _buildSectionHeader(
+            context,
+            'Desbloqueadas (${unlockedBadges.length})',
+          ),
           _buildBadgeGrid(context, unlockedBadges),
-          _buildSectionHeader('Por desbloquear (${lockedBadges.length})'),
+          _buildSectionHeader(
+            context,
+            'Por desbloquear (${lockedBadges.length})',
+          ),
           _buildBadgeGrid(context, lockedBadges),
           const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
         ],
@@ -97,16 +105,17 @@ class MyBadgesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _buildSectionHeader(BuildContext context, String title) {
+    final c = context.colors;
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 32, 24, 16),
         child: Text(
           title,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             letterSpacing: -0.5,
           ),
         ),
@@ -114,7 +123,10 @@ class MyBadgesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBadgeGrid(BuildContext context, List<Map<String, dynamic>> badges) {
+  Widget _buildBadgeGrid(
+    BuildContext context,
+    List<Map<String, dynamic>> badges,
+  ) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       sliver: SliverGrid(
@@ -124,21 +136,19 @@ class MyBadgesPage extends StatelessWidget {
           crossAxisSpacing: 20,
           childAspectRatio: 0.8,
         ),
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            final badge = badges[index];
-            return GestureDetector(
-              onTap: () => _showBadgeDetails(context, badge),
-              child: _buildBadgeItem(badge),
-            );
-          },
-          childCount: badges.length,
-        ),
+        delegate: SliverChildBuilderDelegate((context, index) {
+          final badge = badges[index];
+          return GestureDetector(
+            onTap: () => _showBadgeDetails(context, badge),
+            child: _buildBadgeItem(context, badge),
+          );
+        }, childCount: badges.length),
       ),
     );
   }
 
-  Widget _buildBadgeItem(Map<String, dynamic> badge) {
+  Widget _buildBadgeItem(BuildContext context, Map<String, dynamic> badge) {
+    final c = context.colors;
     final bool unlocked = badge['unlocked'];
     final Color color = badge['color'];
 
@@ -147,25 +157,29 @@ class MyBadgesPage extends StatelessWidget {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              color: unlocked ? color.withValues(alpha: 0.1) : Colors.white,
+              color: unlocked ? color.withValues(alpha: 0.1) : c.card,
               shape: BoxShape.circle,
               border: Border.all(
-                color: unlocked ? color.withValues(alpha: 0.3) : const Color(0xFFE0E0E0),
+                color: unlocked
+                    ? color.withValues(alpha: 0.3)
+                    : c.textHint.withValues(alpha: 0.2),
                 width: 2,
               ),
-              boxShadow: unlocked ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                )
-              ] : [],
+              boxShadow: unlocked
+                  ? [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
             ),
             child: Center(
               child: Icon(
                 badge['icon'],
                 size: 32,
-                color: unlocked ? color : const Color(0xffBDBDBD),
+                color: unlocked ? color : c.textHint.withValues(alpha: 0.4),
               ),
             ),
           ),
@@ -179,7 +193,7 @@ class MyBadgesPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
-            color: unlocked ? const Color(0xFF0A0A0A) : const Color(0xFF9E9E9E),
+            color: unlocked ? c.textPrimary : c.textHint,
           ),
         ),
       ],
@@ -187,6 +201,7 @@ class MyBadgesPage extends StatelessWidget {
   }
 
   void _showBadgeDetails(BuildContext context, Map<String, dynamic> badge) {
+    final c = context.colors;
     final bool unlocked = badge['unlocked'];
     final Color color = badge['color'];
 
@@ -196,9 +211,9 @@ class MyBadgesPage extends StatelessWidget {
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.5,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(32),
             topRight: Radius.circular(32),
           ),
@@ -212,24 +227,29 @@ class MyBadgesPage extends StatelessWidget {
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(color: color.withValues(alpha: 0.3), width: 3),
+                border: Border.all(
+                  color: color.withValues(alpha: 0.3),
+                  width: 3,
+                ),
               ),
               child: Icon(badge['icon'], size: 48, color: color),
             ),
             const SizedBox(height: 24),
             Text(
               badge['title'],
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w800,
-                color: Color(0xFF0A0A0A),
+                color: c.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               unlocked ? '¡Logro desbloqueado!' : 'Logro bloqueado',
               style: TextStyle(
-                color: unlocked ? const Color(0xFF7ED957) : const Color(0xFFE8698A),
+                color: unlocked
+                    ? const Color(0xFF7ED957)
+                    : const Color(0xFFE8698A),
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),
@@ -240,7 +260,7 @@ class MyBadgesPage extends StatelessWidget {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 16,
-                color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
+                color: c.textSecondary,
                 height: 1.5,
               ),
             ),
@@ -250,7 +270,7 @@ class MyBadgesPage extends StatelessWidget {
                 'Conseguido el ${badge['date']}',
                 style: TextStyle(
                   fontSize: 12,
-                  color: const Color(0xFF0A0A0A).withValues(alpha: 0.4),
+                  color: c.textHint,
                   fontWeight: FontWeight.w500,
                 ),
               )
@@ -262,7 +282,7 @@ class MyBadgesPage extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: badge['progress'],
                       minHeight: 8,
-                      backgroundColor: const Color(0xFFFFF0F4),
+                      backgroundColor: c.primaryDeepWithAlpha(0.1),
                       valueColor: AlwaysStoppedAnimation<Color>(color),
                     ),
                   ),

@@ -1,0 +1,8 @@
+Analyzing runn_front...
+
+  error - lib\features\territory\presentation\pages\territory_detail_page.dart:375:27 - Arguments of a constant creation must be constant expressions. Try making the argument a valid constant, or use 'new' to call the constructor. - const_with_non_constant_argument
+   info - migration_script.dart:69:3 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - migration_script.dart:96:34 - Unnecessary use of string interpolation. Try replacing the string literal with the variable name. - unnecessary_string_interpolations
+   info - migration_script.dart:96:45 - Unnecessary use of string interpolation. Try replacing the string literal with the variable name. - unnecessary_string_interpolations
+
+4 issues found.

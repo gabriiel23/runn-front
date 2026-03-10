@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/theme/theme_scope.dart';
 
 class EventDetailPage extends StatelessWidget {
   final String eventId;
@@ -8,6 +9,7 @@ class EventDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     // Mock data for the event
     final event = {
       'name': eventId == '1' ? 'Carrera Nocturna 10K' : 'Trail de la Montaña',
@@ -18,17 +20,17 @@ class EventDetailPage extends StatelessWidget {
           : 'Descubre la naturaleza en su estado más puro. Este trail te llevará por senderos técnicos, bosques frondosos y vistas espectaculares de la cordillera.',
       'participants': eventId == '1' ? 156 : 89,
       'image': eventId == '1'
-          ? 'https://images.unsplash.com/photo-1541252260730-0412e3e2104e?q=80&w=1000'
+          ? 'https://imagenes.primicias.ec/files/content_image_simple_414_238/uploads/2024/05/26/6653b8ee9764c.jpeg'
           : 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000',
       'route': eventId == '1'
           ? 'Centro Histórico - Paseo de la Reforma'
           : 'Reserva Natural El Bosque',
       'distance': eventId == '1' ? '10 km' : '15 km',
-      'color': const Color(0xFFE8698A),
+      'color': c.primaryDeep,
     };
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       body: CustomScrollView(
         physics: const BouncingScrollPhysics(),
         slivers: [
@@ -39,13 +41,13 @@ class EventDetailPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildMainInfo(event),
+                  _buildMainInfo(context, event),
                   const SizedBox(height: 32),
-                  _buildDescription(event),
+                  _buildDescription(context, event),
                   const SizedBox(height: 32),
-                  _buildRouteSection(event),
+                  _buildRouteSection(context, event),
                   const SizedBox(height: 32),
-                  _buildParticipantsSection(event),
+                  _buildParticipantsSection(event, context),
                   const SizedBox(height: 100),
                 ],
               ),
@@ -53,28 +55,25 @@ class EventDetailPage extends StatelessWidget {
           ),
         ],
       ),
-      bottomSheet: _buildJoinButton(event),
+      bottomSheet: _buildJoinButton(event, context),
     );
   }
 
   Widget _buildSliverAppBar(BuildContext context, Map<String, dynamic> event) {
+    final c = context.colors;
     return SliverAppBar(
       expandedHeight: 300,
       pinned: true,
-      backgroundColor: Colors.white,
+      backgroundColor: c.card,
       elevation: 0,
       leading: Container(
         margin: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: c.card.withValues(alpha: 0.9),
           shape: BoxShape.circle,
         ),
         child: IconButton(
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color(0xFF0A0A0A),
-            size: 20,
-          ),
+          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary, size: 20),
           onPressed: () => context.pop(),
         ),
       ),
@@ -101,7 +100,8 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMainInfo(Map<String, dynamic> event) {
+  Widget _buildMainInfo(BuildContext context, Map<String, dynamic> event) {
+    final c = context.colors;
     final color = event['color'] as Color;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -127,7 +127,7 @@ class EventDetailPage extends StatelessWidget {
             const Spacer(),
             Icon(
               Icons.share_rounded,
-              color: const Color(0xFF0A0A0A).withValues(alpha: 0.3),
+              color: c.textPrimary.withValues(alpha: 0.3),
               size: 20,
             ),
           ],
@@ -135,10 +135,10 @@ class EventDetailPage extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           event['name'] as String,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.w800,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             letterSpacing: -1,
           ),
         ),
@@ -146,13 +146,19 @@ class EventDetailPage extends StatelessWidget {
         Row(
           children: [
             _buildInfoChip(
+              context,
               Icons.calendar_today_rounded,
               event['date'] as String,
             ),
             const SizedBox(width: 12),
-            _buildInfoChip(Icons.access_time_rounded, event['time'] as String),
+            _buildInfoChip(
+              context,
+              Icons.access_time_rounded,
+              event['time'] as String,
+            ),
             const SizedBox(width: 12),
             _buildInfoChip(
+              context,
               Icons.straighten_rounded,
               event['distance'] as String,
             ),
@@ -162,19 +168,16 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String text) {
+  Widget _buildInfoChip(BuildContext context, IconData icon, String text) {
+    final c = context.colors;
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 16,
-          color: const Color(0xFF0A0A0A).withValues(alpha: 0.4),
-        ),
+        Icon(icon, size: 16, color: c.textPrimary.withValues(alpha: 0.4)),
         const SizedBox(width: 6),
         Text(
           text,
           style: TextStyle(
-            color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
+            color: c.textPrimary.withValues(alpha: 0.6),
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -183,55 +186,51 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildDescription(Map<String, dynamic> event) {
+  Widget _buildDescription(BuildContext context, Map<String, dynamic> event) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Descripción',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
         Text(
           event['description'] as String,
-          style: TextStyle(
-            fontSize: 15,
-            color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
-            height: 1.6,
-          ),
+          style: TextStyle(fontSize: 15, color: c.textSecondary, height: 1.6),
         ),
       ],
     );
   }
 
-  Widget _buildRouteSection(Map<String, dynamic> event) {
+  Widget _buildRouteSection(BuildContext context, Map<String, dynamic> event) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: c.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF0A0A0A).withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.map_outlined,
-                color: Color(0xFFE8698A),
-                size: 24,
-              ),
+              Icon(Icons.map_outlined, color: c.primaryDeep, size: 24),
               const SizedBox(width: 12),
-              const Text(
+              Text(
                 'Ruta sugerida',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: c.textPrimary,
+                ),
               ),
             ],
           ),
@@ -240,7 +239,7 @@ class EventDetailPage extends StatelessWidget {
             event['route'] as String,
             style: TextStyle(
               fontSize: 14,
-              color: const Color(0xFF0A0A0A).withValues(alpha: 0.6),
+              color: c.textSecondary,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -250,13 +249,9 @@ class EventDetailPage extends StatelessWidget {
             child: Container(
               height: 120,
               width: double.infinity,
-              color: const Color(0xFFF5F5F5),
-              child: const Center(
-                child: Icon(
-                  Icons.route_rounded,
-                  size: 40,
-                  color: Color(0xFFCBD5E0),
-                ),
+              color: c.primaryLight,
+              child: Center(
+                child: Icon(Icons.route_rounded, size: 40, color: c.textHint),
               ),
             ),
           ),
@@ -265,7 +260,11 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildParticipantsSection(Map<String, dynamic> event) {
+  Widget _buildParticipantsSection(
+    Map<String, dynamic> event,
+    BuildContext context,
+  ) {
+    final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -274,12 +273,16 @@ class EventDetailPage extends StatelessWidget {
           children: [
             Text(
               'Participantes (${event['participants']})',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w700,
+                color: c.textPrimary,
+              ),
             ),
             Text(
               'Ver todos',
               style: TextStyle(
-                color: const Color(0xFFE8698A).withValues(alpha: 0.8),
+                color: c.primaryDeepWithAlpha(0.8),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -294,11 +297,11 @@ class EventDetailPage extends StatelessWidget {
               padding: const EdgeInsets.only(right: 8),
               child: CircleAvatar(
                 radius: 18,
-                backgroundColor: const Color(0xFFFFF0F4),
+                backgroundColor: c.primaryLight,
                 child: Icon(
                   Icons.person_rounded,
                   size: 18,
-                  color: const Color(0xFFE8698A).withValues(alpha: 0.7),
+                  color: c.primaryDeepWithAlpha(0.7),
                 ),
               ),
             ),
@@ -308,19 +311,18 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildJoinButton(Map<String, dynamic> event) {
+  Widget _buildJoinButton(Map<String, dynamic> event, BuildContext context) {
+    final c = context.colors;
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
-        ),
+        color: c.card,
+        border: Border(top: BorderSide(color: c.primaryDeepWithAlpha(0.05))),
       ),
       child: ElevatedButton(
         onPressed: () {},
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFE8698A),
+          backgroundColor: c.primaryDeep,
           foregroundColor: Colors.white,
           minimumSize: const Size(double.infinity, 56),
           shape: RoundedRectangleBorder(
