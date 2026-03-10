@@ -129,20 +129,28 @@ class MyBadgesPage extends StatelessWidget {
   ) {
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          mainAxisSpacing: 20,
-          crossAxisSpacing: 20,
-          childAspectRatio: 0.8,
-        ),
-        delegate: SliverChildBuilderDelegate((context, index) {
-          final badge = badges[index];
-          return GestureDetector(
-            onTap: () => _showBadgeDetails(context, badge),
-            child: _buildBadgeItem(context, badge),
+      sliver: SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final isLandscape =
+              constraints.crossAxisExtent > MediaQuery.of(context).size.height;
+          final cols = isLandscape ? 4 : 3;
+          final ratio = isLandscape ? 1.1 : 0.8;
+          return SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: cols,
+              mainAxisSpacing: 20,
+              crossAxisSpacing: 20,
+              childAspectRatio: ratio,
+            ),
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final badge = badges[index];
+              return GestureDetector(
+                onTap: () => _showBadgeDetails(context, badge),
+                child: _buildBadgeItem(context, badge),
+              );
+            }, childCount: badges.length),
           );
-        }, childCount: badges.length),
+        },
       ),
     );
   }

@@ -225,69 +225,80 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   // ── Standard info slide ────────────────────────────────────────────────────
   Widget _buildPage(_OnboardingPage page, AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 64, 24, 0),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: SizedBox(
-              width: double.infinity,
-              height: 300,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          colors.primaryWithAlpha(0.25),
-                          colors.primaryMidWithAlpha(0.45),
-                        ],
-                      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxHeight;
+        final imgHeight = (h * 0.38).clamp(160.0, 320.0);
+        final topPad = (h * 0.06).clamp(16.0, 64.0);
+        final gap = (h * 0.06).clamp(12.0, 72.0);
+        return SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24, topPad, 24, 0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: imgHeight,
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                colors.primaryWithAlpha(0.25),
+                                colors.primaryMidWithAlpha(0.45),
+                              ],
+                            ),
+                          ),
+                        ),
+                        page.imageUrl.isNotEmpty
+                            ? Image.asset(
+                                page.imageUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _buildFallback(page, colors),
+                              )
+                            : _buildFallback(page, colors),
+                        Container(color: Colors.black.withValues(alpha: 0.04)),
+                      ],
                     ),
                   ),
-                  page.imageUrl.isNotEmpty
-                      ? Image.asset(
-                          page.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              _buildFallback(page, colors),
-                        )
-                      : _buildFallback(page, colors),
-                  Container(color: Colors.black.withValues(alpha: 0.04)),
-                ],
-              ),
+                ),
+                SizedBox(height: gap),
+                Text(
+                  page.title,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                    letterSpacing: -0.5,
+                    height: 1.15,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  page.description,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: colors.textSecondary,
+                    height: 1.6,
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 72),
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: colors.textPrimary,
-              letterSpacing: -0.5,
-              height: 1.15,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            page.description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-              color: colors.textSecondary,
-              height: 1.6,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -374,124 +385,140 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       ),
     ];
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 48, 24, 0),
-      child: Column(
-        children: [
-          Icon(Icons.palette_rounded, color: colors.primaryDeep, size: 56),
-          const SizedBox(height: 20),
-          Text(
-            'Elige tu estilo',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              color: colors.textPrimary,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'Puedes cambiarlo después desde Perfil → Ajustes',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 14, color: colors.textSecondary),
-          ),
-          const SizedBox(height: 36),
-          Expanded(
-            child: GridView.count(
-              crossAxisCount: 2,
-              mainAxisSpacing: 16,
-              crossAxisSpacing: 16,
-              childAspectRatio: 1.15,
-              children: themes.map((opt) {
-                final isSelected =
-                    notifier.scheme == opt.scheme &&
-                    notifier.brightness == opt.brightness;
-                return GestureDetector(
-                  onTap: () async {
-                    await notifier.setTheme(opt.scheme, opt.brightness);
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    decoration: BoxDecoration(
-                      color: opt.isDarkCard
-                          ? const Color(0xFF1A1A2E)
-                          : Colors.white,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(
-                        color: isSelected
-                            ? opt.swatchDeep
-                            : opt.swatch.withValues(alpha: 0.3),
-                        width: isSelected ? 3 : 1.5,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: isSelected
-                              ? opt.swatchDeep.withValues(alpha: 0.3)
-                              : Colors.black.withValues(alpha: 0.05),
-                          blurRadius: isSelected ? 20 : 8,
-                          offset: const Offset(0, 4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final h = constraints.maxHeight;
+        final topPad = (h * 0.05).clamp(12.0, 48.0);
+        final gap1 = (h * 0.03).clamp(8.0, 20.0);
+        final gap2 = (h * 0.04).clamp(10.0, 36.0);
+        return SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(24, topPad, 24, 0),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.palette_rounded,
+                  color: colors.primaryDeep,
+                  size: 56,
+                ),
+                SizedBox(height: gap1),
+                Text(
+                  'Elige tu estilo',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    color: colors.textPrimary,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Puedes cambiarlo después desde Perfil → Ajustes',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: colors.textSecondary),
+                ),
+                SizedBox(height: gap2),
+                GridView.count(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 1.15,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: themes.map((opt) {
+                    final isSelected =
+                        notifier.scheme == opt.scheme &&
+                        notifier.brightness == opt.brightness;
+                    return GestureDetector(
+                      onTap: () async {
+                        await notifier.setTheme(opt.scheme, opt.brightness);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        decoration: BoxDecoration(
+                          color: opt.isDarkCard
+                              ? const Color(0xFF1A1A2E)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: isSelected
+                                ? opt.swatchDeep
+                                : opt.swatch.withValues(alpha: 0.3),
+                            width: isSelected ? 3 : 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isSelected
+                                  ? opt.swatchDeep.withValues(alpha: 0.3)
+                                  : Colors.black.withValues(alpha: 0.05),
+                              blurRadius: isSelected ? 20 : 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Color preview circles
-                        Row(
+                        child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            _colorDot(opt.swatch),
-                            const SizedBox(width: 6),
-                            _colorDot(opt.swatchDeep),
-                            if (opt.isDarkCard) ...[
-                              const SizedBox(width: 6),
-                              _colorDot(const Color(0xFF1A1A1A)),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                _colorDot(opt.swatch),
+                                const SizedBox(width: 6),
+                                _colorDot(opt.swatchDeep),
+                                if (opt.isDarkCard) ...[
+                                  const SizedBox(width: 6),
+                                  _colorDot(const Color(0xFF1A1A1A)),
+                                ],
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              opt.emoji,
+                              style: const TextStyle(fontSize: 28),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              opt.label,
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: opt.isDarkCard
+                                    ? Colors.white
+                                    : const Color(0xFF1A1A1A),
+                              ),
+                            ),
+                            if (isSelected) ...[
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: opt.swatchDeep,
+                                  borderRadius: BorderRadius.circular(50),
+                                ),
+                                child: const Text(
+                                  'Activo',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
                             ],
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        Text(opt.emoji, style: const TextStyle(fontSize: 28)),
-                        const SizedBox(height: 8),
-                        Text(
-                          opt.label,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: opt.isDarkCard
-                                ? Colors.white
-                                : const Color(0xFF1A1A1A),
-                          ),
-                        ),
-                        if (isSelected) ...[
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: opt.swatchDeep,
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                            child: const Text(
-                              'Activo',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                );
-              }).toList(),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

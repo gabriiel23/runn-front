@@ -11,7 +11,8 @@ class MyStatisticsPage extends StatefulWidget {
   State<MyStatisticsPage> createState() => _MyStatisticsPageState();
 }
 
-class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerProviderStateMixin {
+class _MyStatisticsPageState extends State<MyStatisticsPage>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0; // 0: Semana, 1: Mes, 2: Año
   bool _isLoading = true;
   UserStatistics? _statistics;
@@ -24,10 +25,10 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
 
   Future<void> _fetchStatistics() async {
     setState(() => _isLoading = true);
-    
+
     // Simulación de llamada al backend
     await Future.delayed(const Duration(milliseconds: 800));
-    
+
     setState(() {
       _statistics = UserStatistics.mock; // Usamos el mock del modelo
       _isLoading = false;
@@ -36,27 +37,29 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFBFC),
+      backgroundColor: c.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: c.bg,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0A0A0A)),
+          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary),
           onPressed: () => context.pop(),
         ),
-        title: const Text(
+        title: Text(
           'Mis estadísticas',
           style: TextStyle(
-            color: Color(0xFF0A0A0A),
+            color: c.textPrimary,
             fontWeight: FontWeight.w700,
             fontSize: 20,
           ),
         ),
       ),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Color(0xFFE8698A)))
-        : _statistics == null
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator(color: c.primary))
+          : _statistics == null
           ? _buildErrorView()
           : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -69,11 +72,26 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
                     const SizedBox(height: 32),
                     _buildStatsSummary(),
                     const SizedBox(height: 32),
-                    _buildChartSection(context, 'Kilómetros recorridos', 'Km', _buildKmChart(context)),
+                    _buildChartSection(
+                      context,
+                      'Kilómetros recorridos',
+                      'Km',
+                      _buildKmChart(context),
+                    ),
                     SizedBox(height: 32),
-                    _buildChartSection(context, 'Velocidad promedio', 'km/h', _buildSpeedChart(context)),
+                    _buildChartSection(
+                      context,
+                      'Velocidad promedio',
+                      'km/h',
+                      _buildSpeedChart(context),
+                    ),
                     SizedBox(height: 32),
-                    _buildChartSection(context, 'Ritmo promedio', 'min/km', _buildPaceChart(context)),
+                    _buildChartSection(
+                      context,
+                      'Ritmo promedio',
+                      'min/km',
+                      _buildPaceChart(context),
+                    ),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -90,8 +108,14 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
         children: [
           Icon(Icons.error_outline_rounded, size: 60, color: c.textHint),
           SizedBox(height: 16),
-          Text('Error al cargar estadísticas', style: TextStyle(color: c.textPrimary)),
-          TextButton(onPressed: _fetchStatistics, child: Text('Reintentar', style: TextStyle(color: c.primary))),
+          Text(
+            'Error al cargar estadísticas',
+            style: TextStyle(color: c.textPrimary),
+          ),
+          TextButton(
+            onPressed: _fetchStatistics,
+            child: Text('Reintentar', style: TextStyle(color: c.primary)),
+          ),
         ],
       ),
     );
@@ -135,7 +159,7 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
             child: Text(
               label,
               style: TextStyle(
-                color: isSelected ? c.surface : c.primary,
+                color: isSelected ? Colors.white : c.primaryDeep,
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),
@@ -165,15 +189,35 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _buildSummaryItem(context, 'Total dist.', _statistics!.totalDistance, Icons.straighten_rounded),
-          _buildSummaryItem(context, 'Promedio', _statistics!.averageDistance, Icons.analytics_rounded),
-          _buildSummaryItem(context, 'Objetivo', _statistics!.distanceGoal, Icons.flag_rounded),
+          _buildSummaryItem(
+            context,
+            'Total dist.',
+            _statistics!.totalDistance,
+            Icons.straighten_rounded,
+          ),
+          _buildSummaryItem(
+            context,
+            'Promedio',
+            _statistics!.averageDistance,
+            Icons.analytics_rounded,
+          ),
+          _buildSummaryItem(
+            context,
+            'Objetivo',
+            _statistics!.distanceGoal,
+            Icons.flag_rounded,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildSummaryItem(BuildContext context, String label, String value, IconData icon) {
+  Widget _buildSummaryItem(
+    BuildContext context,
+    String label,
+    String value,
+    IconData icon,
+  ) {
     final c = context.colors;
     return Column(
       children: [
@@ -192,15 +236,20 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
           label,
           style: TextStyle(
             fontSize: 11,
-            color: c.textPrimary.withValues(alpha: 0.4),
-            fontWeight: FontWeight.w500,
+            color: c.textSecondary,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildChartSection(BuildContext context, String title, String unit, Widget chart) {
+  Widget _buildChartSection(
+    BuildContext context,
+    String title,
+    String unit,
+    Widget chart,
+  ) {
     final c = context.colors;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,14 +311,22 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
       LineChartData(
         gridData: const FlGridData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= points.length) return Text('');
+                if (value.toInt() < 0 || value.toInt() >= points.length) {
+                  return const Text('');
+                }
                 return Text(
                   points[value.toInt()].label,
                   style: TextStyle(
@@ -286,7 +343,11 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: points.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
+            spots: points
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                .toList(),
             isCurved: true,
             color: c.primary,
             barWidth: 4,
@@ -309,14 +370,22 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
       BarChartData(
         gridData: const FlGridData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= points.length) return Text('');
+                if (value.toInt() < 0 || value.toInt() >= points.length) {
+                  return const Text('');
+                }
                 return Text(
                   points[value.toInt()].label,
                   style: TextStyle(
@@ -330,7 +399,11 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
           ),
         ),
         borderData: FlBorderData(show: false),
-        barGroups: points.asMap().entries.map((e) => _makeBarGroup(context, e.key, e.value.value)).toList(),
+        barGroups: points
+            .asMap()
+            .entries
+            .map((e) => _makeBarGroup(context, e.key, e.value.value))
+            .toList(),
       ),
     );
   }
@@ -362,14 +435,22 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
       LineChartData(
         gridData: const FlGridData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (value, meta) {
-                if (value.toInt() < 0 || value.toInt() >= points.length) return Text('');
+                if (value.toInt() < 0 || value.toInt() >= points.length) {
+                  return const Text('');
+                }
                 return Text(
                   points[value.toInt()].label,
                   style: TextStyle(
@@ -385,7 +466,11 @@ class _MyStatisticsPageState extends State<MyStatisticsPage> with SingleTickerPr
         borderData: FlBorderData(show: false),
         lineBarsData: [
           LineChartBarData(
-            spots: points.asMap().entries.map((e) => FlSpot(e.key.toDouble(), e.value.value)).toList(),
+            spots: points
+                .asMap()
+                .entries
+                .map((e) => FlSpot(e.key.toDouble(), e.value.value))
+                .toList(),
             isCurved: false,
             color: c.primaryDeep,
             barWidth: 3,
