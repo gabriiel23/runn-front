@@ -21,6 +21,8 @@ import 'package:runn_front/features/run_results/presentation/pages/run_results_p
 import 'package:runn_front/features/community/presentation/pages/rival_profile_page.dart';
 import 'package:runn_front/features/community/presentation/pages/multimedia_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_participants_page.dart';
+import 'package:runn_front/features/community/presentation/pages/participant_profile_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
@@ -171,6 +173,23 @@ final GoRouter appRouter = GoRouter(
                   builder: (context, state) {
                     final eventId = state.pathParameters['eventId']!;
                     return EventDetailPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId/participants',
+                  name: 'event_participants',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventParticipantsPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId/participant/:userId',
+                  name: 'participant_profile',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    final userId = state.pathParameters['userId']!;
+                    return ParticipantProfilePage(eventId: eventId, userId: userId);
                   },
                 ),
               ],

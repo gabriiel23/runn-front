@@ -12,6 +12,7 @@ class EventDetailPage extends StatelessWidget {
     final c = context.colors;
     // Mock data for the event
     final event = {
+      'id': eventId,
       'name': eventId == '1' ? 'Carrera Nocturna 10K' : 'Trail de la Montaña',
       'date': eventId == '1' ? '15 Mar 2024' : '22 Mar 2024',
       'time': eventId == '1' ? '19:00' : '07:00',
@@ -279,12 +280,24 @@ class EventDetailPage extends StatelessWidget {
                 color: c.textPrimary,
               ),
             ),
-            Text(
-              'Ver todos',
-              style: TextStyle(
-                color: c.primaryDeepWithAlpha(0.8),
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+            GestureDetector(
+              onTap: () {
+                context.pushNamed(
+                  'event_participants',
+                  pathParameters: {'eventId': event['id'] as String},
+                );
+              },
+              behavior: HitTestBehavior.opaque,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
+                child: Text(
+                  'Ver todos',
+                  style: TextStyle(
+                    color: c.primaryDeepWithAlpha(0.8),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ),
           ],
