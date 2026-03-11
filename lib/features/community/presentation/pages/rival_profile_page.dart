@@ -79,6 +79,8 @@ class RivalProfilePage extends StatelessWidget {
         child: Column(
           children: [
             _buildProfileHeader(rival, context),
+            const SizedBox(height: 24),
+            _buildMultimediaCarousel(context, rival),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
@@ -101,7 +103,7 @@ class RivalProfilePage extends StatelessWidget {
     final c = context.colors;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
       decoration: BoxDecoration(
         color: c.card,
         boxShadow: [
@@ -121,20 +123,20 @@ class RivalProfilePage extends StatelessWidget {
               border: Border.all(color: c.primaryDeepWithAlpha(0.2), width: 2),
             ),
             child: CircleAvatar(
-              radius: 50,
+              radius: 46,
               backgroundColor: c.primaryLight,
               child: Icon(
                 Icons.person_rounded,
-                size: 50,
+                size: 46,
                 color: c.primaryDeepWithAlpha(0.7),
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             rival['name'] as String,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.w700,
               color: c.textPrimary,
               letterSpacing: -0.5,
@@ -142,7 +144,7 @@ class RivalProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFFFFB84D).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(20),
@@ -153,33 +155,118 @@ class RivalProfilePage extends StatelessWidget {
             child: Text(
               'Nivel ${rival['level']}',
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: Color(0xFFCC8400),
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Column(
+                children: [
+                  Text('Siguiendo', style: TextStyle(color: c.textHint, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text('97', style: TextStyle(color: c.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(width: 48),
+              Column(
+                children: [
+                  Text('Seguidores', style: TextStyle(color: c.textHint, fontSize: 13)),
+                  const SizedBox(height: 4),
+                  Text('763', style: TextStyle(color: c.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
           Center(
-            child: ElevatedButton.icon(
+            child: ElevatedButton(
               onPressed: () {},
-              icon: const Icon(Icons.person_add_rounded, size: 18),
-              label: const Text('Seguir'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: c.primaryDeep,
                 foregroundColor: Colors.white,
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 40,
-                  vertical: 14,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(24),
                 ),
               ),
+              child: const Text('Seguir', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMultimediaCarousel(BuildContext context, Map<String, dynamic> rival) {
+    final c = context.colors;
+    final mockImages = [
+      'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=500&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=500&auto=format&fit=crop',
+    ];
+
+    return SizedBox(
+      height: 120,
+      child: ListView.separated(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: mockImages.length + 1,
+        separatorBuilder: (context, index) => const SizedBox(width: 12),
+        itemBuilder: (context, index) {
+          if (index == mockImages.length) {
+            return InkWell(
+              onTap: () {
+                context.pushNamed('rival_multimedia', pathParameters: {'userId': this.userId});
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: Container(
+                width: 120,
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.primaryDeepWithAlpha(0.1)),
+                ),
+                child: Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Text(
+                      'Todos los\nmultimedia',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: c.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }
+
+          return ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: Image.network(
+              mockImages[index],
+              width: 120,
+              height: 120,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                width: 120,
+                height: 120,
+                color: c.primaryDeepWithAlpha(0.1),
+                child: Icon(Icons.broken_image_rounded, color: c.textHint),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

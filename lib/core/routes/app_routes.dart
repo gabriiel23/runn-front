@@ -11,6 +11,7 @@ import 'package:runn_front/features/login/register/presentation/pages/register_p
 import 'package:runn_front/features/home/presentation/pages/home_page.dart';
 import 'package:runn_front/features/community/presentation/pages/community_page.dart';
 import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_detail_page.dart';
 import 'package:runn_front/features/community/presentation/pages/create_group_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/challenges_page.dart';
@@ -18,6 +19,7 @@ import 'package:runn_front/features/profile/presentation/pages/profile_page.dart
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
 import 'package:runn_front/features/run_results/presentation/pages/run_results_page.dart';
 import 'package:runn_front/features/community/presentation/pages/rival_profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/multimedia_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
@@ -135,6 +137,14 @@ final GoRouter appRouter = GoRouter(
                       name: 'create_group',
                       builder: (context, state) => const CreateGroupPage(),
                     ),
+                    GoRoute(
+                      path: 'detail',
+                      name: 'group_detail',
+                      builder: (context, state) {
+                        final groupData = state.extra as Map<String, dynamic>?;
+                        return GroupDetailPage(groupData: groupData);
+                      },
+                    ),
                   ],
                 ),
                 GoRoute(
@@ -143,6 +153,15 @@ final GoRouter appRouter = GoRouter(
                   builder: (context, state) {
                     final userId = state.pathParameters['userId']!;
                     return RivalProfilePage(userId: userId);
+                  },
+                ),
+                GoRoute(
+                  path: 'multimedia/:userId',
+                  name: 'rival_multimedia',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId']!;
+                    final extra = state.extra;
+                    return MultimediaPage(userId: userId, extra: extra);
                   },
                 ),
                 GoRoute(

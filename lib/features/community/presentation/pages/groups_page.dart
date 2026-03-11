@@ -9,7 +9,7 @@ class GroupsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     // Hardcoded groups for demonstration, matching existing UI style
     final c = context.colors;
-    final groups = [
+    final List<Map<String, dynamic>> groups = [
       {
         'name': 'Runners Urbanos',
         'members': 247,
@@ -185,23 +185,28 @@ class GroupsPage extends StatelessWidget {
   Widget _buildGroupItem(Map<String, dynamic> group, BuildContext context) {
     final c = context.colors;
     final color = group['color'] as Color;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.10)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
+    return GestureDetector(
+      onTap: () {
+        context.pushNamed('group_detail', extra: group);
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withValues(alpha: 0.10)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
             width: 60,
             height: 60,
             decoration: BoxDecoration(
@@ -272,6 +277,7 @@ class GroupsPage extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
