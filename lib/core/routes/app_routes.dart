@@ -26,6 +26,7 @@ import 'package:runn_front/features/profile/presentation/pages/my_badges_page.da
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/wearables_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/profile_multimedia_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -234,6 +235,11 @@ final GoRouter appRouter = GoRouter(
                   path: 'wearables',
                   name: 'profile_wearables',
                   builder: (context, state) => WearablesPage(),
+                ),
+                GoRoute(
+                  path: 'multimedia',
+                  name: 'profile_multimedia',
+                  builder: (context, state) => const ProfileMultimediaPage(),
                 ),
               ],
             ),

@@ -2,34 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
-class MultimediaPage extends StatefulWidget {
-  final String userId;
-  final dynamic extra;
-
-  const MultimediaPage({super.key, required this.userId, this.extra});
+class ProfileMultimediaPage extends StatefulWidget {
+  const ProfileMultimediaPage({super.key});
 
   @override
-  State<MultimediaPage> createState() => _MultimediaPageState();
+  State<ProfileMultimediaPage> createState() => _ProfileMultimediaPageState();
 }
 
-class _MultimediaPageState extends State<MultimediaPage> {
+class _ProfileMultimediaPageState extends State<ProfileMultimediaPage> {
   bool isGrid = true;
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
 
-    // Check if it's a group or a user based on ID
-    final bool isGroup = widget.userId.startsWith('group');
-
-    // Mock data based on userId
-    final String displayName = isGroup
-        ? (widget.extra?['name'] ?? 'Detalle del Grupo') 
-        : widget.userId == '1'
-            ? 'María González'
-            : widget.userId == '2'
-                ? 'Carlos Ruiz'
-                : 'Ana Martínez';
+    final String displayName = 'Alex Runner';
 
     final mockImages = [
       'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=500&auto=format&fit=crop',
@@ -61,7 +48,7 @@ class _MultimediaPageState extends State<MultimediaPage> {
             ),
           ),
           SliverToBoxAdapter(
-            child: isGroup ? _buildGroupHeader(c, displayName) : _buildUserProfileHeader(c, displayName),
+            child: _buildUserProfileHeader(c, displayName),
           ),
           SliverPersistentHeader(
             pinned: true,
@@ -122,49 +109,6 @@ class _MultimediaPageState extends State<MultimediaPage> {
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: c.textPrimary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGroupHeader(dynamic c, String groupName) {
-    return Container(
-      width: double.infinity,
-      color: c.card,
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-      child: Column(
-        children: [
-          Container(
-            width: 76,
-            height: 76,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  c.primaryDeep.withValues(alpha: 0.15),
-                  c.primaryDeep.withValues(alpha: 0.08),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(color: c.primaryDeep.withValues(alpha: 0.2), width: 2),
-            ),
-            child: Icon(
-              Icons.groups_rounded,
-              color: c.primaryDeep.withValues(alpha: 0.8),
-              size: 38,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            groupName,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: c.textPrimary,
-              letterSpacing: -0.5,
             ),
           ),
         ],
@@ -385,4 +329,3 @@ class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
         child != oldDelegate.child;
   }
 }
-
