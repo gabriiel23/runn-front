@@ -189,7 +189,12 @@ final GoRouter appRouter = GoRouter(
                   builder: (context, state) {
                     final eventId = state.pathParameters['eventId']!;
                     final userId = state.pathParameters['userId']!;
-                    return ParticipantProfilePage(eventId: eventId, userId: userId);
+                    final extraData = state.extra as Map<String, dynamic>?;
+                    return ParticipantProfilePage(
+                      eventId: eventId,
+                      userId: userId,
+                      participantData: extraData,
+                    );
                   },
                 ),
               ],

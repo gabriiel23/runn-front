@@ -5,15 +5,24 @@ import 'package:runn_front/core/theme/theme_scope.dart';
 class ParticipantProfilePage extends StatelessWidget {
   final String userId;
   final String eventId;
+  final Map<String, dynamic>? participantData;
 
-  const ParticipantProfilePage({super.key, required this.userId, required this.eventId});
+  const ParticipantProfilePage({
+    super.key,
+    required this.userId,
+    required this.eventId,
+    this.participantData,
+  });
 
   @override
   Widget build(BuildContext context) {
     // Mock data for the participant
+    final String participantName = participantData?['name'] as String? ?? 'Corredor $userId';
+    final String participantLevel = participantData?['level'] as String? ?? 'Nivel 12';
+
     final participant = {
-      'name': 'Corredor $userId',
-      'level': 12,
+      'name': participantName,
+      'level': participantLevel,
       'runs': 124,
       'km': 842,
       'territories': 18,
@@ -146,7 +155,7 @@ class ParticipantProfilePage extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Nivel ${participant['level']}',
+              participant['level'] as String,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,

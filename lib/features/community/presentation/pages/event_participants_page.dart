@@ -83,6 +83,7 @@ class EventParticipantsPage extends StatelessWidget {
                     'eventId': eventId,
                     'userId': 'user_$index',
                   },
+                  extra: p,
                 );
               },
               style: ElevatedButton.styleFrom(
