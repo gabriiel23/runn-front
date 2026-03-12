@@ -11,9 +11,12 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   late final PageController _newsPageController;
   late final PageController _quotesPageController;
+  late AnimationController _animationController;
+  late Animation<double> _contentAnimation;
   Timer? _newsTimer;
   Timer? _quotesTimer;
 
@@ -60,6 +63,15 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _newsPageController = PageController();
     _quotesPageController = PageController();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    );
+    _contentAnimation = CurvedAnimation(
+      parent: _animationController,
+      curve: Curves.easeOut,
+    );
+    _animationController.forward();
     _startAutoCarousels();
   }
 
@@ -69,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _quotesTimer?.cancel();
     _newsPageController.dispose();
     _quotesPageController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
@@ -99,209 +112,164 @@ class _HomeScreenState extends State<HomeScreen> {
     final c = context.colors;
     return Scaffold(
       backgroundColor: c.bg,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 44, 16, 110),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _header(),
-              const SizedBox(height: 22),
-              _sectionTitle('Stats rapidas', actionText: 'Ver detalles'),
-              const SizedBox(height: 12),
-              _statsRow(),
-              const SizedBox(height: 18),
-              _startRunButton(context),
-              const SizedBox(height: 18),
-              _sectionTitle('Novedades'),
-              const SizedBox(height: 12),
-              _newsCarousel(),
-              const SizedBox(height: 22),
-              _weeklyStats(),
-              const SizedBox(height: 16),
-              _quotesCarousel(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+      body: FadeTransition(
+        opacity: _contentAnimation,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.06),
+            end: Offset.zero,
+          ).animate(_contentAnimation),
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(c), // 👈 ahora SI hace scroll
 
-  Widget _header() {
-    final c = context.colors;
-    return Row(
-      children: [
-        Container(
-          width: 42,
-          height: 42,
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            color: Color(0xFFF0D7CC),
-          ),
-          child: const Icon(Icons.person, color: Color(0xFFB47F65), size: 20),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '¡Bienvenido de nuevo!',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: c.textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SizedBox(height: 2),
-              Text(
-                '¡Hola, Runner!',
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.w900,
-                  color: c.textPrimary,
-                  letterSpacing: -0.7,
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: () => context.go('/notifications'),
-          child: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: const Color(0xFFEDEFF4),
-              borderRadius: BorderRadius.circular(17),
-            ),
-            child: const Icon(
-              Icons.notifications,
-              size: 18,
-              color: Color(0xFF5D6174),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _startRunButton(context),
+                      const SizedBox(height: 28),
 
-  Widget _sectionTitle(String title, {String? actionText}) {
-    final c = context.colors;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w900,
-            color: c.textPrimary,
-            letterSpacing: -0.6,
-          ),
-        ),
-        if (actionText != null)
-          Text(
-            actionText,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF5E9BD8),
-            ),
-          ),
-      ],
-    );
-  }
+                      _buildSectionHeader(
+                        'Novedades',
+                        Icons.newspaper_rounded,
+                        context,
+                      ),
+                      const SizedBox(height: 16),
+                      _newsCarousel(),
 
-  Widget _statsRow() {
-    return Row(
-      children: [
-        Expanded(
-          child: _statCard(
-            icon: Icons.straighten_rounded,
-            title: 'Distancia\ntotal',
-            value: '12.5',
-            unit: 'km',
-            foot: '↑ 15% esta semana',
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: _statCard(
-            icon: Icons.map_rounded,
-            title: 'Territorios\nnuevos',
-            value: '3',
-            unit: 'nuevos',
-            foot: '↑ 2% vs ayer',
-          ),
-        ),
-      ],
-    );
-  }
+                      const SizedBox(height: 28),
 
-  Widget _statCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required String unit,
-    required String foot,
-  }) {
-    final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: c.primaryLight,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 15, color: c.primaryDeep),
-          const SizedBox(height: 6),
-          Text(
-            title,
-            style: TextStyle(
-              height: 1.15,
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: c.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 33,
-                  fontWeight: FontWeight.w900,
-                  color: c.textPrimary,
-                  letterSpacing: -0.9,
-                  height: 0.9,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(
-                  unit,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: c.textSecondary,
+                      _buildSectionHeader(
+                        'Stats rápidas',
+                        Icons.bolt_rounded,
+                        context,
+                      ),
+                      const SizedBox(height: 16),
+                      _statsRow(),
+
+                      const SizedBox(height: 28),
+                      _weeklyStats(),
+
+                      const SizedBox(height: 20),
+                      _quotesCarousel(),
+                    ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            foot,
-            style: const TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF5AAA72),
+        ),
+      ),
+    );
+  }
+
+  // ── HEADER ────────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(dynamic c) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: c.surface,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            top: 20,
+            right: -50,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFFFB84D).withValues(alpha: 0.06),
+                    const Color(0xFFFFB84D).withValues(alpha: 0.01),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 10,
+            left: -40,
+            child: Container(
+              width: 130,
+              height: 130,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    c.primaryDeepWithAlpha(0.05),
+                    c.primaryDeepWithAlpha(0.01),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 64, 24, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row
+                  Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: c.primaryLight,
+                          image: const DecorationImage(
+                            image: AssetImage("assets/corredores.jpg"),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '¡Bienvenido de nuevo!',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: c.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              '¡Hola, Runner!',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w700,
+                                color: c.textPrimary,
+                                letterSpacing: -0.6,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -309,48 +277,95 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── SECTION HEADER ────────────────────────────────────────────────────────
+
+  Widget _buildSectionHeader(
+    String title,
+    IconData icon,
+    BuildContext context,
+  ) {
+    final c = context.colors;
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: c.primaryDeepWithAlpha(0.08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: c.primaryDeepWithAlpha(0.8)),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: c.textPrimary,
+            letterSpacing: -0.4,
+          ),
+        ),
+        const Spacer(),
+      ],
+    );
+  }
+
+  // ── START RUN BUTTON ──────────────────────────────────────────────────────
+
   Widget _startRunButton(BuildContext context) {
     final c = context.colors;
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 66,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: c.primary,
-          borderRadius: BorderRadius.circular(34),
-          boxShadow: [
-            BoxShadow(
-              color: c.primaryDeepWithAlpha(0.28),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [c.primaryDeep, c.primaryDark],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
         ),
-        child: TextButton.icon(
-          onPressed: () => context.go('/start_career'),
-          icon: const Icon(
-            Icons.play_circle_fill_rounded,
-            color: Color(0xFF2A4063),
-            size: 24,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: c.primaryDeepWithAlpha(0.30),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          label: const Text(
-            'Iniciar Carrera',
-            style: TextStyle(
-              fontSize: 29,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF2A4063),
-              letterSpacing: -0.8,
-            ),
-          ),
-          style: TextButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(34),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => context.go('/start_career'),
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(
+                  Icons.play_circle_fill_rounded,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                SizedBox(width: 10),
+                Text(
+                  'Iniciar Carrera',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
       ),
     );
   }
+
+  // ── NEWS CAROUSEL ─────────────────────────────────────────────────────────
 
   Widget _newsCarousel() {
     return Column(
@@ -360,9 +375,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: PageView.builder(
             controller: _newsPageController,
             itemCount: _newsItems.length,
-            onPageChanged: (index) {
-              setState(() => _newsCurrentPage = index);
-            },
+            onPageChanged: (index) => setState(() => _newsCurrentPage = index),
             itemBuilder: (_, index) {
               final item = _newsItems[index];
               return _NewsCard(
@@ -379,36 +392,165 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── STATS ROW ─────────────────────────────────────────────────────────────
+
+  Widget _statsRow() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _statCard(
+            icon: Icons.straighten_rounded,
+            title: 'Distancia\ntotal',
+            value: '12.5',
+            unit: 'km',
+            foot: '↑ 15% esta semana',
+          ),
+          const SizedBox(width: 12),
+          _statCard(
+            icon: Icons.map_rounded,
+            title: 'Territorios\nnuevos',
+            value: '3',
+            unit: 'nuevos',
+            foot: '↑ 2% vs ayer',
+          ),
+          const SizedBox(width: 12),
+          _statCard(
+            icon: Icons.timer_rounded,
+            title: 'Tiempo\ntotal',
+            value: '3.5',
+            unit: 'horas',
+            foot: '↑ 10% vs ayer',
+          ),
+          const SizedBox(width: 12),
+          _statCard(
+            icon: Icons.favorite_rounded,
+            title: 'Ritmo\ncardiaco',
+            value: '120',
+            unit: 'bpm',
+            foot: 'Promedio',
+          ),
+          const SizedBox(width: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _statCard({
+    required IconData icon,
+    required String title,
+    required String value,
+    required String unit,
+    required String foot,
+  }) {
+    final c = context.colors;
+    return Container(
+      width: 150,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              color: c.primaryDeepWithAlpha(0.08),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: c.primaryDeepWithAlpha(0.8)),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            title,
+            style: TextStyle(
+              height: 1.2,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: c.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.bottomLeft,
+                  child: Text(
+                    value,
+                    style: TextStyle(
+                      fontSize: 33,
+                      fontWeight: FontWeight.w900,
+                      color: c.textPrimary,
+                      letterSpacing: -0.9,
+                      height: 0.95,
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  unit,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: c.textSecondary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            foot,
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF7ED957),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── WEEKLY STATS ──────────────────────────────────────────────────────────
+
   Widget _weeklyStats() {
+    final c = context.colors;
     final stats = [
       {
-        'emoji': '📍',
-        'label': 'Distancia',
-        'value': '24.5',
-        'unit': 'km',
-        'progress': 0.72,
-        'color': const Color(0xFFE09AB8),
-        'bg': const Color(0xFFF8EDF2),
-        'change': '+3.2 km vs semana ant.',
-      },
-      {
-        'emoji': '⏱️',
+        'icon': Icons.timer_rounded,
+        'iconColor': c.primaryDeep,
         'label': 'Tiempo',
         'value': '3h 42',
         'unit': 'min',
         'progress': 0.62,
-        'color': const Color(0xFF8EB8E8),
-        'bg': const Color(0xFFEAF3FF),
+        'color': c.primaryDeep,
         'change': '+25 min vs semana ant.',
       },
       {
-        'emoji': '🔥',
+        'icon': Icons.local_fire_department_rounded,
+        'iconColor': const Color(0xFFFFB84D),
         'label': 'Calorias',
         'value': '1,840',
         'unit': 'kcal',
         'progress': 0.84,
-        'color': const Color(0xFFD5A46A),
-        'bg': const Color(0xFFFFF3E6),
+        'color': const Color(0xFFFFB84D),
         'change': 'Meta casi alcanzada',
       },
     ];
@@ -416,21 +558,25 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Resumen semanal'),
-        const SizedBox(height: 12),
+        _buildSectionHeader(
+          'Resumen semanal',
+          Icons.bar_chart_rounded,
+          context,
+        ),
+        const SizedBox(height: 16),
         _weekBarChart(),
-        const SizedBox(height: 14),
+        const SizedBox(height: 12),
         ...stats.map(
           (s) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _weekStatRow(
-              emoji: s['emoji'] as String,
+              icon: s['icon'] as IconData,
+              iconColor: s['iconColor'] as Color,
               label: s['label'] as String,
               value: s['value'] as String,
               unit: s['unit'] as String,
               progress: s['progress'] as double,
               color: s['color'] as Color,
-              bg: s['bg'] as Color,
               change: s['change'] as String,
             ),
           ),
@@ -440,15 +586,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _weekBarChart() {
-    const days = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
-    const values = [4.2, 0.0, 6.5, 5.1, 4.8, 3.9, 0.0];
+    final c = context.colors;
+    const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    const values = [0.1, 2.0, 4.0, 6.0, 4.0, 2.0, 1.0];
     final maxVal = values.reduce((a, b) => a > b ? a : b);
 
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFEEE9EC),
-        borderRadius: BorderRadius.circular(22),
+        color: c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -460,21 +615,31 @@ class _HomeScreenState extends State<HomeScreen> {
                 'Actividad diaria',
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1A1A1A).withValues(alpha: 0.55),
+                  fontWeight: FontWeight.w600,
+                  color: c.textSecondary,
                 ),
               ),
-              const Text(
-                '24.5 km totales',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF8EB8E8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: c.primaryDeepWithAlpha(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  '24.5 km totales',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: c.primaryDeepWithAlpha(0.9),
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -482,22 +647,18 @@ class _HomeScreenState extends State<HomeScreen> {
               final ratio = maxVal > 0 ? values[i] / maxVal : 0.0;
               final hasRun = values[i] > 0;
               final barHeight = hasRun ? (ratio * 52).clamp(8.0, 52.0) : 8.0;
-              final isHighPerformance = hasRun && ratio >= 0.75;
-              final Color barColor = !hasRun
-                  ? const Color(0xFFDFDFDF)
-                  : isHighPerformance
-                  ? const Color(0xFFE09AB8)
-                  : const Color(0xFFBFD8F3);
-              final Color valueColor = !hasRun
-                  ? const Color(0xFFB7B7B7)
-                  : isHighPerformance
-                  ? const Color(0xFFE09AB8)
-                  : const Color(0xFF8EB8E8);
-              final Color dayColor = !hasRun
-                  ? const Color(0xFF9FA3B5)
-                  : isHighPerformance
-                  ? const Color(0xFFE09AB8)
-                  : const Color(0xFF6F92BC);
+              final isHigh = hasRun && ratio >= 0.75;
+              final barColor = !hasRun
+                  ? c.primaryDeepWithAlpha(0.08)
+                  : isHigh
+                  ? const Color(0xFFE8698A)
+                  : c.primaryDeepWithAlpha(0.30);
+              final labelColor = !hasRun
+                  ? c.textSecondary
+                  : isHigh
+                  ? const Color(0xFFE8698A)
+                  : c.primaryDeepWithAlpha(0.6);
+
               return Column(
                 children: [
                   SizedBox(
@@ -508,7 +669,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             style: TextStyle(
                               fontSize: 8,
                               fontWeight: FontWeight.w700,
-                              color: valueColor,
+                              color: labelColor,
                             ),
                           )
                         : null,
@@ -527,10 +688,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     days[i],
                     style: TextStyle(
                       fontSize: 10,
-                      fontWeight: isHighPerformance
-                          ? FontWeight.w800
-                          : FontWeight.w600,
-                      color: dayColor,
+                      fontWeight: isHigh ? FontWeight.w800 : FontWeight.w600,
+                      color: labelColor,
                     ),
                   ),
                 ],
@@ -543,20 +702,29 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _weekStatRow({
-    required String emoji,
+    required IconData icon,
+    required Color iconColor,
     required String label,
     required String value,
     required String unit,
     required double progress,
     required Color color,
-    required Color bg,
     required String change,
   }) {
+    final c = context.colors;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        color: c.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -564,29 +732,27 @@ class _HomeScreenState extends State<HomeScreen> {
             width: 46,
             height: 46,
             decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(12),
+              color: iconColor.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: Center(
-              child: Text(emoji, style: const TextStyle(fontSize: 22)),
-            ),
+            child: Icon(icon, size: 22, color: iconColor),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       label,
                       style: TextStyle(
                         fontSize: 13,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.5),
+                        color: c.textSecondary,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    const Spacer(),
                     Text(
                       change,
                       style: TextStyle(
@@ -605,9 +771,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       value,
                       style: TextStyle(
-                        fontSize: 23,
-                        fontWeight: FontWeight.w900,
-                        color: context.colors.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: c.textPrimary,
+                        letterSpacing: -0.4,
                       ),
                     ),
                     const SizedBox(width: 4),
@@ -615,8 +782,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       unit,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1A1A1A).withValues(alpha: 0.45),
+                        fontWeight: FontWeight.w600,
+                        color: c.textSecondary,
                       ),
                     ),
                   ],
@@ -625,9 +792,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(6),
                   child: LinearProgressIndicator(
-                    minHeight: 6,
+                    minHeight: 5,
                     value: progress,
-                    backgroundColor: color.withValues(alpha: 0.16),
+                    backgroundColor: color.withValues(alpha: 0.12),
                     valueColor: AlwaysStoppedAnimation<Color>(color),
                   ),
                 ),
@@ -639,62 +806,81 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── QUOTES CAROUSEL ───────────────────────────────────────────────────────
+
   Widget _quotesCarousel() {
     final c = context.colors;
     return Column(
       children: [
         SizedBox(
-          height: 220,
+          height: 200,
           child: PageView.builder(
             controller: _quotesPageController,
             itemCount: _quotes.length,
-            onPageChanged: (index) {
-              setState(() => _quoteCurrentPage = index);
-            },
+            onPageChanged: (index) => setState(() => _quoteCurrentPage = index),
             itemBuilder: (_, index) {
               final quote = _quotes[index];
               return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(22, 20, 22, 24),
+                margin: const EdgeInsets.symmetric(horizontal: 1),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(24),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [c.primaryMid.withValues(alpha: 0.5), c.primary],
+                    colors: [c.primaryDeep, c.primaryDark],
                   ),
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: c.primaryDeepWithAlpha(0.25),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      '”',
+                    Text(
+                      '"',
                       style: TextStyle(
                         fontSize: 44,
                         height: 0.9,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFFE6A9C1),
+                        color: Colors.white.withValues(alpha: 0.3),
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      quote['quote']!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        height: 1.3,
-                        fontStyle: FontStyle.italic,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF303448),
+                    Expanded(
+                      child: Text(
+                        quote['quote']!,
+                        style: TextStyle(
+                          fontSize: 18,
+                          height: 1.35,
+                          fontStyle: FontStyle.italic,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white.withValues(alpha: 0.95),
+                          letterSpacing: -0.2,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    Text(
-                      quote['author']!,
-                      style: const TextStyle(
-                        letterSpacing: 2,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF5C93D0),
-                        fontSize: 11,
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        quote['author']!,
+                        style: const TextStyle(
+                          letterSpacing: 1.5,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                          fontSize: 10,
+                        ),
                       ),
                     ),
                   ],
@@ -709,6 +895,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ── DOT INDICATOR ─────────────────────────────────────────────────────────
+
   Widget _dotIndicator(int length, int current) {
     final c = context.colors;
     return Row(
@@ -721,7 +909,9 @@ class _HomeScreenState extends State<HomeScreen> {
           width: i == current ? 20 : 7,
           height: 7,
           decoration: BoxDecoration(
-            color: i == current ? c.primaryMid : c.primaryMidWithAlpha(0.35),
+            color: i == current
+                ? c.primaryDeepWithAlpha(0.8)
+                : c.primaryDeepWithAlpha(0.20),
             borderRadius: BorderRadius.circular(10),
           ),
         ),
@@ -729,6 +919,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+// ── NEWS CARD ─────────────────────────────────────────────────────────────────
 
 class _NewsCard extends StatelessWidget {
   final String title;
@@ -746,7 +938,7 @@ class _NewsCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 1),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         image: DecorationImage(
           image: NetworkImage(imageUrl),
           fit: BoxFit.cover,
@@ -754,17 +946,17 @@ class _NewsCard extends StatelessWidget {
       ),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.black.withValues(alpha: 0.15),
-              Colors.black.withValues(alpha: 0.58),
+              Colors.black.withValues(alpha: 0.10),
+              Colors.black.withValues(alpha: 0.60),
             ],
           ),
         ),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.end,
@@ -772,20 +964,20 @@ class _NewsCard extends StatelessWidget {
             Text(
               title,
               style: const TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w900,
-                height: 1.1,
-                letterSpacing: -0.5,
+                fontSize: 20,
+                fontWeight: FontWeight.w800,
+                height: 1.15,
+                letterSpacing: -0.4,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 5),
             Text(
               subtitle,
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9),
+                fontWeight: FontWeight.w600,
+                color: Colors.white.withValues(alpha: 0.85),
               ),
             ),
           ],

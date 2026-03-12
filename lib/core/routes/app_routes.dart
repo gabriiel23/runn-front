@@ -13,6 +13,7 @@ import 'package:runn_front/features/community/presentation/pages/community_page.
 import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
 import 'package:runn_front/features/community/presentation/pages/create_group_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
+import 'package:runn_front/features/territory/presentation/pages/territory_detail_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/challenges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
@@ -165,7 +166,21 @@ final GoRouter appRouter = GoRouter(
               path: '/territories',
               name: 'territories',
               pageBuilder: (context, state) =>
-                  const NoTransitionPage(child: TerritoriesScreen()),
+                  NoTransitionPage(child: TerritoriesScreen()),
+              routes: [
+                GoRoute(
+                  path: 'detail/:id',
+                  name: 'territory_detail',
+                  builder: (context, state) {
+                    final idStr = state.pathParameters['id']!;
+                    final id = int.tryParse(idStr) ?? 1;
+                    return TerritoryDetailView(
+                      territoryId: id,
+                      onBack: () => context.pop(),
+                    );
+                  },
+                ),
+              ],
             ),
           ],
         ),
