@@ -27,6 +27,7 @@ import 'package:runn_front/features/profile/presentation/pages/my_statistics_pag
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/rival_details_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/wearables_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_multimedia_page.dart';
 
@@ -149,6 +150,18 @@ final GoRouter appRouter = GoRouter(
                       },
                     ),
                   ],
+                ),
+                GoRoute(
+                  path: 'rival-details/:userId',
+                  name: 'rival_details',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId']!;
+                    final extraData = state.extra as Map<String, dynamic>?;
+                    return RivalDetailsPage(
+                      userId: userId,
+                      rivalData: extraData,
+                    );
+                  },
                 ),
                 GoRoute(
                   path: 'rival-profile/:userId',
