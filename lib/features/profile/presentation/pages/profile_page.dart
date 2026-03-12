@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
@@ -25,6 +25,8 @@ class ProfileScreen extends StatelessWidget {
                 _buildBadgesSection(context),
                 const SizedBox(height: 28),
                 _buildRecentActivity(context),
+                const SizedBox(height: 28),
+                _buildMultimediaSection(context),
                 const SizedBox(height: 28),
                 _buildSettingsMenu(context),
                 const SizedBox(height: 100),
@@ -364,6 +366,74 @@ class ProfileScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMultimediaSection(BuildContext context) {
+    final c = context.colors;
+    final mockImages = [
+      'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=500&auto=format&fit=crop',
+      'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=500&auto=format&fit=crop',
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionTitle(context, 'Multimedia'),
+            GestureDetector(
+              onTap: () {
+                context.pushNamed('profile_multimedia');
+              },
+              child: Row(
+                children: [
+                  Text(
+                    'Ver todo',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: c.primaryDeep,
+                    ),
+                  ),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: c.primaryDeep,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 120,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: mockImages.length,
+            separatorBuilder: (context, index) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              return AspectRatio(
+                aspectRatio: 1,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    mockImages[index],
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                      color: c.primaryDeepWithAlpha(0.1),
+                      child: Icon(Icons.broken_image_rounded, color: c.textHint),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

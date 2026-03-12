@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
@@ -738,8 +738,9 @@ class _CommunityScreenState extends State<CommunityScreen>
             padding: const EdgeInsets.only(bottom: 12),
             child: InkWell(
               onTap: () => context.pushNamed(
-                'rival_profile',
+                'rival_details',
                 pathParameters: {'userId': rival['id'] as String},
+                extra: rival,
               ),
               borderRadius: BorderRadius.circular(20),
               child: _buildRivalItem(rival, context),
@@ -815,14 +816,32 @@ class _CommunityScreenState extends State<CommunityScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  rival['name'] as String,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: context.colors.textPrimary,
-                    letterSpacing: -0.2,
-                  ),
+                StatefulBuilder(
+                  builder: (context, setState) {
+                    bool isHovered = false;
+                    return MouseRegion(
+                      onEnter: (_) => setState(() => isHovered = true),
+                      onExit: (_) => setState(() => isHovered = false),
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () => context.pushNamed(
+                          'rival_profile',
+                          pathParameters: {'userId': rival['id'] as String},
+                        ),
+                        child: Text(
+                          rival['name'] as String,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: context.colors.textPrimary,
+                            letterSpacing: -0.2,
+                            decoration: isHovered ? TextDecoration.underline : TextDecoration.none,
+                            decorationColor: context.colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 4),
                 Row(

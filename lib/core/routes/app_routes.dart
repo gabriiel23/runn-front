@@ -11,6 +11,7 @@ import 'package:runn_front/features/login/register/presentation/pages/register_p
 import 'package:runn_front/features/home/presentation/pages/home_page.dart';
 import 'package:runn_front/features/community/presentation/pages/community_page.dart';
 import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_detail_page.dart';
 import 'package:runn_front/features/community/presentation/pages/create_group_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_detail_page.dart';
@@ -19,12 +20,17 @@ import 'package:runn_front/features/profile/presentation/pages/profile_page.dart
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
 import 'package:runn_front/features/run_results/presentation/pages/run_results_page.dart';
 import 'package:runn_front/features/community/presentation/pages/rival_profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/multimedia_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_participants_page.dart';
+import 'package:runn_front/features/community/presentation/pages/participant_profile_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/edit_profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/rival_details_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/wearables_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/profile_multimedia_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -136,7 +142,27 @@ final GoRouter appRouter = GoRouter(
                       name: 'create_group',
                       builder: (context, state) => const CreateGroupPage(),
                     ),
+                    GoRoute(
+                      path: 'detail',
+                      name: 'group_detail',
+                      builder: (context, state) {
+                        final groupData = state.extra as Map<String, dynamic>?;
+                        return GroupDetailPage(groupData: groupData);
+                      },
+                    ),
                   ],
+                ),
+                GoRoute(
+                  path: 'rival-details/:userId',
+                  name: 'rival_details',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId']!;
+                    final extraData = state.extra as Map<String, dynamic>?;
+                    return RivalDetailsPage(
+                      userId: userId,
+                      rivalData: extraData,
+                    );
+                  },
                 ),
                 GoRoute(
                   path: 'rival-profile/:userId',
@@ -147,11 +173,42 @@ final GoRouter appRouter = GoRouter(
                   },
                 ),
                 GoRoute(
+                  path: 'multimedia/:userId',
+                  name: 'rival_multimedia',
+                  builder: (context, state) {
+                    final userId = state.pathParameters['userId']!;
+                    final extra = state.extra;
+                    return MultimediaPage(userId: userId, extra: extra);
+                  },
+                ),
+                GoRoute(
                   path: 'event/:eventId',
                   name: 'event_detail',
                   builder: (context, state) {
                     final eventId = state.pathParameters['eventId']!;
                     return EventDetailPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId/participants',
+                  name: 'event_participants',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventParticipantsPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId/participant/:userId',
+                  name: 'participant_profile',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    final userId = state.pathParameters['userId']!;
+                    final extraData = state.extra as Map<String, dynamic>?;
+                    return ParticipantProfilePage(
+                      eventId: eventId,
+                      userId: userId,
+                      participantData: extraData,
+                    );
                   },
                 ),
               ],
@@ -230,6 +287,11 @@ final GoRouter appRouter = GoRouter(
                   path: 'wearables',
                   name: 'profile_wearables',
                   builder: (context, state) => WearablesPage(),
+                ),
+                GoRoute(
+                  path: 'multimedia',
+                  name: 'profile_multimedia',
+                  builder: (context, state) => const ProfileMultimediaPage(),
                 ),
               ],
             ),

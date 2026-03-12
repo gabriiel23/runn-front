@@ -2,25 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
-class RivalProfilePage extends StatelessWidget {
+class ParticipantProfilePage extends StatelessWidget {
   final String userId;
+  final String eventId;
+  final Map<String, dynamic>? participantData;
 
-  const RivalProfilePage({super.key, required this.userId});
+  const ParticipantProfilePage({
+    super.key,
+    required this.userId,
+    required this.eventId,
+    this.participantData,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Mock data for the rival
-    final rival = {
-      'name': userId == '1'
-          ? 'María González'
-          : userId == '2'
-          ? 'Carlos Ruiz'
-          : 'Ana Martínez',
-      'level': userId == '1'
-          ? 12
-          : userId == '2'
-          ? 9
-          : 15,
+    // Mock data for the participant
+    final String participantName = participantData?['name'] as String? ?? 'Corredor $userId';
+    final String participantLevel = participantData?['level'] as String? ?? 'Nivel 12';
+
+    final participant = {
+      'name': participantName,
+      'level': participantLevel,
       'runs': 124,
       'km': 842,
       'territories': 18,
@@ -37,13 +39,13 @@ class RivalProfilePage extends StatelessWidget {
       {
         'territory': 'Centro Histórico',
         'date': '18 Feb 2024',
-        'winner': rival['name'],
+        'winner': participant['name'],
         'won': false,
       },
       {
         'territory': 'Av. Amazonas',
         'date': '12 Feb 2024',
-        'winner': rival['name'],
+        'winner': participant['name'],
         'won': false,
       },
       {
@@ -65,7 +67,7 @@ class RivalProfilePage extends StatelessWidget {
           onPressed: () => context.pop(),
         ),
         title: Text(
-          'Perfil del Rival',
+          'Perfil del Participante',
           style: TextStyle(
             color: c.textPrimary,
             fontWeight: FontWeight.w700,
@@ -78,15 +80,15 @@ class RivalProfilePage extends StatelessWidget {
         physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
-            _buildProfileHeader(rival, context),
+            _buildProfileHeader(participant, context),
             const SizedBox(height: 24),
-            _buildMultimediaCarousel(context, rival),
+            _buildMultimediaCarousel(context, participant),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Column(
                 children: [
                   const SizedBox(height: 28),
-                  _buildRivalStats(rival, context),
+                  _buildParticipantStats(participant, context),
                   const SizedBox(height: 32),
                   _buildConfrontationHistory(confrontations, context),
                   const SizedBox(height: 40),
@@ -99,7 +101,7 @@ class RivalProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(Map<String, dynamic> rival, BuildContext context) {
+  Widget _buildProfileHeader(Map<String, dynamic> participant, BuildContext context) {
     final c = context.colors;
     return Container(
       width: double.infinity,
@@ -134,7 +136,7 @@ class RivalProfilePage extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            rival['name'] as String,
+            participant['name'] as String,
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
@@ -153,7 +155,7 @@ class RivalProfilePage extends StatelessWidget {
               ),
             ),
             child: Text(
-              'Nivel ${rival['level']}',
+              participant['level'] as String,
               style: const TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
@@ -203,7 +205,87 @@ class RivalProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMultimediaCarousel(BuildContext context, Map<String, dynamic> rival) {
+  Widget _buildParticipantStats(Map<String, dynamic> participant, BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildStatItem(
+            '${participant['runs']}',
+            'Carreras',
+            Icons.directions_run_rounded,
+            context,
+          ),
+          _buildStatDivider(context),
+          _buildStatItem(
+            '${participant['km']}',
+            'Kilómetros',
+            Icons.location_on_rounded,
+            context,
+          ),
+          _buildStatDivider(context),
+          _buildStatItem(
+            '${participant['territories']}',
+            'Territorios',
+            Icons.flag_rounded,
+            context,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatItem(
+    String value,
+    String label,
+    IconData icon,
+    BuildContext context,
+  ) {
+    final c = context.colors;
+    return Column(
+      children: [
+        Icon(icon, color: c.primaryDeepWithAlpha(0.7), size: 20),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: c.textPrimary,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: c.textHint,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStatDivider(BuildContext context) {
+    final c = context.colors;
+    return Container(width: 1, height: 40, color: c.primaryDeepWithAlpha(0.1));
+  }
+
+  Widget _buildMultimediaCarousel(BuildContext context, Map<String, dynamic> participant) {
     final c = context.colors;
     final mockImages = [
       'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=500&auto=format&fit=crop',
@@ -269,86 +351,6 @@ class RivalProfilePage extends StatelessWidget {
         },
       ),
     );
-  }
-
-  Widget _buildRivalStats(Map<String, dynamic> rival, BuildContext context) {
-    final c = context.colors;
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem(
-            '${rival['runs']}',
-            'Carreras',
-            Icons.directions_run_rounded,
-            context,
-          ),
-          _buildStatDivider(context),
-          _buildStatItem(
-            '${rival['km']}',
-            'Kilómetros',
-            Icons.location_on_rounded,
-            context,
-          ),
-          _buildStatDivider(context),
-          _buildStatItem(
-            '${rival['territories']}',
-            'Territorios',
-            Icons.flag_rounded,
-            context,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    String value,
-    String label,
-    IconData icon,
-    BuildContext context,
-  ) {
-    final c = context.colors;
-    return Column(
-      children: [
-        Icon(icon, color: c.primaryDeepWithAlpha(0.7), size: 20),
-        const SizedBox(height: 8),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: c.textPrimary,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            color: c.textHint,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildStatDivider(BuildContext context) {
-    final c = context.colors;
-    return Container(width: 1, height: 40, color: c.primaryDeepWithAlpha(0.1));
   }
 
   Widget _buildConfrontationHistory(
