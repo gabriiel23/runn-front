@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class StartCareerScreen extends StatefulWidget {
   const StartCareerScreen({super.key});
@@ -155,33 +156,20 @@ class _StartCareerScreenState extends State<StartCareerScreen>
               color: c.primaryLight,
               child: Stack(
                 children: [
-                  // Grid pattern
-                  GridView.builder(
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 8,
-                          mainAxisSpacing: 1,
-                          crossAxisSpacing: 1,
-                        ),
-                    itemCount: 96,
-                    itemBuilder: (_, i) => Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: i % 3 == 0
-                              ? [
-                                  const Color(0xFFFFF0F5),
-                                  const Color(0xFFFFD3E0),
-                                ]
-                              : [
-                                  const Color(0xFFFFF8FB),
-                                  const Color(0xFFFFF0F5),
-                                ],
-                        ),
-                      ),
+                  // Map Visual
+                  const GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: LatLng(-0.22985, -78.52495), // Quito, Ecuador (ejemplo)
+                      zoom: 15,
                     ),
+                    zoomControlsEnabled: false,
+                    compassEnabled: false,
+                    mapToolbarEnabled: false,
+                    myLocationButtonEnabled: false,
+                    scrollGesturesEnabled: false,
+                    zoomGesturesEnabled: false,
+                    rotateGesturesEnabled: false,
+                    tiltGesturesEnabled: false,
                   ),
 
                   // Location marker
@@ -436,23 +424,22 @@ class _StartCareerScreenState extends State<StartCareerScreen>
               ),
               child: Stack(
                 children: [
-                  // Grid overlay
-                  Opacity(
-                    opacity: 0.25,
-                    child: GridView.builder(
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 8,
-                            mainAxisSpacing: 1,
-                            crossAxisSpacing: 1,
-                          ),
-                      itemCount: 96,
-                      itemBuilder: (_, i) => Container(
-                        color: i % 3 == 0
-                            ? Colors.white.withValues(alpha: 0.04)
-                            : Colors.white.withValues(alpha: 0.02),
+                  // Map Visual
+                  const Opacity(
+                    opacity: 0.7,
+                    child: GoogleMap(
+                      initialCameraPosition: CameraPosition(
+                        target: LatLng(-0.22985, -78.52495),
+                        zoom: 16,
                       ),
+                      zoomControlsEnabled: false,
+                      compassEnabled: false,
+                      mapToolbarEnabled: false,
+                      myLocationButtonEnabled: false,
+                      scrollGesturesEnabled: false,
+                      zoomGesturesEnabled: false,
+                      rotateGesturesEnabled: false,
+                      tiltGesturesEnabled: false,
                     ),
                   ),
 

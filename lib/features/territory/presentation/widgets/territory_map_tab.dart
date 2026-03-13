@@ -2,14 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import '../../data/models/territory_data.dart';
+import '../../data/models/ranking_data.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-// Grid small preview for map screen.
-const _mapPreviewGrid = [
-  [4, 4, 4, 1, 1],
-  [4, 4, 1, 1, 0],
-  [4, 1, 1, 2, 0],
-  [0, 1, 2, 5, 0],
-];
+
 
 class TerritoryMapTab extends StatefulWidget {
   const TerritoryMapTab({super.key});
@@ -128,6 +124,24 @@ class _TerritoryMapTabState extends State<TerritoryMapTab>
 
               const SizedBox(height: 32),
 
+              // ── RANKING PREVIEW (TOP 3) ──────────────────────────────────────
+              if (!searching) ...[
+                _buildSectionHeader(
+                  'Ranking Top 3',
+                  Icons.leaderboard_rounded,
+                  context,
+                  onTapVerMas: () => context.pushNamed('territory_ranking'),
+                ),
+                const SizedBox(height: 16),
+                _RankingPreviewCard(
+                  onRunnerTap: (runnerId) => context.pushNamed(
+                    'territory_runner_profile',
+                    pathParameters: {'runnerId': runnerId},
+                  ),
+                ),
+                const SizedBox(height: 32),
+              ],
+
               // ── ACTIVITY / RESULTS SECTION ───────────────────────────────
               _buildSectionHeader(
                 searching ? 'Resultados' : 'Actividad Reciente',
@@ -235,8 +249,9 @@ class _TerritoryMapTabState extends State<TerritoryMapTab>
   Widget _buildSectionHeader(
     String title,
     IconData icon,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    VoidCallback? onTapVerMas,
+  }) {
     final c = context.colors;
     return Row(
       children: [
@@ -261,7 +276,7 @@ class _TerritoryMapTabState extends State<TerritoryMapTab>
         ),
         const Spacer(),
         GestureDetector(
-          onTap: () {},
+          onTap: onTapVerMas ?? () {},
           child: Row(
             children: [
               Text(
@@ -286,55 +301,35 @@ class _TerritoryMapTabState extends State<TerritoryMapTab>
   }
 }
 
-// ── GRID MAP ──────────────────────────────────────────────────────────────────
-
 class _TerritoryGridMap extends StatelessWidget {
   const _TerritoryGridMap();
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Column(
-          children: List.generate(_mapPreviewGrid.length, (row) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: row == _mapPreviewGrid.length - 1 ? 0 : 6,
-              ),
-              child: Row(
-                children: List.generate(_mapPreviewGrid[row].length, (col) {
-                  final id = _mapPreviewGrid[row][col];
-                  final territory = id == 0
-                      ? null
-                      : territoriesMock.firstWhere((t) => t.id == id);
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: col == _mapPreviewGrid[row].length - 1 ? 0 : 6,
-                      ),
-                      child: Container(
-                        height: 62,
-                        decoration: BoxDecoration(
-                          color:
-                              territory?.statusColor(context) ??
-                              context.colors.primaryDeepWithAlpha(0.04),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: context.colors.primaryDeepWithAlpha(0.06),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            );
-          }),
+    return Container(
+      height: 260, // Una altura fija para simular la vista del mapa original
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: const GoogleMap(
+        initialCameraPosition: CameraPosition(
+          target: LatLng(-0.22985, -78.52495), // Quito, Ecuador
+          zoom: 14,
         ),
-      ],
+        zoomControlsEnabled: false,
+        compassEnabled: false,
+        mapToolbarEnabled: false,
+        myLocationButtonEnabled: false,
+        scrollGesturesEnabled: false,
+        zoomGesturesEnabled: false,
+        rotateGesturesEnabled: false,
+        tiltGesturesEnabled: false,
+      ),
     );
   }
 }
+
 
 // ── MAP PIN BADGE ─────────────────────────────────────────────────────────────
 
@@ -698,6 +693,127 @@ class _ActivityAlertCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── RANKING PREVIEW WIDGET ───────────────────────────────────────────────────
+
+class _RankingPreviewCard extends StatelessWidget {
+  final Function(String) onRunnerTap;
+
+  const _RankingPreviewCard({required this.onRunnerTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final top3 = territoryRankingMock.take(3).toList();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          _buildPodiumItem(context, top3[1], 2, 80, const Color(0xFFB0C4D8)),
+          _buildPodiumItem(context, top3[0], 1, 110, const Color(0xFFFFB84D)),
+          _buildPodiumItem(context, top3[2], 3, 60, const Color(0xFFCD7F32)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPodiumItem(
+    BuildContext context,
+    RankedRunner runner,
+    int rank,
+    double height,
+    Color medalColor,
+  ) {
+    return GestureDetector(
+      onTap: () => onRunnerTap(runner.id),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: rank == 1 ? 26 : 22,
+            backgroundColor: runner.accentColor.withValues(alpha: 0.15),
+            backgroundImage: runner.avatarUrl.isNotEmpty
+                ? NetworkImage(runner.avatarUrl)
+                : null,
+            child: runner.avatarUrl.isEmpty
+                ? Icon(
+                    Icons.person_rounded,
+                    color: runner.accentColor,
+                    size: rank == 1 ? 24 : 18,
+                  )
+                : null,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            runner.name.split(' ').first,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: context.colors.textPrimary,
+              letterSpacing: -0.2,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${runner.territoriesOwned} zonas',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: context.colors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: 70,
+            height: height,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  medalColor.withValues(alpha: 0.4),
+                  medalColor.withValues(alpha: 0.1),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+              border: Border(
+                top: BorderSide(color: medalColor, width: 2),
+              ),
+            ),
+            child: Center(
+              child: Text(
+                '#$rank',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: medalColor,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

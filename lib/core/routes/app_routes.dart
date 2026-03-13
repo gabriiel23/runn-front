@@ -6,16 +6,24 @@ import 'package:runn_front/features/creation_runner_profile/presentation/pages/p
 import 'package:runn_front/features/creation_runner_profile/presentation/pages/physical_metrics_page.dart';
 import 'package:runn_front/features/creation_runner_profile/presentation/pages/runner_profile_page.dart';
 import 'package:runn_front/features/onboarding/presentation/pages/onboarding_page.dart';
+import 'package:runn_front/core/widgets/splash_page.dart';
 import 'package:runn_front/features/login/register/presentation/pages/login_page.dart';
 import 'package:runn_front/features/login/register/presentation/pages/register_page.dart';
 import 'package:runn_front/features/home/presentation/pages/home_page.dart';
 import 'package:runn_front/features/community/presentation/pages/community_page.dart';
+import 'package:runn_front/features/community/presentation/pages/runners_page.dart';
 import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
 import 'package:runn_front/features/community/presentation/pages/group_detail_page.dart';
 import 'package:runn_front/features/community/presentation/pages/create_group_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_detail_page.dart';
+import 'package:runn_front/features/territory/presentation/pages/territory_ranking_page.dart';
+import 'package:runn_front/features/territory/presentation/pages/territory_runner_profile_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/challenges_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/weekly_challenge_detail_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/past_weekly_challenges_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/challenge_item_detail_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/community_race_detail_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
 import 'package:runn_front/features/run_results/presentation/pages/run_results_page.dart';
@@ -38,8 +46,19 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 // 0 Inicio | 1 Comunidad | 2 Territorios | 3 Retos | 4 Perfil
 final GoRouter appRouter = GoRouter(
   navigatorKey: _rootNavigatorKey,
-  initialLocation: '/onboarding',
+  initialLocation: '/splash',
   routes: [
+    // Splash
+    GoRoute(
+      path: '/splash',
+      name: 'splash',
+      builder: (context, state) {
+        // Por defecto redirige a onboarding, pero acepta custom nextRoute
+        final nextRoute = state.extra as String? ?? '/onboarding';
+        return SplashPage(nextRoute: nextRoute);
+      },
+    ),
+    
     // Onboarding
     GoRoute(
       path: '/onboarding',
@@ -132,6 +151,11 @@ final GoRouter appRouter = GoRouter(
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: CommunityScreen()),
               routes: [
+                GoRoute(
+                  path: 'runners',
+                  name: 'community_runners',
+                  builder: (context, state) => const RunnersPage(),
+                ),
                 GoRoute(
                   path: 'groups',
                   name: 'groups',
@@ -237,6 +261,19 @@ final GoRouter appRouter = GoRouter(
                     );
                   },
                 ),
+                GoRoute(
+                  path: 'ranking',
+                  name: 'territory_ranking',
+                  builder: (context, state) => const TerritoryRankingPage(),
+                ),
+                GoRoute(
+                  path: 'runner/:runnerId',
+                  name: 'territory_runner_profile',
+                  builder: (context, state) {
+                    final runnerId = state.pathParameters['runnerId']!;
+                    return TerritoryRunnerProfilePage(runnerId: runnerId);
+                  },
+                ),
               ],
             ),
           ],
@@ -250,6 +287,36 @@ final GoRouter appRouter = GoRouter(
               name: 'challenges',
               pageBuilder: (context, state) =>
                   const NoTransitionPage(child: ChallengesPage()),
+              routes: [
+                GoRoute(
+                  path: 'weekly',
+                  name: 'challenge_weekly',
+                  builder: (context, state) =>
+                      const WeeklyChallengeDetailPage(),
+                ),
+                GoRoute(
+                  path: 'past',
+                  name: 'challenge_past',
+                  builder: (context, state) =>
+                      const PastWeeklyChallengesPage(),
+                ),
+                GoRoute(
+                  path: 'challenge/:challengeId',
+                  name: 'challenge_item',
+                  builder: (context, state) {
+                    final id = state.pathParameters['challengeId']!;
+                    return ChallengeItemDetailPage(challengeId: id);
+                  },
+                ),
+                GoRoute(
+                  path: 'race/:raceId',
+                  name: 'challenge_race',
+                  builder: (context, state) {
+                    final id = state.pathParameters['raceId']!;
+                    return CommunityRaceDetailPage(raceId: id);
+                  },
+                ),
+              ],
             ),
           ],
         ),

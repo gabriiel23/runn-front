@@ -304,7 +304,7 @@ class ParticipantProfilePage extends StatelessWidget {
           if (index == mockImages.length) {
             return InkWell(
               onTap: () {
-                context.pushNamed('rival_multimedia', pathParameters: {'userId': this.userId});
+                context.pushNamed('rival_multimedia', pathParameters: {'userId': userId});
               },
               borderRadius: BorderRadius.circular(16),
               child: Container(

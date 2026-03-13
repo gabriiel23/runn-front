@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
@@ -170,7 +170,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   // Login button
                                   GestureDetector(
-                                    onTap: () => context.go('/home'),
+                                    onTap: () {
+                                      context.go('/splash', extra: '/home');
+                                    },
                                     child: Container(
                                       width: double.infinity,
                                       padding: const EdgeInsets.symmetric(

@@ -99,7 +99,7 @@ class GroupDetailPage extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: c.card,
           boxShadow: [
@@ -116,12 +116,12 @@ class GroupDetailPage extends StatelessWidget {
             backgroundColor: color,
             foregroundColor: Colors.white,
             elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+            padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
           ),
-          child: const Text('Unirse al grupo', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          child: const Text('Solicitar unirme', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
         ),
       ),
     );
@@ -326,6 +326,7 @@ class GroupDetailPage extends StatelessWidget {
 
   void _copyShareLink(BuildContext context, dynamic c, String groupName) {
     Clipboard.setData(ClipboardData(text: 'https://runn.app/groups/${groupName.replaceAll(' ', '').toLowerCase()}')).then((_) {
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(

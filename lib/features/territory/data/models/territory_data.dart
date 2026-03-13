@@ -73,7 +73,7 @@ class TerritoryData {
 final territoriesMock = [
   TerritoryData(
     id: 1,
-    name: 'Parque de Mexico',
+    name: 'Parque Jipiro',
     status: 'contested',
     dominance: 65,
     runs: 12,
@@ -103,7 +103,7 @@ final territoriesMock = [
   ),
   TerritoryData(
     id: 2,
-    name: 'Corredor Reforma',
+    name: 'Parque La Tebaida',
     status: 'contested',
     dominance: 42,
     runs: 8,
@@ -133,7 +133,7 @@ final territoriesMock = [
   ),
   TerritoryData(
     id: 3,
-    name: 'Plaza de la Paz',
+    name: 'Zona Centro',
     status: 'unclaimed',
     dominance: 0,
     runs: 0,
@@ -146,7 +146,7 @@ final territoriesMock = [
   ),
   TerritoryData(
     id: 4,
-    name: 'Centro Historico',
+    name: 'Zona Norte',
     status: 'owned',
     dominance: 84,
     runs: 15,
@@ -176,7 +176,7 @@ final territoriesMock = [
   ),
   TerritoryData(
     id: 5,
-    name: 'Zona Norte',
+    name: 'Zona Sur',
     status: 'rival',
     dominance: 18,
     runs: 3,

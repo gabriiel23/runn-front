@@ -16,7 +16,6 @@ class _CommunityScreenState extends State<CommunityScreen>
   late Animation<double> _contentAnimation;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  bool _isSearchFocused = false;
 
   @override
   void initState() {
@@ -34,9 +33,6 @@ class _CommunityScreenState extends State<CommunityScreen>
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     );
     _animationController.forward();
-    _searchFocusNode.addListener(
-      () => setState(() => _isSearchFocused = _searchFocusNode.hasFocus),
-    );
   }
 
   @override
@@ -69,8 +65,6 @@ class _CommunityScreenState extends State<CommunityScreen>
                       padding: const EdgeInsets.symmetric(horizontal: 24),
                       child: Column(
                         children: [
-                          const SizedBox(height: 28),
-                          _buildSearchBar(),
                           const SizedBox(height: 24),
                           _buildQuickActions(),
                           const SizedBox(height: 32),
@@ -148,7 +142,7 @@ class _CommunityScreenState extends State<CommunityScreen>
             ),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -206,7 +200,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                         ),
                       ],
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 8),
                     Text(
                       'Comunidad',
                       style: TextStyle(
@@ -227,7 +221,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                         height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -332,131 +326,6 @@ class _CommunityScreenState extends State<CommunityScreen>
     );
   }
 
-  Widget _buildSectionHeader(
-    String title,
-    IconData icon, {
-    VoidCallback? onTap,
-  }) {
-    return Row(
-      children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: BoxDecoration(
-            color: context.colors.primaryDeepWithAlpha(0.08),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Icon(
-            icon,
-            size: 18,
-            color: context.colors.primaryDeepWithAlpha(0.8),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w700,
-            color: context.colors.textPrimary,
-            letterSpacing: -0.4,
-          ),
-        ),
-        const Spacer(),
-        if (onTap != null)
-          GestureDetector(
-            onTap: onTap,
-            child: Row(
-              children: [
-                Text(
-                  'Ver más',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: context.colors.primaryDeepWithAlpha(0.9),
-                  ),
-                ),
-                const SizedBox(width: 2),
-                Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 14,
-                  color: context.colors.primaryDeepWithAlpha(0.9),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
-  // SEARCH
-  // ──────────────────────────────────────────────────────────────────────────
-
-  Widget _buildSearchBar() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      decoration: BoxDecoration(
-        color: context.colors.inputFill,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: _isSearchFocused
-              ? context.colors.primaryDeepWithAlpha(0.3)
-              : context.colors.primaryDeepWithAlpha(0.08),
-          width: _isSearchFocused ? 2 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _isSearchFocused
-                ? context.colors.primaryDeepWithAlpha(0.08)
-                : Colors.black.withValues(alpha: 0.02),
-            blurRadius: _isSearchFocused ? 16 : 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: _searchController,
-        focusNode: _searchFocusNode,
-        style: TextStyle(
-          fontSize: 15,
-          color: context.colors.textPrimary,
-          fontWeight: FontWeight.w500,
-        ),
-        decoration: InputDecoration(
-          hintText: 'Buscar grupos, runners...',
-          hintStyle: TextStyle(
-            color: context.colors.textHint,
-            fontWeight: FontWeight.w400,
-          ),
-          prefixIcon: Icon(
-            Icons.search_rounded,
-            color: _isSearchFocused
-                ? context.colors.primaryDeepWithAlpha(0.8)
-                : context.colors.textHint,
-            size: 22,
-          ),
-          suffixIcon: _searchController.text.isNotEmpty
-              ? IconButton(
-                  icon: Icon(
-                    Icons.clear_rounded,
-                    color: context.colors.textPrimary.withValues(alpha: 0.4),
-                    size: 20,
-                  ),
-                  onPressed: () => setState(() => _searchController.clear()),
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-        onChanged: (_) => setState(() {}),
-      ),
-    );
-  }
-
   // ──────────────────────────────────────────────────────────────────────────
   // QUICK ACTIONS
   // ──────────────────────────────────────────────────────────────────────────
@@ -464,6 +333,16 @@ class _CommunityScreenState extends State<CommunityScreen>
   Widget _buildQuickActions() {
     return Row(
       children: [
+        Expanded(
+          child: _buildQuickActionCard(
+            icon: Icons.person_rounded,
+            iconColor: context.colors.primaryDeep,
+            iconBgColor: context.colors.primaryLight,
+            label: 'Ver Runners',
+            onTap: () => context.push('/community/runners'),
+          ),
+        ),
+        const SizedBox(width: 14),
         Expanded(
           child: _buildQuickActionCard(
             icon: Icons.group_add_rounded,
@@ -498,7 +377,7 @@ class _CommunityScreenState extends State<CommunityScreen>
       onTap: onTap,
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
           color: context.colors.card,
           borderRadius: BorderRadius.circular(18),
@@ -514,8 +393,8 @@ class _CommunityScreenState extends State<CommunityScreen>
         child: Column(
           children: [
             Container(
-              width: 56,
-              height: 56,
+              width: 28,
+              height: 20,
               decoration: BoxDecoration(
                 color: iconBgColor,
                 borderRadius: BorderRadius.circular(16),
@@ -574,8 +453,22 @@ class _CommunityScreenState extends State<CommunityScreen>
 
     return Column(
       children: [
-        _buildSectionHeader('Eventos próximos', Icons.event_available_rounded),
+        Row(
+          children: [
+            Icon(
+              Icons.event_available_rounded,
+              size: 20,
+              color: context.colors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Eventos próximos',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
+
         SizedBox(
           height: 190,
           child: ListView.separated(
@@ -730,9 +623,20 @@ class _CommunityScreenState extends State<CommunityScreen>
     ];
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader('Rivales', Icons.bolt_rounded),
+        Row(
+          children: [
+            Icon(Icons.bolt_rounded, size: 20, color: context.colors.primary),
+            const SizedBox(width: 6),
+            Text(
+              'Rivales',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
         const SizedBox(height: 16),
+
         ...rivals.map(
           (rival) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
@@ -816,32 +720,25 @@ class _CommunityScreenState extends State<CommunityScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                StatefulBuilder(
-                  builder: (context, setState) {
-                    bool isHovered = false;
-                    return MouseRegion(
-                      onEnter: (_) => setState(() => isHovered = true),
-                      onExit: (_) => setState(() => isHovered = false),
-                      cursor: SystemMouseCursors.click,
-                      child: GestureDetector(
-                        onTap: () => context.pushNamed(
-                          'rival_profile',
-                          pathParameters: {'userId': rival['id'] as String},
-                        ),
-                        child: Text(
-                          rival['name'] as String,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: context.colors.textPrimary,
-                            letterSpacing: -0.2,
-                            decoration: isHovered ? TextDecoration.underline : TextDecoration.none,
-                            decorationColor: context.colors.textPrimary,
-                          ),
-                        ),
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => context.pushNamed(
+                      'rival_profile',
+                      pathParameters: {'userId': rival['id'] as String},
+                    ),
+                    child: Text(
+                      rival['name'] as String,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: context.colors.textPrimary,
+                        letterSpacing: -0.2,
+                        decoration: TextDecoration.none,
+                        decorationColor: context.colors.textPrimary,
                       ),
-                    );
-                  },
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(

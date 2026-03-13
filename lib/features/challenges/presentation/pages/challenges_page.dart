@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/features/challenges/data/challenge_data.dart';
 
 class ChallengesPage extends StatefulWidget {
   const ChallengesPage({super.key});
@@ -329,8 +330,9 @@ class _ChallengesPageState extends State<ChallengesPage>
   Widget _buildSectionHeader(
     String title,
     IconData icon,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    VoidCallback? onTapVerMas,
+  }) {
     final c = context.colors;
     return Row(
       children: [
@@ -354,27 +356,28 @@ class _ChallengesPageState extends State<ChallengesPage>
           ),
         ),
         const Spacer(),
-        GestureDetector(
-          onTap: () {},
-          child: Row(
-            children: [
-              Text(
-                'Ver más',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+        if (onTapVerMas != null)
+          GestureDetector(
+            onTap: onTapVerMas,
+            child: Row(
+              children: [
+                Text(
+                  'Ver más',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: c.primaryDeepWithAlpha(0.9),
+                  ),
+                ),
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
                   color: c.primaryDeepWithAlpha(0.9),
                 ),
-              ),
-              const SizedBox(width: 2),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 14,
-                color: c.primaryDeepWithAlpha(0.9),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
@@ -395,25 +398,28 @@ class _ChallengesPageState extends State<ChallengesPage>
           'Reto de la semana',
           Icons.emoji_events_rounded,
           context,
+          onTapVerMas: () => context.pushNamed('challenge_past'),
         ),
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [c.primaryDeep, c.primaryDark],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: c.primaryDeepWithAlpha(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
+        GestureDetector(
+          onTap: () => context.pushNamed('challenge_weekly'),
+          child: Container(
+            padding: const EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [c.primaryDeep, c.primaryDark],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: c.primaryDeepWithAlpha(0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -529,6 +535,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               ),
             ],
           ),
+          ),
         ),
       ],
     );
@@ -539,56 +546,31 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildDailyChallenges() {
-    final c = context.colors;
-    final challenges = [
-      {
-        'icon': Icons.directions_run_rounded,
-        'iconColor': c.primaryDeep,
-        'iconBgColor': c.primaryLight,
-        'title': 'Carrera matutina',
-        'description': 'Corre 5 km antes de las 9 AM',
-        'reward': '+50 pts',
-        'done': true,
-      },
-      {
-        'icon': Icons.flag_rounded,
-        'iconColor': const Color(0xFF7ED957),
-        'iconBgColor': const Color(0xFFF4FDF0),
-        'title': 'Conquista nueva zona',
-        'description': 'Visita un territorio que no sea tuyo',
-        'reward': '+80 pts',
-        'done': false,
-      },
-      {
-        'icon': Icons.people_rounded,
-        'iconColor': const Color(0xFFFFB84D),
-        'iconBgColor': const Color(0xFFFFF8F0),
-        'title': 'Corre en grupo',
-        'description': 'Completa una ruta con al menos 1 amigo',
-        'reward': '+60 pts',
-        'done': false,
-      },
-    ];
-
     return Column(
       children: [
-        _buildSectionHeader('Desafíos diarios', Icons.bolt_rounded, context),
+        _buildSectionHeader('Desafíos semanales', Icons.bolt_rounded, context),
         const SizedBox(height: 16),
-        ...challenges.map(
-          (challenge) => Padding(
+        ...weeklyChallengeItems.map(
+          (ch) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildDailyChallengeItem(challenge),
+            child: GestureDetector(
+              onTap: () => context.pushNamed(
+                'challenge_item',
+                pathParameters: {'challengeId': ch.id},
+              ),
+              child: _buildDailyChallengeItem(ch),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDailyChallengeItem(Map<String, dynamic> challenge) {
+  Widget _buildDailyChallengeItem(ChallengeItem ch) {
     final c = context.colors;
-    final isDone = challenge['done'] as bool;
-    final iconColor = challenge['iconColor'] as Color;
-    final iconBgColor = challenge['iconBgColor'] as Color;
+    final isDone = ch.done;
+    final iconColor = ch.iconColor;
+    final iconBgColor = ch.iconBgColor;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -620,7 +602,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
-              isDone ? Icons.check_rounded : challenge['icon'] as IconData,
+              isDone ? Icons.check_rounded : ch.icon,
               color: isDone ? const Color(0xFF7ED957) : iconColor,
               size: 24,
             ),
@@ -631,7 +613,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  challenge['title'] as String,
+                  ch.title,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -644,7 +626,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  challenge['description'] as String,
+                  ch.description,
                   style: TextStyle(
                     fontSize: 12,
                     color: c.textSecondary,
@@ -664,13 +646,19 @@ class _ChallengesPageState extends State<ChallengesPage>
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              isDone ? '✓' : challenge['reward'] as String,
+              isDone ? '✓' : ch.reward,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: isDone ? const Color(0xFF7ED957) : iconColor,
               ),
             ),
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 18,
+            color: c.textHint,
           ),
         ],
       ),
@@ -682,55 +670,33 @@ class _ChallengesPageState extends State<ChallengesPage>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildCommunityRaces() {
-    final c = context.colors;
-    final races = [
-      {
-        'name': '5K Matutino',
-        'creator': 'Runners Urbanos',
-        'date': '28 Nov',
-        'participants': 42,
-        'distance': 5,
-        'color': c.primaryDeep,
-      },
-      {
-        'name': 'Desafío 10K',
-        'creator': 'Trail Seekers',
-        'date': '2 Dic',
-        'participants': 67,
-        'distance': 10,
-        'color': const Color(0xFF7ED957),
-      },
-      {
-        'name': 'Media Maratón',
-        'creator': 'Maratón Team',
-        'date': '10 Dic',
-        'participants': 128,
-        'distance': 21,
-        'color': const Color(0xFFFFB84D),
-      },
-    ];
-
     return Column(
       children: [
         _buildSectionHeader(
-          'Carreras de la comunidad',
+          'Carreras para la comunidad',
           Icons.flag_rounded,
           context,
         ),
         const SizedBox(height: 16),
-        ...races.map(
+        ...communityRaces.map(
           (race) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: _buildRaceItem(race),
+            child: GestureDetector(
+              onTap: () => context.pushNamed(
+                'challenge_race',
+                pathParameters: {'raceId': race.id},
+              ),
+              child: _buildRaceItem(race),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildRaceItem(Map<String, dynamic> race) {
+  Widget _buildRaceItem(CommunityRace race) {
     final c = context.colors;
-    final color = race['color'] as Color;
+    final color = race.color;
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: _cardDecoration(accentColor: color),
@@ -752,7 +718,7 @@ class _ChallengesPageState extends State<ChallengesPage>
             ),
             child: Center(
               child: Text(
-                '${race['distance']}K',
+                '${race.distance}K',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w800,
@@ -768,7 +734,7 @@ class _ChallengesPageState extends State<ChallengesPage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  race['name'] as String,
+                  race.name,
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
@@ -778,7 +744,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Por ${race['creator']}',
+                  'Por ${race.creator}',
                   style: TextStyle(fontSize: 12, color: c.textSecondary),
                 ),
                 const SizedBox(height: 6),
@@ -791,7 +757,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      race['date'] as String,
+                      race.date,
                       style: TextStyle(
                         fontSize: 12,
                         color: c.textSecondary,
@@ -802,7 +768,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                     Icon(Icons.people_rounded, size: 12, color: c.textHint),
                     const SizedBox(width: 4),
                     Text(
-                      '${race['participants']} inscritos',
+                      '${race.participants} inscritos',
                       style: TextStyle(
                         fontSize: 12,
                         color: c.textSecondary,
@@ -814,20 +780,10 @@ class _ChallengesPageState extends State<ChallengesPage>
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              'Unirse',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-            ),
+          Icon(
+            Icons.chevron_right_rounded,
+            size: 18,
+            color: c.textHint,
           ),
         ],
       ),

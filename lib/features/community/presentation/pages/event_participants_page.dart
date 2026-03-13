@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import '../../data/models/community_runners_data.dart';
 
 class EventParticipantsPage extends StatelessWidget {
   final String eventId;
@@ -11,19 +12,8 @@ class EventParticipantsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = context.colors;
     
-    // Mock participants data for the event
-    final participants = [
-      {'name': 'Carlos Ruiz', 'level': 'Corredor Experto', 'image': null},
-      {'name': 'Ana López', 'level': 'Principiante', 'image': null},
-      {'name': 'Miguel Torres', 'level': 'Intermedio', 'image': null},
-      {'name': 'Elena Rojas', 'level': 'Triatleta', 'image': null},
-      {'name': 'David Silva', 'level': 'Avanzado', 'image': null},
-      {'name': 'Sofia Navarro', 'level': 'Principiante', 'image': null},
-      {'name': 'Hugo Méndez', 'level': 'Intermedio', 'image': null},
-      {'name': 'Laura Gómez', 'level': 'Corredor Experto', 'image': null},
-      {'name': 'Diego Castro', 'level': 'Intermedio', 'image': null},
-      {'name': 'Carmen Vega', 'level': 'Profesional', 'image': null},
-    ];
+    // Obtenemos los 10 primeros corredores del mockup global
+    final participants = communityRunners.take(10).toList();
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -81,7 +71,7 @@ class EventParticipantsPage extends StatelessWidget {
                   'participant_profile',
                   pathParameters: {
                     'eventId': eventId,
-                    'userId': 'user_$index',
+                    'userId': p['id'] as String,
                   },
                   extra: p,
                 );

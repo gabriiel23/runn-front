@@ -71,10 +71,10 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          color: context.colors.primary,
+          color: context.colors.card,
           boxShadow: [
             BoxShadow(
-              color: context.colors.primary.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.03),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -93,8 +93,8 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.15),
-                      Colors.white.withValues(alpha: 0.0),
+                      context.colors.primaryDeepWithAlpha(0.05),
+                      context.colors.primaryDeepWithAlpha(0.01),
                     ],
                   ),
                 ),
@@ -111,8 +111,8 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      Colors.white.withValues(alpha: 0.1),
-                      Colors.white.withValues(alpha: 0.0),
+                      context.colors.primaryDeepWithAlpha(0.04),
+                      context.colors.primaryDeepWithAlpha(0.01),
                     ],
                   ),
                 ),
@@ -133,12 +133,12 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.colors.primaryLight,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.apps_rounded,
-                            color: Colors.white,
+                            color: context.colors.primaryDeepWithAlpha(0.8),
                             size: 22,
                           ),
                         ),
@@ -146,12 +146,12 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                           width: 44,
                           height: 44,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
+                            color: context.colors.primaryLight,
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.tune_rounded,
-                            color: Colors.white,
+                            color: context.colors.primaryDeepWithAlpha(0.8),
                             size: 22,
                           ),
                         ),
@@ -159,12 +159,12 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                     ),
                     const SizedBox(height: 24),
                     // Título
-                    const Text(
+                    Text(
                       'Territorios',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w700,
-                        color: Colors.white,
+                        color: context.colors.textPrimary,
                         letterSpacing: -0.8,
                       ),
                     ),
@@ -173,7 +173,7 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                       'Gestiona y explora tus zonas de cobertura',
                       style: TextStyle(
                         fontSize: 15,
-                        color: Colors.white.withValues(alpha: 0.8),
+                        color: context.colors.textSecondary,
                         fontWeight: FontWeight.w400,
                         letterSpacing: -0.2,
                         height: 1.4,
@@ -184,7 +184,7 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                     Container(
                       height: 42,
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.1),
+                        color: context.colors.primaryDeepWithAlpha(0.08),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: TabBar(
@@ -194,11 +194,11 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
                         padding: const EdgeInsets.all(4),
                         indicatorPadding: EdgeInsets.zero,
                         indicator: BoxDecoration(
-                          color: Colors.white,
+                          color: context.colors.primary,
                           borderRadius: BorderRadius.circular(13),
                         ),
-                        labelColor: context.colors.primary,
-                        unselectedLabelColor: Colors.white.withValues(alpha: 0.7),
+                        labelColor: context.colors.card, // White on both modes mostly
+                        unselectedLabelColor: context.colors.textSecondary,
                         labelStyle: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,

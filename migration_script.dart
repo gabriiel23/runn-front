@@ -66,7 +66,8 @@ void migrarArchivo(String path) {
   );
 
   file.writeAsStringSync(content);
-  print('Migrado \$path');
+  // ignore: avoid_print
+  print('Migrado $path');
 }
 
 void cleanConstModifiers(String path) {
@@ -93,7 +94,7 @@ void cleanConstModifiers(String path) {
   ];
 
   for (final target in constTargets) {
-    content = content.replaceAll('$target', '${target.substring(6)}');
+    content = content.replaceAll(target, target.substring(6));
   }
   file.writeAsStringSync(content);
 }

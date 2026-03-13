@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
@@ -200,10 +200,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               const SizedBox(height: 28),
 
                               // Register button
-                              GestureDetector(
-                                onTap: () => context.go('/profile_setup'),
-                                child: Container(
-                                  width: double.infinity,
+                                GestureDetector(
+                                  // Temporalmente enviando as splash -> home similar al login para match con el request.
+                                  onTap: () {
+                                    context.go('/splash', extra: '/home');
+                                  },
+                                  child: Container(
+                                    width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 18,
                                   ),
