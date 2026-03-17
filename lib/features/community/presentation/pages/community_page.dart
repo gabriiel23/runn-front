@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -359,10 +362,342 @@ class _CommunityScreenState extends State<CommunityScreen>
             iconColor: context.colors.primaryDeep,
             iconBgColor: context.colors.primaryLight,
             label: 'Invitar Amigos',
-            onTap: () {},
+            onTap: () => _showShareBottomSheet(context),
           ),
         ),
       ],
+    );
+  }
+
+  void _showShareBottomSheet(BuildContext context) {
+    final c = context.colors;
+    const inviteLink = 'https://runn.app/invite';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: c.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, -5),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            child: Stack(
+              children: [
+                // Decorative Background Elements (Cohesive with Header)
+                Positioned(
+                  top: -60,
+                  right: -60,
+                  child: Container(
+                    width: 150,
+                    height: 150,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          c.primaryDeep.withValues(alpha: 0.08),
+                          c.primaryDeep.withValues(alpha: 0.01),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: -40,
+                  left: -40,
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          c.primary.withValues(alpha: 0.06),
+                          c.primary.withValues(alpha: 0.01),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Handle
+                      Container(
+                        width: 44,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: c.textSecondary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(2.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Title
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Compartir enlace',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                              color: c.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: c.primaryLight,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Icon(
+                              Icons.share_rounded,
+                              size: 16,
+                              color: c.primaryDeep,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 28),
+
+                      // Social Icons Row
+                      SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildShareAppIcon(
+                              context,
+                              'WhatsApp',
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1024px-WhatsApp.svg.png',
+                              () async {
+                                Navigator.pop(context);
+                                final url = Uri.parse(
+                                  'whatsapp://send?text=${Uri.encodeComponent("¡Únete a Runn! $inviteLink")}',
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url);
+                                } else {
+                                  Share.share('¡Únete a Runn! $inviteLink');
+                                }
+                              },
+                            ),
+                            _buildShareAppIcon(
+                              context,
+                              'Facebook',
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Facebook_Logo_%282019%29.png/1024px-Facebook_Logo_%282019%29.png',
+                              () async {
+                                Navigator.pop(context);
+                                final url = Uri.parse(
+                                  'https://www.facebook.com/sharer/sharer.php?u=$inviteLink',
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url,
+                                      mode: LaunchMode.externalApplication);
+                                } else {
+                                  Share.share('¡Únete a Runn! $inviteLink');
+                                }
+                              },
+                            ),
+                            _buildShareAppIcon(
+                              context,
+                              'Messenger',
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Facebook_Messenger_logo_2020.svg/1024px-Facebook_Messenger_logo_2020.svg.png',
+                              () async {
+                                Navigator.pop(context);
+                                final url = Uri.parse(
+                                  'fb-messenger://share?link=$inviteLink',
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url);
+                                } else {
+                                  Share.share('¡Únete a Runn! $inviteLink');
+                                }
+                              },
+                            ),
+                            _buildShareAppIcon(
+                              context,
+                              'Telegram',
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Telegram_logo.svg/1024px-Telegram_logo.svg.png',
+                              () async {
+                                Navigator.pop(context);
+                                final url = Uri.parse(
+                                  'tg://msg?text=${Uri.encodeComponent("¡Únete a Runn! $inviteLink")}',
+                                );
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url);
+                                } else {
+                                  Share.share('¡Únete a Runn! $inviteLink');
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+                      Container(
+                        height: 1,
+                        width: double.infinity,
+                        color: c.textSecondary.withValues(alpha: 0.08),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Action List
+                      _buildShareActionItem(
+                        context,
+                        Icons.content_copy_rounded,
+                        'Copiar vínculo',
+                        () {
+                          Clipboard.setData(const ClipboardData(text: inviteLink));
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.check_circle_rounded,
+                                      color: Colors.white, size: 20),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                      'Vínculo copiado al portapapeles'),
+                                ],
+                              ),
+                              behavior: SnackBarBehavior.floating,
+                              margin: const EdgeInsets.all(20),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              backgroundColor: c.primaryDeep,
+                            ),
+                          );
+                        },
+                      ),
+                      _buildShareActionItem(
+                        context,
+                        Icons.ios_share_rounded,
+                        'Abrir más opciones',
+                        () {
+                          Navigator.pop(context);
+                          Share.share('¡Únete a Runn! $inviteLink');
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildShareAppIcon(
+    BuildContext context,
+    String label,
+    String imageUrl,
+    VoidCallback onTap,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 24),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Column(
+          children: [
+            SizedBox(
+              width: 64,
+              height: 64,
+              child: ClipOval(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: context.colors.primaryLight,
+                    child: Icon(Icons.share_rounded, color: context.colors.primaryDeep),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: context.colors.textPrimary,
+                fontWeight: FontWeight.w600,
+                letterSpacing: -0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShareActionItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
+    final c = context.colors;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: c.primaryLight,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: c.primaryDeep,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: c.textPrimary,
+                letterSpacing: -0.3,
+              ),
+            ),
+            const Spacer(),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: c.textSecondary.withValues(alpha: 0.3),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
