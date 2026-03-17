@@ -203,7 +203,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 GestureDetector(
                                   // Temporalmente enviando as splash -> home similar al login para match con el request.
                                   onTap: () {
-                                    context.go('/splash', extra: '/home');
+                                    context.go('/splash', extra: '/profile_setup');
                                   },
                                   child: Container(
                                     width: double.infinity,
