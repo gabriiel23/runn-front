@@ -88,13 +88,13 @@ class _SettingsPageState extends State<SettingsPage> {
                 _buildSettingsGroup([
                   _buildSettingsItem(
                     Icons.person_outline_rounded,
-                    'Información personal',
-                    () {},
+                    'Editar perfil',
+                    () => context.pushNamed('profile_edit'),
                   ),
                   _buildSettingsItem(
-                    Icons.notifications_none_rounded,
-                    'Notificaciones',
-                    () {},
+                    Icons.watch_rounded,
+                    'Conectar wearable',
+                    () => context.pushNamed('profile_wearables'),
                   ),
                   _buildSettingsItem(
                     Icons.lock_outline_rounded,

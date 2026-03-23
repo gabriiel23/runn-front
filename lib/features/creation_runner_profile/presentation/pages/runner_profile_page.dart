@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import '../../../login/register/services/auth_service.dart';
+import 'package:runn_front/core/services/http_client.dart';
 
 class _Level {
   final String id;
@@ -25,7 +27,9 @@ const _levels = [
 ];
 
 class RunnerProfileScreen extends StatefulWidget {
-  const RunnerProfileScreen({super.key});
+  final Map<String, dynamic> metricas;
+
+  const RunnerProfileScreen({super.key, required this.metricas});
 
   @override
   State<RunnerProfileScreen> createState() => _RunnerProfileScreenState();
@@ -33,6 +37,41 @@ class RunnerProfileScreen extends StatefulWidget {
 
 class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
   String _selectedLevel = 'beginner';
+  bool _isLoading = false;
+
+  Future<void> _handleFinish() async {
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthService.updateMetricas(
+        genero: widget.metricas['genero'],
+        fechaNacimiento: widget.metricas['fecha_nacimiento'],
+        alturaCm: widget.metricas['altura_cm'].toDouble(),
+        pesoKg: widget.metricas['peso_kg'].toDouble(),
+        nivel: _selectedLevel,
+        pais: widget.metricas['pais'],
+        ciudad: widget.metricas['ciudad'],
+      );
+
+      if (mounted) {
+        context.go('/home');
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error inesperado al guardar datos'), backgroundColor: Color(0xFFFF3B30)),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -272,14 +311,14 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                 ),
               ),
               child: GestureDetector(
-                onTap: () => context.go('/home'),
+                onTap: _isLoading ? null : _handleFinish,
                 child: Container(
                   width: double.infinity,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: c.primary,
+                    color: _isLoading ? c.primary.withValues(alpha: 0.5) : c.primary,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
+                    boxShadow: _isLoading ? [] : [
                       BoxShadow(
                         color: c.primary.withValues(alpha: 0.5),
                         blurRadius: 20,
@@ -287,24 +326,31 @@ class _RunnerProfileScreenState extends State<RunnerProfileScreen> {
                       ),
                     ],
                   ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Finalizar',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: c.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.check_circle_outline_rounded,
-                        color: c.textPrimary,
-                        size: 22,
-                      ),
-                    ],
+                  child: Center(
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24, height: 24,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Finalizar',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: c.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Icon(
+                                Icons.check_circle_outline_rounded,
+                                color: c.textPrimary,
+                                size: 22,
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               ),

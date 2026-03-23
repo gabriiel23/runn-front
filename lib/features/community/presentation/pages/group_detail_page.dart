@@ -1,599 +1,681 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import '../../services/grupos_service.dart';
+import '../../domain/models/grupo_model.dart';
+import '../../../../core/config/api_config.dart';
+import '../../../../core/services/http_client.dart';
 
-class GroupDetailPage extends StatelessWidget {
-  final Map<String, dynamic>? groupData;
-  // Fallback data in case someone navigates directly without passing the extra object
-  const GroupDetailPage({super.key, this.groupData});
+class GroupDetailPage extends StatefulWidget {
+  final String grupoId;
+  final Map<String, dynamic>? groupData; // kept for backward compat
+
+  const GroupDetailPage({super.key, required this.grupoId, this.groupData});
+
+  @override
+  State<GroupDetailPage> createState() => _GroupDetailPageState();
+}
+
+class _GroupDetailPageState extends State<GroupDetailPage> {
+  GrupoDetalle? _detalle;
+  bool _isLoading = true;
+  bool _isActing = false;
+  String? _rolGlobal;
+  String? _miUserId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAll();
+  }
+
+  Future<void> _loadAll() async {
+    setState(() => _isLoading = true);
+    try {
+      final results = await Future.wait([
+        GruposService.getGrupoDetalle(widget.grupoId),
+        ApiConfig.getUserRol(),
+        ApiConfig.getCurrentUserId(),
+      ]);
+      if (mounted) {
+        setState(() {
+          _detalle = results[0] as GrupoDetalle;
+          _rolGlobal = results[1] as String?;
+          _miUserId = results[2] as String?;
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ─── ACCIONES PRINCIPALES ─────────────────────────────────────────────────
+
+  Future<void> _unirseGrupo() async {
+    setState(() => _isActing = true);
+    try {
+      await GruposService.unirseGrupo(widget.grupoId);
+      if (mounted) await _loadAll();
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)));
+      }
+    } finally {
+      if (mounted) setState(() => _isActing = false);
+    }
+  }
+
+  Future<void> _salirseGrupo() async {
+    final c = context.colors;
+    final conf = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: c.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Salir del grupo', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold)),
+        content: Text('¿Estás seguro de que quieres salirte de este grupo?', style: TextStyle(color: c.textSecondary)),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancelar', style: TextStyle(color: c.textHint))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3B30), foregroundColor: Colors.white, elevation: 0),
+            child: const Text('Salirme', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (conf != true || !mounted) return;
+    setState(() => _isActing = true);
+    try {
+      await GruposService.salirseGrupo(widget.grupoId);
+      if (mounted) context.pop();
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)));
+      }
+    } finally {
+      if (mounted) setState(() => _isActing = false);
+    }
+  }
+
+  Future<void> _eliminarGrupo() async {
+    final c = context.colors;
+    final motivoCtrl = TextEditingController();
+    final mostrarMotivo = _rolGlobal == 'admin' && _detalle?.miRol != 'creador';
+
+    final conf = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: c.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Eliminar grupo', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('¿Estás seguro de que quieres eliminar este grupo? Esta acción no se puede deshacer.',
+              style: TextStyle(color: c.textSecondary)),
+          if (mostrarMotivo) ...[
+            const SizedBox(height: 12),
+            TextField(
+              controller: motivoCtrl,
+              style: TextStyle(color: c.textPrimary),
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Motivo (opcional)',
+                hintStyle: TextStyle(color: c.textHint),
+                filled: true, fillColor: c.bg,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancelar', style: TextStyle(color: c.textHint))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFF3B30), foregroundColor: Colors.white, elevation: 0),
+            child: const Text('Eliminar', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+    if (conf != true || !mounted) return;
+
+    setState(() => _isActing = true);
+    try {
+      await GruposService.eliminarGrupo(widget.grupoId,
+          motivo: motivoCtrl.text.trim().isNotEmpty ? motivoCtrl.text.trim() : null);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Grupo eliminado exitosamente'), backgroundColor: Color(0xFF34C759)));
+        context.pop();
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)));
+      }
+    } finally {
+      if (mounted) setState(() => _isActing = false);
+    }
+  }
+
+  // ─── MENÚ DE TRES PUNTOS ─────────────────────────────────────────────────
+  // Corrección 3 & 7: reorganiza las opciones por rol. Siempre visible.
+
+  void _mostrarMenu() {
+    final d = _detalle!;
+    final c = context.colors;
+    final rol = d.miRol; // 'creador' | 'admin' | 'miembro' | null
+    final esAdminGlobal = _rolGlobal == 'admin';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+        decoration: BoxDecoration(color: c.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(color: c.primaryDeepWithAlpha(0.2), borderRadius: BorderRadius.circular(2))),
+
+          // ── Admin global: Solo eliminar (con motivo) ─────────
+          if (esAdminGlobal && rol != 'creador')
+            _menuItem(c, Icons.delete_rounded, 'Eliminar grupo', const Color(0xFFFF3B30), () {
+              Navigator.pop(context); _eliminarGrupo();
+            }),
+
+          // ── Creador: Editar + Gestionar + Eliminar ────────────
+          if (rol == 'creador') ...[
+            _menuItem(c, Icons.edit_rounded, 'Editar grupo', c.textPrimary, () {
+              Navigator.pop(context); _mostrarFormEditar();
+            }),
+            _menuItem(c, Icons.people_alt_rounded, 'Gestionar miembros', c.textPrimary, () {
+              Navigator.pop(context);
+              context.pushNamed('group_members', pathParameters: {'grupoId': widget.grupoId},
+                  extra: {'mi_rol': d.miRol, 'mi_id': _miUserId});
+            }),
+            _menuItem(c, Icons.delete_rounded, 'Eliminar grupo', const Color(0xFFFF3B30), () {
+              Navigator.pop(context); _eliminarGrupo();
+            }),
+          ],
+
+          // ── Admin del grupo: Editar + Gestionar + Salirme ────
+          if (rol == 'admin') ...[
+            _menuItem(c, Icons.edit_rounded, 'Editar grupo', c.textPrimary, () {
+              Navigator.pop(context); _mostrarFormEditar();
+            }),
+            _menuItem(c, Icons.people_alt_rounded, 'Gestionar miembros', c.textPrimary, () {
+              Navigator.pop(context);
+              context.pushNamed('group_members', pathParameters: {'grupoId': widget.grupoId},
+                  extra: {'mi_rol': d.miRol, 'mi_id': _miUserId});
+            }),
+            Divider(height: 12, color: c.primaryDeepWithAlpha(0.08)),
+            _menuItem(c, Icons.exit_to_app_rounded, 'Salirme del grupo', const Color(0xFFFF3B30), () {
+              Navigator.pop(context); _salirseGrupo();
+            }),
+          ],
+
+          // ── Miembro: Solo salirme ─────────────────────────────
+          if (rol == 'miembro')
+            _menuItem(c, Icons.exit_to_app_rounded, 'Salirme del grupo', const Color(0xFFFF3B30), () {
+              Navigator.pop(context); _salirseGrupo();
+            }),
+        ]),
+      ),
+    );
+  }
+
+  Widget _menuItem(dynamic c, IconData icon, String label, Color color, VoidCallback onTap) {
+    return ListTile(
+      leading: Container(padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, color: color, size: 20)),
+      title: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: color)),
+      onTap: onTap,
+    );
+  }
+
+  // ─── EDITAR GRUPO (Corrección 4: permite cambiar foto) ────────────────────
+
+  void _mostrarFormEditar() {
+    final d = _detalle!;
+    final c = context.colors;
+    final nombreCtrl = TextEditingController(text: d.grupo.nombre);
+    final descCtrl = TextEditingController(text: d.grupo.descripcion ?? '');
+    String modalidad = d.grupo.modalidad;
+    bool esPrivado = d.grupo.esPrivado;
+    Uint8List? nuevaFoto;
+    String? nuevoMimeType;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModal) => Container(
+          height: MediaQuery.of(ctx).size.height * 0.9,
+          decoration: BoxDecoration(color: c.bg, borderRadius: const BorderRadius.vertical(top: Radius.circular(24))),
+          child: Column(children: [
+            const SizedBox(height: 12),
+            Container(width: 40, height: 4, decoration: BoxDecoration(color: c.primaryDeepWithAlpha(0.2), borderRadius: BorderRadius.circular(2))),
+            Padding(padding: const EdgeInsets.all(20),
+              child: Text('Editar Grupo', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: c.textPrimary))),
+            Divider(height: 1, color: c.primaryDeepWithAlpha(0.1)),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(left: 20, right: 20, top: 20, bottom: MediaQuery.of(ctx).viewInsets.bottom + 20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                  // ── Selector de Foto ──────────────────────────────
+                  Text('Foto del grupo', style: TextStyle(fontWeight: FontWeight.w700, color: c.textPrimary, fontSize: 15)),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () async {
+                      final picker = ImagePicker();
+                      final img = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+                      if (img == null) return;
+                      final bytes = await img.readAsBytes();
+                      setModal(() { nuevaFoto = bytes; nuevoMimeType = img.mimeType ?? 'image/jpeg'; });
+                    },
+                    child: Container(
+                      height: 150, width: double.infinity,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: c.primaryDeepWithAlpha(0.1), width: 1.5),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Stack(fit: StackFit.expand, children: [
+                          // Mostrar nueva foto o la foto actual del grupo
+                          if (nuevaFoto != null)
+                            Image.memory(nuevaFoto!, fit: BoxFit.cover)
+                          else if (d.grupo.fotoUrl != null && d.grupo.fotoUrl!.isNotEmpty)
+                            Image.network(d.grupo.fotoUrl!, fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => _fotoEditPlaceholder(c))
+                          else
+                            _fotoEditPlaceholder(c),
+                          // Overlay de edición
+                          Positioned(bottom: 10, right: 10,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+                            ),
+                          ),
+                        ]),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // ── Campos de texto ───────────────────────────────
+                  Text('Información', style: TextStyle(fontWeight: FontWeight.w700, color: c.textPrimary, fontSize: 15)),
+                  const SizedBox(height: 10),
+                  _textField(c, nombreCtrl, 'Nombre', Icons.edit_note_rounded),
+                  const SizedBox(height: 12),
+                  _textField(c, descCtrl, 'Descripción', Icons.description_rounded, maxLines: 3),
+                  const SizedBox(height: 20),
+
+                  // ── Modalidad ─────────────────────────────────────
+                  Text('Modalidad', style: TextStyle(fontWeight: FontWeight.w700, color: c.textPrimary, fontSize: 15)),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: _modalOpt(c, 'social', '👟 Social', modalidad, (v) => setModal(() => modalidad = v))),
+                    const SizedBox(width: 10),
+                    Expanded(child: _modalOpt(c, 'territorial', '🗺 Territorial', modalidad, (v) => setModal(() => modalidad = v))),
+                  ]),
+                  const SizedBox(height: 20),
+
+                  // ── Privacidad ────────────────────────────────────
+                  Text('Privacidad', style: TextStyle(fontWeight: FontWeight.w700, color: c.textPrimary, fontSize: 15)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(color: c.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: c.primaryDeepWithAlpha(0.07))),
+                    child: Row(children: [
+                      Icon(esPrivado ? Icons.lock_rounded : Icons.lock_open_rounded, color: c.primaryDeep, size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(esPrivado ? 'Privado' : 'Público', style: TextStyle(fontWeight: FontWeight.w600, color: c.textPrimary))),
+                      Switch(value: esPrivado, activeThumbColor: c.primaryDeep, onChanged: (v) => setModal(() => esPrivado = v)),
+                    ]),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ── Botón Guardar ─────────────────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        Navigator.pop(ctx);
+                        setState(() => _isActing = true);
+                        try {
+                          await GruposService.editarGrupo(
+                            id: widget.grupoId,
+                            nombre: nombreCtrl.text.trim(),
+                            descripcion: descCtrl.text.trim(),
+                            modalidad: modalidad,
+                            esPrivado: esPrivado,
+                            foto: nuevaFoto,
+                            fotoMimeType: nuevoMimeType,
+                          );
+                          if (mounted) await _loadAll();
+                        } on ApiException catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)));
+                          }
+                        } finally {
+                          if (mounted) setState(() => _isActing = false);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(backgroundColor: c.primaryDeep, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
+                      child: const Text('Guardar Cambios', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ]),
+              ),
+            ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  Widget _fotoEditPlaceholder(dynamic c) => Container(
+    color: c.primaryDeepWithAlpha(0.08),
+    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      Icon(Icons.add_photo_alternate_rounded, size: 40, color: c.primaryDeepWithAlpha(0.3)),
+      const SizedBox(height: 8),
+      Text('Toca para cambiar foto', style: TextStyle(color: c.textHint, fontSize: 13)),
+    ]),
+  );
+
+  Widget _textField(dynamic c, TextEditingController ctrl, String hint, IconData icon, {int maxLines = 1}) {
+    return Container(
+      decoration: BoxDecoration(color: c.card, borderRadius: BorderRadius.circular(14), border: Border.all(color: c.primaryDeepWithAlpha(0.07))),
+      child: TextField(controller: ctrl, maxLines: maxLines, style: TextStyle(color: c.textPrimary),
+        decoration: InputDecoration(hintText: hint, hintStyle: TextStyle(color: c.textHint),
+          prefixIcon: Icon(icon, color: c.primaryDeep, size: 20), border: InputBorder.none, contentPadding: const EdgeInsets.all(14))),
+    );
+  }
+
+  Widget _modalOpt(dynamic c, String value, String label, String current, Function(String) onTap) {
+    final sel = current == value;
+    return GestureDetector(
+      onTap: () => onTap(value),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: sel ? c.primaryDeepWithAlpha(0.1) : c.card, borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: sel ? c.primaryDeep : c.primaryDeepWithAlpha(0.08), width: sel ? 1.5 : 1),
+        ),
+        child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: sel ? c.primaryDeep : c.textPrimary), textAlign: TextAlign.center),
+      ),
+    );
+  }
+
+  // ─── BUILD ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    final c = context.colors;
+    if (_isLoading) {
+      return Scaffold(backgroundColor: context.colors.bg, body: Center(child: CircularProgressIndicator(color: context.colors.primaryDeep)));
+    }
+    if (_detalle == null) {
+      return Scaffold(backgroundColor: context.colors.bg, body: Center(child: Text('Error al cargar el grupo', style: TextStyle(color: context.colors.textPrimary))));
+    }
 
-    // Use passed data or some fallback mockup
-    final String name = groupData?['name'] ?? 'Detalle del Grupo';
-    final int members = groupData?['members'] ?? 0;
-    final String location = groupData?['location'] ?? 'Ubicación Desconocida';
-    final String level = groupData?['level'] ?? 'Nivel';
-    final Color color = groupData?['color'] ?? c.primaryDeep;
+    final c = context.colors;
+    final d = _detalle!;
 
     return Scaffold(
       backgroundColor: c.bg,
-      appBar: AppBar(
-        backgroundColor: c.card,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: c.textPrimary),
-          onPressed: () => context.pop(),
-        ),
-        title: Text(
-          name,
-          style: TextStyle(
-            color: c.textPrimary,
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            letterSpacing: -0.5,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.more_vert_rounded, color: c.textPrimary),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        child: Column(
-          children: [
-            _buildGroupHeader(context, c, name, members, location, level, color),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 32),
-                  Text(
-                    'Sobre el grupo',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: c.textPrimary,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Este grupo está enfocado en compartir rutas, entrenamientos y experiencias en $location. Ideal para corredores de nivel $level que buscan mantener un ritmo constante y mejorar sus tiempos en equipo.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: c.textSecondary,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildStatsRow(c),
-                  const SizedBox(height: 32),
-                  _buildMultimediaGallery(context, c, name),
-                  const SizedBox(height: 32),
-                  Text(
-                    'Próximas actividades',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: c.textPrimary,
-                      letterSpacing: -0.4,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildActivityCard(c, color, 'Carrera Dominical', 'Dom, 12 Mar • 07:00 AM', 15),
-                  const SizedBox(height: 12),
-                  _buildActivityCard(c, color, 'Entrenamiento en cuestas', 'Mié, 15 Mar • 06:00 PM', 5),
-                  const SizedBox(height: 40),
-                ],
+      body: Stack(children: [
+        CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            _buildSliverAppBar(c, d),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  _buildGroupInfo(c, d),
+                  const SizedBox(height: 24),
+                  _buildChips(c, d),
+                  const SizedBox(height: 28),
+                  _buildMembersPreview(c, d),
+                  const SizedBox(height: 24),
+                  _buildRetosPreview(c, d),
+                  const SizedBox(height: 24),
+                  _buildActividadesPreview(c, d),
+                  const SizedBox(height: 24),
+                  _buildGalleryPreview(c, d),
+                  // Espacio para el botón bottom (si aplica)
+                  if (!d.soyMiembro) const SizedBox(height: 100),
+                ]),
               ),
             ),
           ],
         ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: c.card,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -4),
-            ),
-          ],
-        ),
-        child: ElevatedButton(
-          onPressed: () {},
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+        // Botón bottom: SOLO para no-miembros (Unirse). Corrección 3 & 6.
+        if (!d.soyMiembro)
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              decoration: BoxDecoration(
+                color: c.bg.withValues(alpha: 0.95),
+                border: Border(top: BorderSide(color: c.primaryDeepWithAlpha(0.08))),
+              ),
+              child: _buildBottomButton(c, d),
             ),
           ),
-          child: const Text('Solicitar unirme', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-        ),
-      ),
+        if (_isActing)
+          Container(color: Colors.black.withValues(alpha: 0.3), child: const Center(child: CircularProgressIndicator())),
+      ]),
     );
   }
 
-  Widget _buildGroupHeader(BuildContext context, dynamic c, String name, int members, String location, String level, Color color) {
-    return Container(
-      width: double.infinity,
-      color: c.card,
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-      child: Column(
-        children: [
-          Container(
-            width: 90,
-            height: 90,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.15),
-                  color.withValues(alpha: 0.08),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              border: Border.all(color: color.withValues(alpha: 0.2), width: 2),
-            ),
-            child: Icon(
-              Icons.groups_rounded,
-              color: color.withValues(alpha: 0.8),
-              size: 44,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            name,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w700,
-              color: c.textPrimary,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.location_on_rounded, color: c.textHint, size: 16),
-              const SizedBox(width: 4),
-              Text(
-                location,
-                style: TextStyle(color: c.textSecondary, fontSize: 14, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(width: 12),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: c.textHint, shape: BoxShape.circle)),
-              const SizedBox(width: 12),
-              Text(
-                level,
-                style: TextStyle(color: c.textSecondary, fontSize: 14, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: BoxDecoration(
-              color: c.bg,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.people_alt_rounded, color: color, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  '$members miembros',
-                  style: TextStyle(
-                    color: c.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 32),
-          _buildActionButtonsRow(context, c, color, name, level, location),
-        ],
-      ),
-    );
-  }
+  Widget _buildSliverAppBar(dynamic c, GrupoDetalle d) {
+    // El botón ⋮ es siempre visible para miembros, omitido para no-miembros sin rol
+    final mostrarMenu = d.soyMiembro || _rolGlobal == 'admin';
 
-  Widget _buildActionButtonsRow(BuildContext context, dynamic c, Color themeColor, String name, String level, String location) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildActionButton(c, Icons.person_add_alt_1_rounded, 'Invitar', themeColor, () => _showInviteSheet(context, c, themeColor)),
-        _buildActionButton(c, Icons.share_rounded, 'Compartir', themeColor, () => _copyShareLink(context, c, name)),
-        _buildActionButton(c, Icons.info_outline_rounded, 'Resumen', themeColor, () => _showSummaryDialog(context, c, name, level, location)),
-        _buildActionButton(c, Icons.calendar_today_rounded, 'Eventos', themeColor, () => _showEventsSheet(context, c, themeColor)),
+    return SliverAppBar(
+      expandedHeight: 230,
+      pinned: true,
+      backgroundColor: c.card,
+      leading: IconButton(
+        icon: Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle), child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20)),
+        onPressed: () => context.pop(),
+      ),
+      actions: [
+        if (mostrarMenu)
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              icon: Container(padding: const EdgeInsets.all(6), decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle), child: const Icon(Icons.more_vert_rounded, color: Colors.white, size: 20)),
+              onPressed: _mostrarMenu,
+            ),
+          ),
       ],
-    );
-  }
-
-  Widget _buildActionButton(dynamic c, IconData icon, String label, Color themeColor, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: c.bg,
-              shape: BoxShape.circle,
-              border: Border.all(color: c.primaryDeepWithAlpha(0.1)),
-            ),
-            child: Icon(icon, color: c.textPrimary, size: 26),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 13,
-              color: c.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        title: Text(d.grupo.nombre, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 18,
+            shadows: [Shadow(blurRadius: 8, color: Colors.black54)])),
+        background: Stack(fit: StackFit.expand, children: [
+          d.grupo.fotoUrl != null && d.grupo.fotoUrl!.isNotEmpty
+              ? Image.network(d.grupo.fotoUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _fotoPlaceholder(c))
+              : _fotoPlaceholder(c),
+          Container(decoration: BoxDecoration(gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Colors.transparent, Colors.black.withValues(alpha: 0.6)],
+          ))),
+        ]),
       ),
     );
   }
 
-  void _showInviteSheet(BuildContext context, dynamic c, Color themeColor) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.6,
-          decoration: BoxDecoration(
-            color: c.bg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-                decoration: BoxDecoration(
-                  color: c.card,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  border: Border(bottom: BorderSide(color: c.primaryDeepWithAlpha(0.1))),
-                ),
-                child: Text('Invitar corredores', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.textPrimary, letterSpacing: -0.5)),
-              ),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  children: [
-                    _buildInviteUserTile(c, 'Carlos Ruiz', 'Corredor Experto', themeColor),
-                    _buildInviteUserTile(c, 'Ana López', 'Principiante', themeColor),
-                    _buildInviteUserTile(c, 'Miguel Torres', 'Intermedio', themeColor),
-                    _buildInviteUserTile(c, 'Elena Rojas', 'Triatleta', themeColor),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  Widget _fotoPlaceholder(dynamic c) => Container(
+    color: c.primaryDeep,
+    child: Icon(Icons.groups_rounded, size: 80, color: Colors.white.withValues(alpha: 0.3)),
+  );
+
+  Widget _buildGroupInfo(dynamic c, GrupoDetalle d) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      if (d.grupo.descripcion != null && d.grupo.descripcion!.isNotEmpty)
+        Text(d.grupo.descripcion!, style: TextStyle(color: c.textSecondary, fontSize: 14, height: 1.5)),
+      const SizedBox(height: 12),
+      if (d.grupo.creadoPorNombre != null)
+        Row(children: [Icon(Icons.person_outline_rounded, size: 14, color: c.textHint), const SizedBox(width: 4), Text('Creado por ${d.grupo.creadoPorNombre}', style: TextStyle(fontSize: 12, color: c.textHint))]),
+      const SizedBox(height: 4),
+      Row(children: [Icon(Icons.people_alt_rounded, size: 14, color: c.textHint), const SizedBox(width: 4), Text('${d.totalMiembros} miembros', style: TextStyle(fontSize: 12, color: c.textHint))]),
+    ]);
   }
 
-  Widget _buildInviteUserTile(dynamic c, String userName, String subtitle, Color themeColor) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      leading: CircleAvatar(
-        radius: 24,
-        backgroundColor: c.primaryLight,
-        child: Icon(Icons.person_rounded, color: c.primaryDeepWithAlpha(0.7)),
+  Widget _buildChips(dynamic c, GrupoDetalle d) {
+    return Wrap(spacing: 8, runSpacing: 6, children: [
+      _chip(c, d.grupo.modalidad == 'territorial' ? '🗺 Territorial' : '👟 Social',
+          d.grupo.modalidad == 'territorial' ? const Color(0xFF7ED957) : c.primaryDeep),
+      _chip(c, d.grupo.esPrivado ? '🔒 Privado' : '🌐 Público', c.textHint),
+      if (d.miRol != null) _chip(c, 'Mi rol: ${d.miRol}', c.primaryDeep),
+    ]);
+  }
+
+  Widget _chip(dynamic c, String label, Color color) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+    child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
+  );
+
+  Widget _buildSectionHeader(dynamic c, String title, {VoidCallback? onVerTodo}) {
+    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: c.textPrimary, letterSpacing: -0.2)),
+      if (onVerTodo != null)
+        TextButton(onPressed: onVerTodo, child: Text('Ver todo', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.w600, fontSize: 13))),
+    ]);
+  }
+
+  Widget _buildMembersPreview(dynamic c, GrupoDetalle d) {
+    final preview = d.miembros.take(5).toList();
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _buildSectionHeader(c, 'Miembros',
+          onVerTodo: () => context.pushNamed('group_members', pathParameters: {'grupoId': widget.grupoId},
+              extra: {'mi_rol': d.miRol, 'mi_id': _miUserId})),
+      const SizedBox(height: 12),
+      SizedBox(
+        height: 50,
+        child: Row(children: [
+          ...preview.map((m) => Padding(padding: const EdgeInsets.only(right: 10),
+            child: CircleAvatar(radius: 22, backgroundColor: c.primaryLight,
+              backgroundImage: m.avatarUrl != null && m.avatarUrl!.isNotEmpty ? NetworkImage(m.avatarUrl!) as ImageProvider : null,
+              child: m.avatarUrl == null || m.avatarUrl!.isEmpty
+                  ? Text(m.nombre.isNotEmpty ? m.nombre[0].toUpperCase() : '?', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.bold))
+                  : null))),
+          if (d.totalMiembros > 5)
+            CircleAvatar(radius: 22, backgroundColor: c.primaryDeepWithAlpha(0.1),
+              child: Text('+${d.totalMiembros - 5}', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.bold, fontSize: 12))),
+        ]),
       ),
-      title: Text(userName, style: TextStyle(fontWeight: FontWeight.w600, color: c.textPrimary)),
-      subtitle: Text(subtitle, style: TextStyle(color: c.textSecondary, fontSize: 13)),
-      trailing: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: themeColor.withValues(alpha: 0.1),
-          foregroundColor: themeColor,
-          elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+    ]);
+  }
+
+  Widget _buildRetosPreview(dynamic c, GrupoDetalle d) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _buildSectionHeader(c, '🏁 Retos',
+          onVerTodo: () => context.pushNamed('group_challenges', pathParameters: {'grupoId': widget.grupoId}, extra: {'mi_rol': d.miRol})),
+      const SizedBox(height: 10),
+      if (d.retos.isEmpty)
+        _emptyHint(c, 'Sin retos aún')
+      else
+        ...d.retos.take(3).map((r) => _smallCard(c, r.titulo, '${r.participantes} participantes', Icons.flag_rounded)),
+    ]);
+  }
+
+  Widget _buildActividadesPreview(dynamic c, GrupoDetalle d) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _buildSectionHeader(c, '🏃 Actividades',
+          onVerTodo: () => context.pushNamed('group_activities', pathParameters: {'grupoId': widget.grupoId}, extra: {'mi_rol': d.miRol})),
+      const SizedBox(height: 10),
+      if (d.actividades.isEmpty)
+        _emptyHint(c, 'Sin actividades aún')
+      else
+        ...d.actividades.take(3).map((a) => _smallCard(c, a.titulo, a.fecha != null ? a.fechaFmt : a.tipo, Icons.directions_run_rounded)),
+    ]);
+  }
+
+  Widget _buildGalleryPreview(dynamic c, GrupoDetalle d) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      _buildSectionHeader(c, '🖼 Galería',
+          onVerTodo: () => context.pushNamed('group_gallery', pathParameters: {'grupoId': widget.grupoId}, extra: {'es_miembro': d.soyMiembro})),
+      const SizedBox(height: 10),
+      if (d.multimedia.isEmpty)
+        _emptyHint(c, 'Sin fotos aún')
+      else
+        SizedBox(
+          height: 90,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: d.multimedia.take(5).length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (_, i) {
+              final foto = d.multimedia[i];
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(foto.fotoUrl, width: 90, height: 90, fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => Container(width: 90, height: 90, color: c.primaryDeepWithAlpha(0.08))),
+              );
+            },
+          ),
         ),
-        child: const Text('Invitar', style: TextStyle(fontWeight: FontWeight.w700)),
-      ),
+    ]);
+  }
+
+  Widget _smallCard(dynamic c, String titulo, String sub, IconData icon) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      decoration: BoxDecoration(color: c.card, borderRadius: BorderRadius.circular(12), border: Border.all(color: c.primaryDeepWithAlpha(0.07))),
+      child: Row(children: [
+        Icon(icon, size: 18, color: c.primaryDeep), const SizedBox(width: 10),
+        Expanded(child: Text(titulo, style: TextStyle(fontWeight: FontWeight.w600, color: c.textPrimary, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+        Text(sub, style: TextStyle(fontSize: 11, color: c.textSecondary)),
+      ]),
     );
   }
 
-  void _copyShareLink(BuildContext context, dynamic c, String groupName) {
-    Clipboard.setData(ClipboardData(text: 'https://runn.app/groups/${groupName.replaceAll(' ', '').toLowerCase()}')).then((_) {
-      // ignore: use_build_context_synchronously
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle_rounded, color: c.bg),
-              const SizedBox(width: 12),
-              const Text('Enlace copiado al portapapeles'),
-            ],
-          ),
-          backgroundColor: c.textPrimary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          margin: const EdgeInsets.fromLTRB(24, 0, 24, 80),
-        ),
+  Widget _emptyHint(dynamic c, String text) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Text(text, style: TextStyle(color: c.textHint, fontSize: 13, fontStyle: FontStyle.italic)),
+  );
+
+  // Corrección 6: grupo privado → "Solo por invitación" (no-miembro) 
+  //              grupo público → "Unirse al grupo" (no-miembro)
+  Widget _buildBottomButton(dynamic c, GrupoDetalle d) {
+    if (d.grupo.esPrivado) {
+      return Container(
+        width: double.infinity, height: 52,
+        decoration: BoxDecoration(color: c.primaryDeepWithAlpha(0.06), borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: c.primaryDeepWithAlpha(0.15))),
+        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.lock_rounded, color: c.textHint, size: 20),
+          const SizedBox(width: 8),
+          Text('Grupo privado — Solo por invitación', style: TextStyle(color: c.textHint, fontWeight: FontWeight.w600, fontSize: 14)),
+        ]),
       );
-    });
-  }
-
-  void _showSummaryDialog(BuildContext context, dynamic c, String name, String level, String location) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: c.card,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Resumen del Grupo', style: TextStyle(fontWeight: FontWeight.w700, color: c.textPrimary, letterSpacing: -0.5)),
-        content: Text(
-          '$name es un grupo ubicado en $location, enfocado en compartir experiencias y mejorar los tiempos. Recomendado para corredores de nivel $level.',
-          style: TextStyle(color: c.textSecondary, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Cerrar', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEventsSheet(BuildContext context, dynamic c, Color themeColor) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return Container(
-          height: MediaQuery.of(context).size.height * 0.5,
-          decoration: BoxDecoration(
-            color: c.bg,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-                decoration: BoxDecoration(
-                  color: c.card,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  border: Border(bottom: BorderSide(color: c.primaryDeepWithAlpha(0.1))),
-                ),
-                child: Text('Eventos rápidos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: c.textPrimary, letterSpacing: -0.5)),
-              ),
-              Expanded(
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 24),
-                  children: [
-                    _buildActivityCard(c, themeColor, 'Carrera Dominical', 'Dom, 12 Mar • 07:00 AM', 15),
-                    const SizedBox(height: 16),
-                    _buildActivityCard(c, themeColor, 'Entrenamiento en cuestas', 'Mié, 15 Mar • 06:00 PM', 5),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildStatsRow(dynamic c) {
-    return Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: c.card,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.directions_run_rounded, color: c.primaryDeep, size: 24),
-                const SizedBox(height: 12),
-                Text('Actividades', style: TextStyle(color: c.textHint, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text('142', style: TextStyle(color: c.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: c.card,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.emoji_events_rounded, color: const Color(0xFFFFB84D), size: 24),
-                const SizedBox(height: 12),
-                Text('Retos ganados', style: TextStyle(color: c.textHint, fontSize: 12)),
-                const SizedBox(height: 4),
-                Text('28', style: TextStyle(color: c.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActivityCard(dynamic c, Color themeColor, String title, String subtitle, int km) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: c.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: c.primaryDeepWithAlpha(0.08)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: themeColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.event_rounded, color: themeColor),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: c.textPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(fontSize: 13, color: c.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: c.bg,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              '$km km',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: c.textPrimary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMultimediaGallery(BuildContext context, dynamic c, String name) {
-    final mockImages = [
-      'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=500&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=500&auto=format&fit=crop',
-    ];
+    }
 
     return SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Galería del grupo',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: c.textPrimary,
-                  letterSpacing: -0.4,
-                ),
-              ),
-              GestureDetector(
-                onTap: () {
-                  context.pushNamed(
-                    'rival_multimedia', 
-                    pathParameters: {'userId': 'group123'},
-                    extra: {'name': name}, // Pass the group name explicitly
-                  );
-                },
-                child: Row(
-                  children: [
-                    Text(
-                      'Ver todo',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: c.primaryDeep,
-                      ),
-                    ),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
-                      color: c.primaryDeep,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: mockImages.length,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                return AspectRatio(
-                  aspectRatio: 1,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(16),
-                    child: Image.network(
-                      mockImages[index],
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: c.primaryDeepWithAlpha(0.1),
-                        child: Icon(Icons.broken_image_rounded, color: c.textHint),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+      width: double.infinity, height: 52,
+      child: ElevatedButton.icon(
+        onPressed: _isActing ? null : _unirseGrupo,
+        icon: const Icon(Icons.group_add_rounded, color: Colors.white),
+        label: const Text('Unirse al grupo', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16)),
+        style: ElevatedButton.styleFrom(backgroundColor: c.primaryDeep, elevation: 0, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
       ),
     );
   }

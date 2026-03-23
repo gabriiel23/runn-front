@@ -12,6 +12,15 @@ class ProfileSetupScreen extends StatefulWidget {
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   String _selectedGender = 'male';
   DateTime? _selectedDate;
+  final _countryController = TextEditingController();
+  final _cityController = TextEditingController();
+
+  @override
+  void dispose() {
+    _countryController.dispose();
+    _cityController.dispose();
+    super.dispose();
+  }
 
   final _genderOptions = [
     ('male', 'Hombre'),
@@ -299,6 +308,93 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
                             ),
                           ),
                         ),
+                        const SizedBox(height: 32),
+
+                        // ── Location ───────────────────────────────────
+                        Text(
+                          'País',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _countryController,
+                          style: TextStyle(color: c.textPrimary, fontSize: 15),
+                          decoration: InputDecoration(
+                            hintText: 'Ej. Ecuador',
+                            hintStyle: TextStyle(color: c.textSecondary),
+                            filled: true,
+                            fillColor: c.primary.withValues(alpha: 0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: c.primaryMid.withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: c.primaryMid.withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: c.primary, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        Text(
+                          'Ciudad',
+                          style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        TextField(
+                          controller: _cityController,
+                          style: TextStyle(color: c.textPrimary, fontSize: 15),
+                          decoration: InputDecoration(
+                            hintText: 'Ej. Loja',
+                            hintStyle: TextStyle(color: c.textSecondary),
+                            filled: true,
+                            fillColor: c.primary.withValues(alpha: 0.1),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: c.primaryMid.withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(
+                                color: c.primaryMid.withValues(alpha: 0.4),
+                                width: 1.5,
+                              ),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(14),
+                              borderSide: BorderSide(color: c.primary, width: 2),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 18,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 36),
 
                         // ── Info card ──────────────────────────────────
@@ -366,7 +462,29 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
                         // ── Continue button ────────────────────────────
                         GestureDetector(
-                          onTap: () => context.go('/physical_metrics'),
+                          onTap: () {
+                            if (_selectedDate == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Por favor, selecciona tu fecha de nacimiento')),
+                              );
+                              return;
+                            }
+                            if (_countryController.text.trim().isEmpty || _cityController.text.trim().isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Por favor, ingresa tu país y ciudad')),
+                              );
+                              return;
+                            }
+                            
+                            final metricas = {
+                              'genero': _selectedGender,
+                              'fecha_nacimiento': _selectedDate,
+                              'pais': _countryController.text.trim(),
+                              'ciudad': _cityController.text.trim(),
+                            };
+                            
+                            context.go('/physical_metrics', extra: metricas);
+                          },
                           child: Container(
                             width: double.infinity,
                             height: 56,

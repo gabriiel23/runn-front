@@ -159,7 +159,7 @@ class _MyStatisticsPageState extends State<MyStatisticsPage>
             child: Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : c.primaryDeep,
+                color: isSelected ? c.primaryLight : c.primaryDeep,
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),

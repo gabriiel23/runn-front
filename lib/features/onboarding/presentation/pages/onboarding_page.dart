@@ -17,7 +17,7 @@ class _OnboardingPage {
   });
 }
 
-const _pages = [
+const _carouselPages = [
   _OnboardingPage(
     title: 'Conquista tu Ciudad',
     description:
@@ -39,12 +39,70 @@ const _pages = [
     imageUrl: 'assets/estadisticas.jpg',
     fallbackIcon: Icons.bar_chart_rounded,
   ),
-  // Slide 4: theme selector (special)
-  _OnboardingPage(
-    title: 'Elige tu estilo',
-    description: 'Selecciona el tema visual que quieres usar en la app.',
-    imageUrl: '',
-    fallbackIcon: Icons.palette_rounded,
+];
+
+class _ThemeOption {
+  final String label;
+  final String label2;
+  final String emoji;
+  final AppColorScheme scheme;
+  final AppBrightness brightness;
+  final Color swatch;
+  final Color swatchDeep;
+  final bool isDarkCard;
+
+  const _ThemeOption({
+    required this.label,
+    required this.label2,
+    required this.emoji,
+    required this.scheme,
+    required this.brightness,
+    required this.swatch,
+    required this.swatchDeep,
+    required this.isDarkCard,
+  });
+}
+
+final _themes = [
+  const _ThemeOption(
+    label: 'Rosa',
+    label2: 'Claro',
+    emoji: '🌸',
+    scheme: AppColorScheme.pink,
+    brightness: AppBrightness.light,
+    swatch: Color(0xFFFFD3E0),
+    swatchDeep: Color(0xFFC4607A),
+    isDarkCard: false,
+  ),
+  const _ThemeOption(
+    label: 'Rosa',
+    label2: 'Oscuro',
+    emoji: '🌙',
+    scheme: AppColorScheme.pink,
+    brightness: AppBrightness.dark,
+    swatch: Color(0xFFFFD3E0),
+    swatchDeep: Color(0xFFF08AAA),
+    isDarkCard: true,
+  ),
+  const _ThemeOption(
+    label: 'Azul',
+    label2: 'Claro',
+    emoji: '🩵',
+    scheme: AppColorScheme.blue,
+    brightness: AppBrightness.light,
+    swatch: Color(0xFF84DEFA),
+    swatchDeep: Color(0xFF0A8FAD),
+    isDarkCard: false,
+  ),
+  const _ThemeOption(
+    label: 'Azul',
+    label2: 'Oscuro',
+    emoji: '🌑',
+    scheme: AppColorScheme.blue,
+    brightness: AppBrightness.dark,
+    swatch: Color(0xFF84DEFA),
+    swatchDeep: Color(0xFF4DD4F2),
+    isDarkCard: true,
   ),
 ];
 
@@ -57,30 +115,29 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  static const int _virtualMultiplier = 1000;
+  late final PageController _pageController;
+  int _virtualPage = _carouselPages.length * _virtualMultiplier;
   late AnimationController _timerController;
 
   static const _slideDuration = Duration(seconds: 5);
-  // Index of the theme-picker slide (last one)
-  static const _themeSlideIndex = 3;
+
+  int get _realIndex => _virtualPage % _carouselPages.length;
 
   @override
   void initState() {
     super.initState();
+    _pageController = PageController(initialPage: _virtualPage);
     _timerController =
         AnimationController(vsync: this, duration: _slideDuration)
           ..addStatusListener((status) {
-            if (status == AnimationStatus.completed) {
-              _nextPage();
-            }
+            if (status == AnimationStatus.completed) _nextPage();
           });
     _timerController.forward();
   }
 
   void _nextPage() {
-    if (_currentPage >= _pages.length - 1) return; // stay on last
-    final next = _currentPage + 1;
+    final next = _virtualPage + 1;
     _pageController.animateToPage(
       next,
       duration: const Duration(milliseconds: 500),
@@ -88,24 +145,21 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  void _goToPage(int index) {
+  void _goToRealIndex(int index) {
+    final offset = index - _realIndex;
+    final targetVirtual = _virtualPage + offset;
     _pageController.animateToPage(
-      index,
+      targetVirtual,
       duration: const Duration(milliseconds: 400),
       curve: Curves.easeInOut,
     );
   }
 
-  void _onPageChanged(int index) {
-    setState(() => _currentPage = index);
+  void _onPageChanged(int virtualIndex) {
+    setState(() => _virtualPage = virtualIndex);
     _timerController.reset();
-    // Don't auto-advance from the theme selector slide
-    if (index < _themeSlideIndex) {
-      _timerController.forward();
-    }
+    _timerController.forward();
   }
-
-  bool get _isThemeSlide => _currentPage == _themeSlideIndex;
 
   @override
   void dispose() {
@@ -122,99 +176,39 @@ class _OnboardingScreenState extends State<OnboardingScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // ── Carousel ──────────────────────────────────────────────────
+            // ── HEADER: Selector de tema ───────────────────────────────────
             Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: _onPageChanged,
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  if (index == _themeSlideIndex) {
-                    return _buildThemeSelectorSlide(context);
-                  }
-                  return _buildPage(_pages[index], colors);
-                },
+              flex: 20,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 0, bottom: 0),
+                child: _buildThemeHeader(context),
               ),
             ),
 
-            // ── Bottom section ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 36),
-              child: Column(
-                children: [
-                  // Progress dots
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 24),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(_pages.length, (i) {
-                        final isActive = i == _currentPage;
-                        return GestureDetector(
-                          onTap: () => _goToPage(i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: const EdgeInsets.symmetric(horizontal: 4),
-                            width: isActive ? 32 : 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: isActive
-                                  ? colors.primary
-                                  : colors.primaryWithAlpha(0.3),
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
+            // ── Divider separador ──────────────────────────────────────────
+            Divider(
+              height: 0,
+              thickness: 2,
+              indent: 20,
+              endIndent: 20,
+              color: colors.primaryDark,
+            ),
 
-                  // CTA button
-                  GestureDetector(
-                    onTap: () {
-                      if (_isThemeSlide) {
-                        context.go('/login');
-                      } else {
-                        _nextPage();
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      decoration: BoxDecoration(
-                        color: colors.primary,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: colors.primaryWithAlpha(0.5),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _isThemeSlide ? 'Comenzar' : 'Siguiente',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: colors.textPrimary,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Icon(
-                            _isThemeSlide
-                                ? Icons.rocket_launch_rounded
-                                : Icons.arrow_forward_rounded,
-                            color: colors.textPrimary,
-                            size: 20,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+            // ── MEDIO: Carrusel infinito ───────────────────────────────────
+            Expanded(
+              flex: 60,
+              child: Padding(
+                padding: const EdgeInsets.only(top:48, bottom: 48),
+                child: _buildCarousel(colors),
+              ),
+            ),
+
+            // ── BOTTOM: Botón ──────────────────────────────────────────────
+            Expanded(
+              flex: 10,
+              child: Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 16),
+                child: _buildBottomButton(context, colors),
               ),
             ),
           ],
@@ -223,82 +217,211 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  // ── Standard info slide ────────────────────────────────────────────────────
-  Widget _buildPage(_OnboardingPage page, AppColors colors) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final h = constraints.maxHeight;
-        final imgHeight = (h * 0.38).clamp(160.0, 320.0);
-        final topPad = (h * 0.06).clamp(16.0, 64.0);
-        final gap = (h * 0.06).clamp(12.0, 72.0);
-        return SingleChildScrollView(
-          physics: const NeverScrollableScrollPhysics(),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(24, topPad, 24, 0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: imgHeight,
-                    child: Stack(
-                      fit: StackFit.expand,
+  // ── HEADER: fila horizontal con chips de tema ──────────────────────────────
+  Widget _buildThemeHeader(BuildContext context) {
+    final notifier = context.themeNotifier;
+    final colors = context.colors;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'ELIGE TU ESTILO',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: colors.textSecondary,
+              letterSpacing: 1.1,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: _themes.map((opt) {
+              final isSelected =
+                  notifier.scheme == opt.scheme &&
+                  notifier.brightness == opt.brightness;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => notifier.setTheme(opt.scheme, opt.brightness),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? opt.swatchDeep.withValues(alpha: 0.15)
+                          : colors.card,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSelected
+                            ? opt.swatchDeep
+                            : colors.primaryWithAlpha(0.15),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                colors.primaryWithAlpha(0.25),
-                                colors.primaryMidWithAlpha(0.45),
-                              ],
-                            ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _colorDot(opt.swatch, 10),
+                            const SizedBox(width: 3),
+                            _colorDot(opt.swatchDeep, 10),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(opt.emoji, style: const TextStyle(fontSize: 14)),
+                        const SizedBox(height: 2),
+                        Text(
+                          opt.label,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? opt.swatchDeep
+                                : colors.textSecondary,
                           ),
                         ),
-                        page.imageUrl.isNotEmpty
-                            ? Image.asset(
-                                page.imageUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
-                                    _buildFallback(page, colors),
-                              )
-                            : _buildFallback(page, colors),
-                        Container(color: Colors.black.withValues(alpha: 0.04)),
+                        Text(
+                          opt.label2,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w400,
+                            color: isSelected
+                                ? opt.swatchDeep.withValues(alpha: 0.8)
+                                : colors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
-                SizedBox(height: gap),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── CARRUSEL INFINITO ──────────────────────────────────────────────────────
+  Widget _buildCarousel(AppColors colors) {
+    return Column(
+      children: [
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            onPageChanged: _onPageChanged,
+            itemBuilder: (context, virtualIndex) {
+              final realIndex = virtualIndex % _carouselPages.length;
+              return _buildCarouselSlide(_carouselPages[realIndex], colors);
+            },
+          ),
+        ),
+
+        // Dots indicadores
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(_carouselPages.length, (i) {
+              final isActive = i == _realIndex;
+              return GestureDetector(
+                onTap: () => _goToRealIndex(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: isActive ? 28 : 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? colors.primary
+                        : colors.primaryWithAlpha(0.3),
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCarouselSlide(_OnboardingPage page, AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          colors.primaryWithAlpha(0.25),
+                          colors.primaryMidWithAlpha(0.45),
+                        ],
+                      ),
+                    ),
+                  ),
+                  page.imageUrl.isNotEmpty
+                      ? Image.asset(
+                          page.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) =>
+                              _buildFallback(page, colors),
+                        )
+                      : _buildFallback(page, colors),
+                ],
+              ),
+            ),
+          ),
+
+          // Texto debajo de la imagen
+          Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Column(
+              children: [
                 Text(
                   page.title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 32,
+                    fontSize: 24,
                     fontWeight: FontWeight.w800,
                     color: colors.textPrimary,
                     letterSpacing: -0.5,
                     height: 1.15,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 8),
                 Text(
                   page.description,
                   textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
                     color: colors.textSecondary,
-                    height: 1.6,
+                    height: 1.5,
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
@@ -322,233 +445,69 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         ),
         Center(
           child: Container(
-            width: 100,
-            height: 100,
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               color: colors.card.withValues(alpha: 0.85),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colors.primaryDeepWithAlpha(0.25),
-                  blurRadius: 24,
-                ),
-              ],
             ),
-            child: Icon(page.fallbackIcon, color: colors.primaryDeep, size: 44),
+            child: Icon(page.fallbackIcon, color: colors.primaryDeep, size: 36),
           ),
         ),
       ],
     );
   }
 
-  // ── Theme selector slide ───────────────────────────────────────────────────
-  Widget _buildThemeSelectorSlide(BuildContext context) {
-    final notifier = context.themeNotifier;
-    final colors = context.colors;
-
-    final themes = [
-      _ThemeOption(
-        label: 'Rosa Claro',
-        emoji: '🌸',
-        scheme: AppColorScheme.pink,
-        brightness: AppBrightness.light,
-        swatch: const Color(0xFFFFD3E0),
-        swatchDeep: const Color(0xFFC4607A),
-        isDarkCard: false,
-      ),
-      _ThemeOption(
-        label: 'Rosa Oscuro',
-        emoji: '🌙',
-        scheme: AppColorScheme.pink,
-        brightness: AppBrightness.dark,
-        swatch: const Color(0xFFFFD3E0),
-        swatchDeep: const Color(0xFFF08AAA),
-        isDarkCard: true,
-      ),
-      _ThemeOption(
-        label: 'Azul Claro',
-        emoji: '🩵',
-        scheme: AppColorScheme.blue,
-        brightness: AppBrightness.light,
-        swatch: const Color(0xFF84DEFA),
-        swatchDeep: const Color(0xFF0A8FAD),
-        isDarkCard: false,
-      ),
-      _ThemeOption(
-        label: 'Azul Oscuro',
-        emoji: '🌑',
-        scheme: AppColorScheme.blue,
-        brightness: AppBrightness.dark,
-        swatch: const Color(0xFF84DEFA),
-        swatchDeep: const Color(0xFF4DD4F2),
-        isDarkCard: true,
-      ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final h = constraints.maxHeight;
-        final topPad = (h * 0.05).clamp(12.0, 48.0);
-        final gap1 = (h * 0.03).clamp(8.0, 20.0);
-        final gap2 = (h * 0.04).clamp(10.0, 36.0);
-        return SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(24, topPad, 24, 0),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.palette_rounded,
-                  color: colors.primaryDeep,
-                  size: 56,
-                ),
-                SizedBox(height: gap1),
-                Text(
-                  'Elige tu estilo',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w800,
-                    color: colors.textPrimary,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Puedes cambiarlo después desde Perfil → Ajustes',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 14, color: colors.textSecondary),
-                ),
-                SizedBox(height: gap2),
-                GridView.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.15,
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: themes.map((opt) {
-                    final isSelected =
-                        notifier.scheme == opt.scheme &&
-                        notifier.brightness == opt.brightness;
-                    return GestureDetector(
-                      onTap: () async {
-                        await notifier.setTheme(opt.scheme, opt.brightness);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        decoration: BoxDecoration(
-                          color: opt.isDarkCard
-                              ? const Color(0xFF1A1A2E)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          border: Border.all(
-                            color: isSelected
-                                ? opt.swatchDeep
-                                : opt.swatch.withValues(alpha: 0.3),
-                            width: isSelected ? 3 : 1.5,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isSelected
-                                  ? opt.swatchDeep.withValues(alpha: 0.3)
-                                  : Colors.black.withValues(alpha: 0.05),
-                              blurRadius: isSelected ? 20 : 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                _colorDot(opt.swatch),
-                                const SizedBox(width: 6),
-                                _colorDot(opt.swatchDeep),
-                                if (opt.isDarkCard) ...[
-                                  const SizedBox(width: 6),
-                                  _colorDot(const Color(0xFF1A1A1A)),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              opt.emoji,
-                              style: const TextStyle(fontSize: 28),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              opt.label,
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w700,
-                                color: opt.isDarkCard
-                                    ? Colors.white
-                                    : const Color(0xFF1A1A1A),
-                              ),
-                            ),
-                            if (isSelected) ...[
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 3,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: opt.swatchDeep,
-                                  borderRadius: BorderRadius.circular(50),
-                                ),
-                                child: const Text(
-                                  'Activo',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
+  // ── BOTÓN ──────────────────────────────────────────────────────────────────
+  Widget _buildBottomButton(BuildContext context, AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      child: GestureDetector(
+        onTap: () => context.go('/login'),
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: colors.primary,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: colors.primaryWithAlpha(0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+              ),
+            ],
           ),
-        );
-      },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Comenzar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: colors.textPrimary,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Icon(
+                Icons.rocket_launch_rounded,
+                color: colors.textPrimary,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _colorDot(Color color) => Container(
-    width: 16,
-    height: 16,
+  Widget _colorDot(Color color, double size) => Container(
+    width: size,
+    height: size,
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 1.5),
+      border: Border.all(color: Colors.white, width: 1),
     ),
   );
-}
-
-class _ThemeOption {
-  final String label;
-  final String emoji;
-  final AppColorScheme scheme;
-  final AppBrightness brightness;
-  final Color swatch;
-  final Color swatchDeep;
-  final bool isDarkCard;
-
-  const _ThemeOption({
-    required this.label,
-    required this.emoji,
-    required this.scheme,
-    required this.brightness,
-    required this.swatch,
-    required this.swatchDeep,
-    required this.isDarkCard,
-  });
 }

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import '../../services/auth_service.dart';
+import 'package:runn_front/core/services/http_client.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,6 +18,72 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
+
+  Future<void> _handleRegister() async {
+    final name = _nameController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    if (name.isEmpty || email.isEmpty || password.isEmpty || confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, completa todos los campos')),
+      );
+      return;
+    }
+
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, ingresa un correo electrónico válido')),
+      );
+      return;
+    }
+
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Las contraseñas no coinciden')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await AuthService.registro(
+        nombre: name,
+        correo: email,
+        contrasena: password,
+        confirmarContrasena: confirmPassword,
+      );
+      if (mounted) {
+        context.go('/splash', extra: '/profile_setup');
+      }
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            backgroundColor: const Color(0xFFFF3B30),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error inesperado de conexión'),
+            backgroundColor: Color(0xFFFF3B30),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -55,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
-                    vertical: 16,
+                    vertical: 8,
                   ),
                   child: Row(
                     children: [
@@ -72,86 +140,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Hero image
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: c.primary, width: 3),
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: SizedBox(
-                                width: double.infinity,
-                                height: 180,
-                                child: Stack(
-                                  fit: StackFit.expand,
-                                  children: [
-                                    ColorFiltered(
-                                      colorFilter: ColorFilter.mode(
-                                        c.primaryWithAlpha(0.35),
-                                        BlendMode.overlay,
-                                      ),
-                                      child: Image.asset(
-                                        'assets/corredores.jpg',
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, __, ___) =>
-                                            _buildFallbackHero(c),
-                                      ),
-                                    ),
-                                    Container(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          colors: [
-                                            Colors.black.withValues(
-                                              alpha: 0.05,
-                                            ),
-                                            Colors.black.withValues(
-                                              alpha: 0.15,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                          padding: const EdgeInsets.fromLTRB(24, 14, 24, 4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Únete a la Carrera',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w800,
+                                  color: c.textPrimary,
+                                  letterSpacing: -0.5,
+                                  height: 1.15,
                                 ),
                               ),
-                            ),
+                              SizedBox(height: 6), // opcional para espacio
+                              Text(
+                                'Regístrate para empezar a conquistar territorios en tu ciudad.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  color: c.textSecondary,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
 
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
-                          child: Text(
-                            'Únete a la carrera',
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w800,
-                              color: c.textPrimary,
-                              letterSpacing: -0.5,
-                              height: 1.15,
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
-                          child: Text(
-                            'Regístrate para empezar a conquistar territorios en tu ciudad.',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: c.textSecondary,
-                              height: 1.5,
-                            ),
-                          ),
-                        ),
-
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                          padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -159,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               const SizedBox(height: 8),
                               _buildTextField(
                                 controller: _nameController,
-                                hint: 'Ej. Juan Pérez',
+                                hint: 'Tu nombre y apellido',
                                 keyboardType: TextInputType.name,
                                 c: c,
                               ),
@@ -169,7 +190,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               const SizedBox(height: 8),
                               _buildTextField(
                                 controller: _emailController,
-                                hint: 'tu@email.com',
+                                hint: 'Tu correo electrónico',
                                 keyboardType: TextInputType.emailAddress,
                                 c: c,
                               ),
@@ -200,36 +221,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               const SizedBox(height: 28),
 
                               // Register button
-                                GestureDetector(
-                                  // Temporalmente enviando as splash -> home similar al login para match con el request.
-                                  onTap: () {
-                                    context.go('/splash', extra: '/profile_setup');
-                                  },
-                                  child: Container(
-                                    width: double.infinity,
+                              GestureDetector(
+                                onTap: _isLoading ? null : _handleRegister,
+                                child: Container(
+                                  width: double.infinity,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 18,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: c.primary,
+                                    color: _isLoading
+                                        ? c.primary.withValues(alpha: 0.5)
+                                        : c.primary,
                                     borderRadius: BorderRadius.circular(16),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: c.primaryWithAlpha(0.5),
-                                        blurRadius: 20,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ],
+                                    boxShadow: _isLoading
+                                        ? []
+                                        : [
+                                            BoxShadow(
+                                              color: c.primaryWithAlpha(0.5),
+                                              blurRadius: 20,
+                                              offset: const Offset(0, 8),
+                                            ),
+                                          ],
                                   ),
                                   child: Center(
-                                    child: Text(
-                                      'Registrarse',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w700,
-                                        color: c.textPrimary,
-                                      ),
-                                    ),
+                                    child: _isLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Registrarse',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w700,
+                                              color: c.textPrimary,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ),
@@ -334,46 +365,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildFallbackHero(c) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 8,
-            mainAxisSpacing: 1,
-            crossAxisSpacing: 1,
-          ),
-          itemCount: 64,
-          itemBuilder: (_, i) => Container(
-            color: i % 3 == 0
-                ? c.primaryWithAlpha(0.2)
-                : c.primaryLight.withValues(alpha: 0.6),
-          ),
-        ),
-        Center(
-          child: Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: c.card.withValues(alpha: 0.85),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: c.primaryDeepWithAlpha(0.25), blurRadius: 20),
-              ],
-            ),
-            child: Icon(
-              Icons.directions_run_rounded,
-              color: c.primaryDeep,
-              size: 32,
-            ),
-          ),
-        ),
-      ],
     );
   }
 

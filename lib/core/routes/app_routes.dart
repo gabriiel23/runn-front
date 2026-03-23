@@ -10,11 +10,17 @@ import 'package:runn_front/core/widgets/splash_page.dart';
 import 'package:runn_front/features/login/register/presentation/pages/login_page.dart';
 import 'package:runn_front/features/login/register/presentation/pages/register_page.dart';
 import 'package:runn_front/features/home/presentation/pages/home_page.dart';
+import 'package:runn_front/features/home/presentation/pages/news_edit_page.dart';
 import 'package:runn_front/features/community/presentation/pages/community_page.dart';
 import 'package:runn_front/features/community/presentation/pages/runners_page.dart';
 import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
 import 'package:runn_front/features/community/presentation/pages/group_detail_page.dart';
 import 'package:runn_front/features/community/presentation/pages/create_group_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_members_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_challenges_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_activities_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_ranking_page.dart';
+import 'package:runn_front/features/community/presentation/pages/group_gallery_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_detail_page.dart';
 import 'package:runn_front/features/territory/presentation/pages/territory_ranking_page.dart';
@@ -27,16 +33,14 @@ import 'package:runn_front/features/challenges/presentation/pages/community_race
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
 import 'package:runn_front/features/run_results/presentation/pages/run_results_page.dart';
-import 'package:runn_front/features/community/presentation/pages/rival_profile_page.dart';
+import 'package:runn_front/features/community/presentation/pages/public_profile_page.dart';
 import 'package:runn_front/features/community/presentation/pages/multimedia_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_participants_page.dart';
-import 'package:runn_front/features/community/presentation/pages/participant_profile_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/edit_profile_page.dart';
-import 'package:runn_front/features/community/presentation/pages/rival_details_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/wearables_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_multimedia_page.dart';
 
@@ -107,14 +111,20 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/physical_metrics',
       name: 'physical_metrics',
-      builder: (context, state) => const PhysicalMetricsScreen(),
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>? ?? {};
+        return PhysicalMetricsScreen(metricas: data);
+      },
     ),
 
     // Runner profile creation flow (Step 3)
     GoRoute(
       path: '/runner_profile',
       name: 'runner_profile',
-      builder: (context, state) => const RunnerProfileScreen(),
+      builder: (context, state) {
+        final data = state.extra as Map<String, dynamic>? ?? {};
+        return RunnerProfileScreen(metricas: data);
+      },
     ),
 
     // Run Results (outside shell — full screen)
@@ -122,6 +132,16 @@ final GoRouter appRouter = GoRouter(
       path: '/run_results',
       name: 'run_results',
       builder: (context, state) => const RunResultsScreen(),
+    ),
+
+    // News Edit
+    GoRoute(
+      path: '/news/:id/edit',
+      name: 'news_edit',
+      builder: (context, state) {
+        final id = state.pathParameters['id']!;
+        return NewsEditPage(novedadId: id);
+      },
     ),
 
     // Shell — main navigation with bottom bar
@@ -167,12 +187,69 @@ final GoRouter appRouter = GoRouter(
                       builder: (context, state) => const CreateGroupPage(),
                     ),
                     GoRoute(
-                      path: 'detail',
+                      path: ':grupoId',
                       name: 'group_detail',
                       builder: (context, state) {
-                        final groupData = state.extra as Map<String, dynamic>?;
-                        return GroupDetailPage(groupData: groupData);
+                        final grupoId = state.pathParameters['grupoId']!;
+                        return GroupDetailPage(grupoId: grupoId);
                       },
+                      routes: [
+                        GoRoute(
+                          path: 'members',
+                          name: 'group_members',
+                          builder: (context, state) {
+                            final grupoId = state.pathParameters['grupoId']!;
+                            final extra = state.extra as Map<String, dynamic>?;
+                            return GroupMembersPage(
+                              grupoId: grupoId,
+                              miRol: extra?['mi_rol']?.toString(),
+                            );
+                          },
+                        ),
+                        GoRoute(
+                          path: 'challenges',
+                          name: 'group_challenges',
+                          builder: (context, state) {
+                            final grupoId = state.pathParameters['grupoId']!;
+                            final extra = state.extra as Map<String, dynamic>?;
+                            return GroupChallengesPage(
+                              grupoId: grupoId,
+                              miRol: extra?['mi_rol']?.toString(),
+                            );
+                          },
+                        ),
+                        GoRoute(
+                          path: 'activities',
+                          name: 'group_activities',
+                          builder: (context, state) {
+                            final grupoId = state.pathParameters['grupoId']!;
+                            final extra = state.extra as Map<String, dynamic>?;
+                            return GroupActivitiesPage(
+                              grupoId: grupoId,
+                              miRol: extra?['mi_rol']?.toString(),
+                            );
+                          },
+                        ),
+                        GoRoute(
+                          path: 'ranking/:tipo',
+                          name: 'group_ranking',
+                          builder: (context, state) {
+                            final grupoId = state.pathParameters['grupoId']!;
+                            final tipo = state.pathParameters['tipo'] ?? 'retos';
+                            return GroupRankingPage(grupoId: grupoId, tipo: tipo);
+                          },
+                        ),
+                        GoRoute(
+                          path: 'gallery',
+                          name: 'group_gallery',
+                          builder: (context, state) {
+                            final grupoId = state.pathParameters['grupoId']!;
+                            final extra = state.extra as Map<String, dynamic>?;
+                            final esMiembro = extra?['es_miembro'] as bool? ?? false;
+                            return GroupGalleryPage(grupoId: grupoId, esMiembro: esMiembro);
+                          },
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -182,18 +259,19 @@ final GoRouter appRouter = GoRouter(
                   builder: (context, state) {
                     final userId = state.pathParameters['userId']!;
                     final extraData = state.extra as Map<String, dynamic>?;
-                    return RivalDetailsPage(
+                    return PublicProfilePage(
                       userId: userId,
-                      rivalData: extraData,
+                      viewType: 'rival',
+                      extraData: extraData,
                     );
                   },
                 ),
                 GoRoute(
-                  path: 'rival-profile/:userId',
-                  name: 'rival_profile',
+                  path: 'profile-others-runners/:userId',
+                  name: 'profile_others_runners',
                   builder: (context, state) {
                     final userId = state.pathParameters['userId']!;
-                    return RivalProfilePage(userId: userId);
+                    return PublicProfilePage(userId: userId, viewType: 'runner');
                   },
                 ),
                 GoRoute(
@@ -225,13 +303,10 @@ final GoRouter appRouter = GoRouter(
                   path: 'event/:eventId/participant/:userId',
                   name: 'participant_profile',
                   builder: (context, state) {
-                    final eventId = state.pathParameters['eventId']!;
                     final userId = state.pathParameters['userId']!;
-                    final extraData = state.extra as Map<String, dynamic>?;
-                    return ParticipantProfilePage(
-                      eventId: eventId,
+                    return PublicProfilePage(
                       userId: userId,
-                      participantData: extraData,
+                      viewType: 'participant',
                     );
                   },
                 ),

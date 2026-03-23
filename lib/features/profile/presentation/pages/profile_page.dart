@@ -1,9 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import '../../services/profile_service.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Map<String, dynamic> _userData = {};
+  // Lista de fotos multimedia del backend ({id, url})
+  List<Map<String, String>> _mediaItems = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    // 1. Carga instantánea desde caché local
+    final local = await ProfileService.getLocalProfile();
+    if (mounted) {
+      setState(() {
+        _userData = local;
+        _isLoading = false;
+      });
+    }
+
+    // 2. Refresco en segundo plano: perfil y multimedia desde el servidor
+    try {
+      final remoto = await ProfileService.getMyProfile();
+      if (mounted) {
+        setState(() {
+          _userData = {
+            'id': remoto.id,
+            'nombre': remoto.nombre,
+            'correo': remoto.correo,
+            'nivel': remoto.nivel,
+            'puntos': remoto.puntos,
+            'biografia': remoto.biografia,
+            'avatar_url': remoto.avatarUrl,
+            'ciudad': remoto.ciudad,
+            'pais': remoto.pais,
+            'peso_kg': remoto.pesoKg,
+            'altura_cm': remoto.alturaCm,
+          };
+        });
+      }
+    } catch (_) {
+      // Se mantienen los datos del caché si falla la red
+    }
+
+    // Cargar multimedia desde el backend
+    try {
+      final items = await ProfileService.getMedia();
+      if (mounted) setState(() => _mediaItems = items);
+    } catch (_) {
+      // Fallback silencioso
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,9 +85,7 @@ class ProfileScreen extends StatelessWidget {
                 _buildStatisticsSection(context),
                 const SizedBox(height: 28),
                 _buildMultimediaSection(context),
-                const SizedBox(height: 28),
-                _buildSettingsMenu(context),
-                const SizedBox(height: 100),
+                const SizedBox(height: 60),
               ]),
             ),
           ),
@@ -36,12 +94,25 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // HEADER (foto + nombre + descripción + ubicación + círculos de stats)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // HEADER
+  // ────────────────────────────────────────────────────────────────────────────
 
   Widget _buildHeader(BuildContext context) {
     final c = context.colors;
+    final nombre = _userData['nombre'] as String? ?? '';
+    final biografia = _userData['biografia'] as String?;
+    final ciudad = _userData['ciudad'] as String?;
+    final pais = _userData['pais'] as String?;
+    final avatarUrl = _userData['avatar_url'] as String?;
+    final nivel = _userData['nivel'] as String?;
+    final puntos = (_userData['puntos'] as num?)?.toInt() ?? 0;
+
+    final ubicacion = [
+      ciudad,
+      pais,
+    ].where((s) => s != null && s.isNotEmpty).join(', ');
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -58,14 +129,18 @@ class ProfileScreen extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            // ── Barra superior ─────────────────────────────────────────────
+            // ── Barra superior ────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   GestureDetector(
-                    onTap: () => context.pushNamed('profile_edit'),
+                    onTap: () async {
+                      await context.pushNamed('profile_settings');
+                      // Refrescar datos al volver por si se ha modificado el perfil desde Configuración
+                      if (mounted) _loadProfile();
+                    },
                     child: Container(
                       width: 42,
                       height: 42,
@@ -74,9 +149,9 @@ class ProfileScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(13),
                       ),
                       child: Icon(
-                        Icons.edit_rounded,
+                        Icons.menu_rounded,
                         color: c.primaryDeep,
-                        size: 19,
+                        size: 20,
                       ),
                     ),
                   ),
@@ -85,138 +160,140 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
 
-            // ── Foto de perfil con borde de nivel ──────────────────────────
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Foto
-                Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        const Color(0xFFFFB84D),
-                        const Color(0xFFFFB84D).withValues(alpha: 0.4),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundColor: c.primaryLight,
-                    child: Icon(
-                      Icons.person_rounded,
-                      color: c.primaryDeepWithAlpha(0.7),
-                      size: 46,
-                    ),
-                  ),
-                ),
-                // Badge de nivel
-                Positioned(
-                  bottom: -6,
-                  left: 0,
-                  right: 0,
-                  child: Center(
+            // ── Foto de perfil ────────────────────────────────────────────────
+            SizedBox(
+              width: 160, // 🔥 control total aquí
+              height: 160,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 4,
-                      ),
+                      width: 160, // 🔥 tamaño del avatar
+                      height: 160,
+                      padding: const EdgeInsets.all(4), // 🔥 borde
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFFB84D),
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFFB84D).withValues(
-                              alpha: 0.4,
-                            ),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFFFFB84D),
+                            const Color(0xFFFFB84D).withValues(alpha: 0.4),
+                          ],
+                        ),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.emoji_events_rounded,
-                            color: Colors.white,
-                            size: 13,
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            'LVL. 10',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                        ],
+                      child: ClipOval(
+                        child: avatarUrl != null && avatarUrl.isNotEmpty
+                            ? Image.network(
+                                avatarUrl,
+                                fit: BoxFit.cover, // 🔥 clave
+                              )
+                            : Container(
+                                color: c.primaryLight,
+                                child: Icon(
+                                  Icons.person_rounded,
+                                  size: 40,
+                                  color: c.primaryDeepWithAlpha(0.7),
+                                ),
+                              ),
                       ),
                     ),
                   ),
-                ),
-              ],
+
+                  // Badge
+                  Positioned(
+                    bottom: -6,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB84D),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          nivel ?? 'PRINCIPIANTE',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 24),
 
-            // ── Nombre ─────────────────────────────────────────────────────
-            Text(
-              'Alex Runner',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w800,
-                color: c.textPrimary,
-                letterSpacing: -0.8,
-              ),
-            ),
+            // ── Nombre ───────────────────────────────────────────────────────
+            _isLoading && nombre.isEmpty
+                ? Container(
+                    width: 140,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: c.primaryLight,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  )
+                : Text(
+                    nombre.isNotEmpty ? nombre : 'Mi perfil',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: c.textPrimary,
+                      letterSpacing: -0.8,
+                    ),
+                  ),
             const SizedBox(height: 8),
 
-            // ── Descripción ────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Text(
-                'Corriendo por el mundo, un kilómetro a la vez. 🏃‍♂️💨',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: c.textSecondary,
-                  height: 1.5,
-                  fontWeight: FontWeight.w400,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-
-            // ── Ubicación ──────────────────────────────────────────────────
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.location_on_rounded,
-                  size: 14,
-                  color: c.primaryDeepWithAlpha(0.6),
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Loja, EC',
+            // ── Biografía ────────────────────────────────────────────────────
+            if (biografia != null && biografia.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  biografia,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
                     color: c.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    height: 1.5,
+                    fontWeight: FontWeight.w400,
                   ),
                 ),
-              ],
-            ),
+              ),
+            const SizedBox(height: 10),
+
+            // ── Ubicación ────────────────────────────────────────────────────
+            if (ubicacion.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.location_on_rounded,
+                    size: 14,
+                    color: c.primaryDeepWithAlpha(0.6),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    ubicacion,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: c.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
 
             const SizedBox(height: 28),
 
-            // ── Tres círculos de stats ─────────────────────────────────────
+            // ── Círculos de stats ─────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Row(
@@ -224,22 +301,22 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   _buildStatCircle(
                     context,
-                    '12',
+                    '–',
                     'Territorios',
                     Icons.flag_rounded,
                     const Color(0xFFE8698A),
                   ),
                   _buildStatCircle(
                     context,
-                    '352',
+                    '–',
                     'KM Totales',
                     Icons.directions_run_rounded,
                     c.primaryDeep,
                   ),
                   _buildStatCircle(
                     context,
-                    '#8',
-                    'Rango',
+                    '$puntos',
+                    'Puntos',
                     Icons.leaderboard_rounded,
                     const Color(0xFFFFB84D),
                   ),
@@ -270,10 +347,7 @@ class ProfileScreen extends StatelessWidget {
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: color.withValues(alpha: 0.08),
-            border: Border.all(
-              color: color.withValues(alpha: 0.2),
-              width: 2,
-            ),
+            border: Border.all(color: color.withValues(alpha: 0.2), width: 2),
           ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -305,9 +379,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // INSIGNIAS (preview + Ver más)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // INSIGNIAS
+  // ────────────────────────────────────────────────────────────────────────────
 
   Widget _buildBadgesSection(BuildContext context) {
     final c = context.colors;
@@ -391,37 +465,37 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // ESTADÍSTICAS (preview + Ver más)
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // ESTADÍSTICAS
+  // ────────────────────────────────────────────────────────────────────────────
 
   Widget _buildStatisticsSection(BuildContext context) {
     final c = context.colors;
     final previewStats = [
       {
         'label': 'Total km',
-        'value': '352.4',
+        'value': '–',
         'unit': 'km',
         'icon': Icons.route_rounded,
         'color': c.primaryDeep,
       },
       {
         'label': 'Velocidad máx.',
-        'value': '18.2',
+        'value': '–',
         'unit': 'km/h',
         'icon': Icons.speed_rounded,
         'color': const Color(0xFFE8698A),
       },
       {
         'label': 'Ritmo promedio',
-        'value': '5:12',
+        'value': '–',
         'unit': 'min/km',
         'icon': Icons.timer_rounded,
         'color': const Color(0xFF7ED957),
       },
       {
         'label': 'Carreras',
-        'value': '47',
+        'value': '–',
         'unit': 'total',
         'icon': Icons.flag_rounded,
         'color': const Color(0xFFFFB84D),
@@ -438,13 +512,15 @@ class ProfileScreen extends StatelessWidget {
           () => context.pushNamed('profile_stats'),
         ),
         const SizedBox(height: 16),
-        GridView.count(
-          crossAxisCount: 2,
+        GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 2.4,
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: 74,
+          ),
           children: previewStats.map((s) {
             final color = s['color'] as Color;
             final icon = s['icon'] as IconData;
@@ -487,6 +563,8 @@ class ProfileScreen extends StatelessWidget {
                             color: c.textPrimary,
                             letterSpacing: -0.3,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           s['label'] as String,
@@ -495,6 +573,8 @@ class ProfileScreen extends StatelessWidget {
                             color: c.textSecondary,
                             fontWeight: FontWeight.w500,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -508,132 +588,74 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
   // MULTIMEDIA
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
 
   Widget _buildMultimediaSection(BuildContext context) {
     final c = context.colors;
-    final mockImages = [
-      'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=500&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=500&auto=format&fit=crop',
-    ];
+    // Mostrar máximo 3 thumbnails
+    final preview = _mediaItems.take(3).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildSectionHeader(
-          context,
-          'Multimedia',
-          'Ver todo',
-          () => context.pushNamed('profile_multimedia'),
-        ),
+        _buildSectionHeader(context, 'Multimedia', 'Ver todo', () async {
+          await context.pushNamed('profile_multimedia');
+          // Recargar multimedia cuando se regresa
+          if (mounted) {
+            final items = await ProfileService.getMedia();
+            if (mounted) setState(() => _mediaItems = items);
+          }
+        }),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 120,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: mockImages.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              return AspectRatio(
-                aspectRatio: 1,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    mockImages[index],
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      color: c.primaryDeepWithAlpha(0.1),
-                      child: Icon(
-                        Icons.broken_image_rounded,
-                        color: c.textHint,
+        if (preview.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24.0),
+              child: Text(
+                'Sin fotos',
+                style: TextStyle(color: c.textHint, fontSize: 13),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 110,
+            child: Row(
+              children: [
+                for (int i = 0; i < preview.length; i++) ...[
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        preview[i]['url']!,
+                        fit: BoxFit.cover,
+                        height: 110,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: c.primaryDeepWithAlpha(0.1),
+                          child: Icon(
+                            Icons.broken_image_rounded,
+                            color: c.textHint,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            },
+                  if (i < preview.length - 1) const SizedBox(width: 8),
+                ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }
 
-  // ──────────────────────────────────────────────────────────────────────────
-  // MENÚ DE OPCIONES FINALES
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
 
-  Widget _buildSettingsMenu(BuildContext context) {
-    return Column(
-      children: [
-        _buildMenuOption(
-          context,
-          'Editar perfil',
-          Icons.person_outline_rounded,
-          'profile_edit',
-        ),
-        const SizedBox(height: 12),
-        _buildMenuOption(
-          context,
-          'Conectar wearable',
-          Icons.watch_rounded,
-          'profile_wearables',
-        ),
-        const SizedBox(height: 12),
-        _buildMenuOption(
-          context,
-          'Configuración',
-          Icons.settings_outlined,
-          'profile_settings',
-        ),
-      ],
-    );
-  }
-
-  Widget _buildMenuOption(
-    BuildContext context,
-    String title,
-    IconData icon,
-    String routeName,
-  ) {
-    final c = context.colors;
-    return ListTile(
-      onTap: () => context.pushNamed(routeName),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      tileColor: c.card,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: c.primaryDeepWithAlpha(0.05)),
-      ),
-      leading: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: c.primaryLight,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: c.primaryDeep, size: 20),
-      ),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: c.textPrimary,
-        ),
-      ),
-      trailing: Icon(
-        Icons.arrow_forward_ios_rounded,
-        size: 14,
-        color: c.textHint.withValues(alpha: 0.5),
-      ),
-    );
-  }
-
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
   // HELPERS
-  // ──────────────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
 
   Widget _buildSectionHeader(
     BuildContext context,

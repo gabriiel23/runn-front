@@ -3,7 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 
 class PhysicalMetricsScreen extends StatefulWidget {
-  const PhysicalMetricsScreen({super.key});
+  final Map<String, dynamic> metricas;
+
+  const PhysicalMetricsScreen({super.key, required this.metricas});
 
   @override
   State<PhysicalMetricsScreen> createState() => _PhysicalMetricsScreenState();
@@ -379,7 +381,13 @@ class _PhysicalMetricsScreenState extends State<PhysicalMetricsScreen> {
 
                         // ── Next button ───────────────────────────────
                         GestureDetector(
-                          onTap: () => context.go('/runner_profile'),
+                          onTap: () {
+                            final nuevasMetricas = Map<String, dynamic>.from(widget.metricas);
+                            nuevasMetricas['altura_cm'] = _height;
+                            nuevasMetricas['peso_kg'] = _weight;
+
+                            context.go('/runner_profile', extra: nuevasMetricas);
+                          },
                           child: Container(
                             width: double.infinity,
                             height: 56,

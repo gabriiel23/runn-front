@@ -1,8 +1,13 @@
-﻿import 'dart:async';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/config/api_config.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/features/home/data/models/novedad_model.dart';
+import 'package:runn_front/features/home/services/novedades_service.dart';
+import 'package:runn_front/features/home/presentation/widgets/news_bottom_sheet.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,26 +28,9 @@ class _HomeScreenState extends State<HomeScreen>
   int _newsCurrentPage = 0;
   int _quoteCurrentPage = 0;
 
-  final List<Map<String, String>> _newsItems = const [
-    {
-      'title': 'Maraton de Primavera: Inscribete',
-      'subtitle': 'Evento principal de esta semana',
-      'image':
-          'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=1000&q=80',
-    },
-    {
-      'title': 'Nueva ruta en parque central',
-      'subtitle': 'Conquista 3 territorios hoy',
-      'image':
-          'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?auto=format&fit=crop&w=1000&q=80',
-    },
-    {
-      'title': 'Reto nocturno disponible',
-      'subtitle': 'Gana bonus de energia',
-      'image':
-          'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1000&q=80',
-    },
-  ];
+  bool _isAdmin = false;
+  bool _isLoadingNews = true;
+  List<NovedadModel> _newsItems = [];
 
   final List<Map<String, String>> _quotes = const [
     {
@@ -72,7 +60,22 @@ class _HomeScreenState extends State<HomeScreen>
       curve: Curves.easeOut,
     );
     _animationController.forward();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await _checkRole();
+    await _loadNews();
     _startAutoCarousels();
+  }
+
+  Future<void> _checkRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _isAdmin = prefs.getString(ApiConfig.userRolKey) == 'admin';
+      });
+    }
   }
 
   @override
@@ -87,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _startAutoCarousels() {
     _newsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
+      if (!mounted || _newsItems.isEmpty) return;
       final next = (_newsCurrentPage + 1) % _newsItems.length;
       _newsPageController.animateToPage(
         next,
@@ -138,6 +141,20 @@ class _HomeScreenState extends State<HomeScreen>
                         'Novedades',
                         Icons.newspaper_rounded,
                         context,
+                        trailing: _isAdmin
+                            ? IconButton(
+                                onPressed: () async {
+                                  final refresh = await context.push('/news/new/edit');
+                                  if (refresh == true) {
+                                    _loadNews();
+                                  }
+                                },
+                                icon: Icon(Icons.add_circle, color: context.colors.primaryDeep, size: 28),
+                                tooltip: 'Nueva Novedad',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              )
+                            : null,
                       ),
                       const SizedBox(height: 16),
                       _newsCarousel(),
@@ -282,8 +299,9 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildSectionHeader(
     String title,
     IconData icon,
-    BuildContext context,
-  ) {
+    BuildContext context, {
+    Widget? trailing,
+  }) {
     final c = context.colors;
     return Row(
       children: [
@@ -306,7 +324,11 @@ class _HomeScreenState extends State<HomeScreen>
             letterSpacing: -0.4,
           ),
         ),
-        const Spacer(),
+        if (trailing != null) ...[
+          const Spacer(),
+          trailing,
+        ] else
+          const Spacer(),
       ],
     );
   }
@@ -341,19 +363,19 @@ class _HomeScreenState extends State<HomeScreen>
             padding: const EdgeInsets.symmetric(vertical: 18),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
+              children: [
                 Icon(
                   Icons.play_circle_fill_rounded,
-                  color: Colors.white,
+                  color: c.primaryLight,
                   size: 26,
                 ),
-                SizedBox(width: 10),
+                const SizedBox(width: 10),
                 Text(
                   'Iniciar Carrera',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: c.primaryLight,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -367,11 +389,54 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── NEWS CAROUSEL ─────────────────────────────────────────────────────────
 
+  Future<void> _loadNews() async {
+    try {
+      final items = _isAdmin
+          ? await NovedadesService.getAdminNovedades()
+          : await NovedadesService.getNovedades();
+      if (mounted) {
+        setState(() {
+          _newsItems = items;
+          _isLoadingNews = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingNews = false);
+      }
+    }
+  }
+
   Widget _newsCarousel() {
+    if (_isLoadingNews) {
+      return const SizedBox(
+        height: 165,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_newsItems.isEmpty) {
+      return Container(
+        height: 165,
+        decoration: BoxDecoration(
+          color: context.colors.primaryDeepWithAlpha(0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Pronto habrán novedades...',
+          style: TextStyle(
+            color: context.colors.textHint,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
     return Column(
       children: [
         SizedBox(
-          height: 165,
+          height: 280,
           child: PageView.builder(
             controller: _newsPageController,
             itemCount: _newsItems.length,
@@ -379,14 +444,24 @@ class _HomeScreenState extends State<HomeScreen>
             itemBuilder: (_, index) {
               final item = _newsItems[index];
               return _NewsCard(
-                title: item['title']!,
-                subtitle: item['subtitle']!,
-                imageUrl: item['image']!,
+                novedad: item,
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (ctx) => NewsDetailBottomSheet(
+                      novedad: item,
+                      isAdmin: _isAdmin,
+                      onRefreshRequested: _loadNews,
+                    ),
+                  );
+                },
               );
             },
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         _dotIndicator(_newsItems.length, _newsCurrentPage),
       ],
     );
@@ -923,64 +998,129 @@ class _HomeScreenState extends State<HomeScreen>
 // ── NEWS CARD ─────────────────────────────────────────────────────────────────
 
 class _NewsCard extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final String imageUrl;
+  final NovedadModel novedad;
+  final VoidCallback onTap;
 
   const _NewsCard({
-    required this.title,
-    required this.subtitle,
-    required this.imageUrl,
+    required this.novedad,
+    required this.onTap,
   });
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '';
+    final months = [
+      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+    ];
+    return '${date.day} de ${months[date.month - 1]}. ${date.year}';
+  }
+
+  String _capitalize(String s) {
+    if (s.isEmpty) return '';
+    return s[0].toUpperCase() + s.substring(1).toLowerCase().replaceAll('_', ' ');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 1),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        image: DecorationImage(
-          image: NetworkImage(imageUrl),
-          fit: BoxFit.cover,
-        ),
-      ),
+    final c = context.colors;
+    final hasImage = novedad.fotoUrl != null && novedad.fotoUrl!.isNotEmpty;
+
+    return GestureDetector(
+      onTap: onTap,
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 1),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withValues(alpha: 0.10),
-              Colors.black.withValues(alpha: 0.60),
+          color: c.primaryDeep,
+          image: hasImage
+              ? DecorationImage(
+                  image: NetworkImage(novedad.fotoUrl!),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.10),
+                Colors.black.withValues(alpha: 0.75),
+              ],
+            ),
+          ),
+          padding: const EdgeInsets.all(18),
+          child: Stack(
+            children: [
+              if (novedad.destacada)
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB84D),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.star_rounded, color: Colors.white, size: 14),
+                        SizedBox(width: 4),
+                        Text('Destacado', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: c.primaryDeep,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      _capitalize(novedad.tipo),
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    novedad.titulo,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      height: 1.15,
+                      letterSpacing: -0.4,
+                      color: Colors.white,
+                    ),
+                  ),
+                  if (novedad.publicadoEn != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      _formatDate(novedad.publicadoEn),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
-        ),
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-                height: 1.15,
-                letterSpacing: -0.4,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              subtitle,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
-            ),
-          ],
         ),
       ),
     );

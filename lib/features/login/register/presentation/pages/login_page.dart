@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import '../../../../../core/config/api_config.dart';
+import '../../../../../core/services/http_client.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,6 +15,63 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  Future<void> _handleLogin() async {
+    final correo = _emailController.text.trim();
+    final contrasena = _passwordController.text.trim();
+
+    if (correo.isEmpty || contrasena.isEmpty) {
+      _showError('Por favor ingresa tu correo y contraseña.');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final data = await RunnHttpClient.post(
+        '/auth/login',
+        body: {'correo': correo, 'contrasena': contrasena},
+      ) as Map<String, dynamic>;
+
+      final token = data['token'] as String;
+      final usuario = data['usuario'] as Map<String, dynamic>;
+
+      await ApiConfig.saveUserSession(
+        token: token,
+        id: usuario['id'] as String,
+        nombre: usuario['nombre'] as String,
+        correo: usuario['correo'] as String,
+        nivel: usuario['nivel'] as String?,
+        puntos: (usuario['puntos'] as num?)?.toInt(),
+        rol: usuario['rol'] as String?,
+      );
+
+      if (!mounted) return;
+      context.go('/home');
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      _showError(e.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showError('No se pudo conectar al servidor.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFFF3B30),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(20),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -141,7 +200,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const SizedBox(height: 8),
                                   _buildTextField(
                                     controller: _emailController,
-                                    hint: 'tu@email.com',
+                                    hint: 'Tu correo electrónico',
                                     keyboardType: TextInputType.emailAddress,
                                     c: c,
                                   ),
@@ -170,16 +229,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
                                   // Login button
                                   GestureDetector(
-                                    onTap: () {
-                                      context.go('/splash', extra: '/home');
-                                    },
+                                    onTap: _isLoading ? null : _handleLogin,
                                     child: Container(
                                       width: double.infinity,
                                       padding: const EdgeInsets.symmetric(
                                         vertical: 18,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: c.primary,
+                                        color: _isLoading
+                                            ? c.primary.withValues(alpha: 0.6)
+                                            : c.primary,
                                         borderRadius: BorderRadius.circular(16),
                                         boxShadow: [
                                           BoxShadow(
@@ -190,14 +249,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ],
                                       ),
                                       child: Center(
-                                        child: Text(
-                                          'Iniciar Sesión',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w700,
-                                            color: c.textPrimary,
-                                          ),
-                                        ),
+                                        child: _isLoading
+                                            ? const SizedBox(
+                                                width: 22,
+                                                height: 22,
+                                                child: CircularProgressIndicator(
+                                                  strokeWidth: 2.5,
+                                                  color: Colors.white,
+                                                ),
+                                              )
+                                            : Text(
+                                                'Iniciar Sesión',
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: c.textPrimary,
+                                                ),
+                                              ),
                                       ),
                                     ),
                                   ),

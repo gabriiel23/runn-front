@@ -4,6 +4,11 @@ import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../services/eventos_service.dart';
+import '../../services/usuarios_service.dart';
+import '../../domain/models/evento_model.dart';
+import '../../../../core/config/api_config.dart';
+import 'event_edit_page.dart';
 
 class CommunityScreen extends StatefulWidget {
   const CommunityScreen({super.key});
@@ -19,6 +24,17 @@ class _CommunityScreenState extends State<CommunityScreen>
   late Animation<double> _contentAnimation;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+
+  // ─── Estado de eventos ────────────────────────────────────────────────────
+  List<EventoModel> _eventos = [];
+  bool _eventosLoading = true;
+  String _eventosError = '';
+
+  // ─── Estado de Comunidad (Estadísticas) ──────────────────────────────────
+  Map<String, int> _stats = {'grupos': 0, 'runners': 0, 'eventos': 0};
+  bool _statsLoading = true;
+
+  String? _userRol;
 
   @override
   void initState() {
@@ -36,6 +52,34 @@ class _CommunityScreenState extends State<CommunityScreen>
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     );
     _animationController.forward();
+    _loadRolYEventos();
+  }
+
+  Future<void> _loadRolYEventos() async {
+    final rol = await ApiConfig.getUserRol();
+    if (mounted) setState(() => _userRol = rol);
+    await Future.wait([
+      _fetchEventos(),
+      _fetchStats(),
+    ]);
+  }
+
+  Future<void> _fetchStats() async {
+    try {
+      final stats = await UsuariosService.getCommunityStats();
+      if (mounted) setState(() { _stats = stats; _statsLoading = false; });
+    } catch (_) {
+      if (mounted) setState(() => _statsLoading = false);
+    }
+  }
+
+  Future<void> _fetchEventos() async {
+    try {
+      final lista = await EventosService.getEventos();
+      if (mounted) setState(() { _eventos = lista; _eventosLoading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _eventosError = e.toString(); _eventosLoading = false; });
+    }
   }
 
   @override
@@ -241,19 +285,19 @@ class _CommunityScreenState extends State<CommunityScreen>
                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
                           _buildHeaderStat(
-                            '247',
+                            _statsLoading ? '...' : _stats['grupos'].toString(),
                             'Grupos',
                             Icons.groups_rounded,
                           ),
                           _buildHeaderDivider(),
                           _buildHeaderStat(
-                            '1.2k',
+                            _statsLoading ? '...' : _stats['runners']! > 1000 ? '${(_stats['runners']! / 1000).toStringAsFixed(1)}k' : _stats['runners'].toString(),
                             'Runners',
                             Icons.directions_run_rounded,
                           ),
                           _buildHeaderDivider(),
                           _buildHeaderStat(
-                            '52',
+                            _statsLoading ? '...' : _stats['eventos'].toString(),
                             'Eventos',
                             Icons.event_rounded,
                           ),
@@ -758,81 +802,119 @@ class _CommunityScreenState extends State<CommunityScreen>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildEventsSection() {
-    final events = [
-      {
-        'id': '1',
-        'name': 'Carrera Nocturna 10K',
-        'date': '15 Mar 2024 · 19:00',
-        'description':
-            'Corre bajo las luces de la ciudad en este evento especial.',
-        'participants': 156,
-        'image':
-            'https://imagenes.primicias.ec/files/content_image_simple_414_238/uploads/2024/05/26/6653b8ee9764c.jpeg',
-        'color': context.colors.primaryDeep,
-        'emoji': '🏃',
-        'icon': Icons.event_available_rounded,
-      },
-      {
-        'id': '2',
-        'name': 'Trail de la Montaña',
-        'date': '22 Mar 2024 · 07:00',
-        'description': 'Desafía tus límites en los senderos más técnicos.',
-        'participants': 89,
-        'image':
-            'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000&auto=format&fit=crop',
-        'color': context.colors.primaryDeep,
-        'emoji': '🏃',
-        'icon': Icons.event_available_rounded,
-      },
-    ];
+    final c = context.colors;
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Icon(
-              Icons.event_available_rounded,
-              size: 20,
-              color: context.colors.primary,
+            Row(
+              children: [
+                Icon(Icons.event_available_rounded, size: 20, color: c.primary),
+                const SizedBox(width: 6),
+                const Text(
+                  'Eventos próximos',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
             ),
-            const SizedBox(width: 6),
-            Text(
-              'Eventos próximos',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
+            if (_userRol == 'admin')
+              TextButton.icon(
+                onPressed: () async {
+                  final result = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(builder: (_) => const EventEditPage()),
+                  );
+                  // Si se creó un evento, recargamos la lista
+                  if (result == true && mounted) {
+                    setState(() { _eventosLoading = true; _eventosError = ''; });
+                    await _fetchEventos();
+                  }
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: c.primaryDeep,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text(
+                  'Crear',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
           ],
         ),
         const SizedBox(height: 16),
 
-        SizedBox(
-          height: 190,
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            scrollDirection: Axis.horizontal,
-            itemCount: events.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 16),
-            itemBuilder: (context, index) {
-              return _buildEventItem(events[index]);
-            },
+        if (_eventosLoading)
+          const SizedBox(
+            height: 190,
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_eventosError.isNotEmpty)
+          SizedBox(
+            height: 190,
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.event_busy_rounded, size: 36, color: c.primaryDeepWithAlpha(0.3)),
+                  const SizedBox(height: 8),
+                  Text('No se pudieron cargar eventos',
+                      style: TextStyle(color: c.textHint, fontSize: 13)),
+                  TextButton(
+                    onPressed: () {
+                      setState(() { _eventosLoading = true; _eventosError = ''; });
+                      _fetchEventos();
+                    },
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else if (_eventos.isEmpty)
+          SizedBox(
+            height: 190,
+            child: Center(
+              child: Text(
+                'No hay eventos próximos',
+                style: TextStyle(color: c.textHint, fontSize: 14),
+              ),
+            ),
+          )
+        else
+          SizedBox(
+            height: 190,
+            child: ListView.separated(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              scrollDirection: Axis.horizontal,
+              itemCount: _eventos.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 16),
+              itemBuilder: (context, index) {
+                return _buildEventItem(_eventos[index]);
+              },
+            ),
           ),
-        ),
       ],
     );
   }
 
-  Widget _buildEventItem(Map<String, dynamic> event) {
-    final color = event['color'] as Color;
+  Widget _buildEventItem(EventoModel evento) {
+    final c = context.colors;
     return GestureDetector(
       onTap: () => context.pushNamed(
         'event_detail',
-        pathParameters: {'eventId': event['id'] as String},
+        pathParameters: {'eventId': evento.id},
       ),
       child: Container(
         width: 280,
         decoration: BoxDecoration(
-          color: context.colors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: color.withValues(alpha: 0.1)),
+          border: Border.all(color: c.primaryDeepWithAlpha(0.1)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -845,12 +927,23 @@ class _CommunityScreenState extends State<CommunityScreen>
           borderRadius: BorderRadius.circular(23),
           child: Stack(
             children: [
+              // Imagen o placeholder
               Positioned.fill(
-                child: Image.network(
-                  event['image'] as String,
-                  fit: BoxFit.cover,
-                ),
+                child: evento.fotoUrl != null && evento.fotoUrl!.isNotEmpty
+                    ? Image.network(
+                        evento.fotoUrl!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          color: c.primaryLight,
+                          child: Icon(Icons.event_rounded, size: 48, color: c.primaryDeepWithAlpha(0.3)),
+                        ),
+                      )
+                    : Container(
+                        color: c.primaryLight,
+                        child: Icon(Icons.event_rounded, size: 48, color: c.primaryDeepWithAlpha(0.3)),
+                      ),
               ),
+              // Gradiente oscuro
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
@@ -865,6 +958,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   ),
                 ),
               ),
+              // Contenido
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Column(
@@ -872,16 +966,13 @@ class _CommunityScreenState extends State<CommunityScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: color.withValues(alpha: 0.9),
+                        color: c.primaryDeep.withValues(alpha: 0.9),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        event['date'] as String,
+                        evento.fechaFormateada,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,
@@ -891,25 +982,45 @@ class _CommunityScreenState extends State<CommunityScreen>
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      event['name'] as String,
+                      evento.titulo,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.5,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 4),
+                    if (evento.lugar != null && evento.lugar!.isNotEmpty)
+                      Row(
+                        children: [
+                          Icon(Icons.location_on_rounded,
+                              color: Colors.white.withValues(alpha: 0.8), size: 12),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              evento.lugar!,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(
-                          Icons.people_alt_rounded,
-                          color: Colors.white.withValues(alpha: 0.8),
-                          size: 14,
-                        ),
+                        Icon(Icons.people_alt_rounded,
+                            color: Colors.white.withValues(alpha: 0.8), size: 14),
                         const SizedBox(width: 6),
                         Text(
-                          '${event['participants']} participantes',
+                          '${evento.participantes} participantes',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
@@ -1059,7 +1170,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
                     onTap: () => context.pushNamed(
-                      'rival_profile',
+                      'profile_others_runners',
                       pathParameters: {'userId': rival['id'] as String},
                     ),
                     child: Text(
