@@ -15,7 +15,11 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _animController;
+  late AnimationController _skeletonController;
   late Animation<double> _headerAnimation;
+  late Animation<double> _pulseAnimation;
+  
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -33,13 +37,29 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
       parent: _animController,
       curve: Curves.easeOut,
     );
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _skeletonController, curve: Curves.easeInOut),
+    );
+    _skeletonController.repeat(reverse: true);
     _animController.forward();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (mounted) setState(() => _isRefreshing = true);
+    // Simular carga ya que es mockup por ahora
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     _animController.dispose();
+    _skeletonController.dispose();
     super.dispose();
   }
 
@@ -47,19 +67,27 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: context.colors.bg,
-      body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
-          SliverToBoxAdapter(child: _buildHeader(context)),
-          const SliverToBoxAdapter(child: SizedBox(height: 8)),
-        ],
-        body: TabBarView(
-          controller: _tabController,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            TerritoryMapTab(),
-            MyTerritoriesTab(),
-            OwnedTerritoriesTab(),
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: context.colors.primaryDeep,
+        backgroundColor: context.colors.surface,
+        child: NestedScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverToBoxAdapter(child: _buildHeader(context)),
+            const SliverToBoxAdapter(child: SizedBox(height: 8)),
           ],
+          body: _isRefreshing 
+            ? _buildTerritorySkeleton(context) 
+            : TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  TerritoryMapTab(),
+                  MyTerritoriesTab(),
+                  OwnedTerritoriesTab(),
+                ],
+              ),
         ),
       ),
     );
@@ -216,6 +244,66 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // SKELETON
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildTerritorySkeleton(BuildContext context) {
+    final c = context.colors;
+    return FadeTransition(
+      opacity: _pulseAnimation,
+      child: ListView.separated(
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 90),
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 4,
+        separatorBuilder: (_, __) => const SizedBox(height: 12),
+        itemBuilder: (_, index) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: c.bg,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(height: 16, width: 120, color: c.bg),
+                      const SizedBox(height: 8),
+                      Container(height: 12, width: 80, color: c.bg),
+                      const SizedBox(height: 8),
+                      Container(height: 12, width: 100, color: c.bg),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 45,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: c.bg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

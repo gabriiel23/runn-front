@@ -123,7 +123,7 @@ class _GroupsPageState extends State<GroupsPage>
           style: TextStyle(
             color: c.textPrimary,
             fontWeight: FontWeight.w700,
-            fontSize: 20,
+            fontSize: 24,
             letterSpacing: -0.5,
           ),
         ),

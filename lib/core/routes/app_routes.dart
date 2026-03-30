@@ -32,7 +32,9 @@ import 'package:runn_front/features/challenges/presentation/pages/challenge_item
 import 'package:runn_front/features/challenges/presentation/pages/community_race_detail_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
+import 'package:runn_front/features/start_career/presentation/pages/run_active_page.dart';
 import 'package:runn_front/features/run_results/presentation/pages/run_results_page.dart';
+import 'package:runn_front/features/start_career/domain/actividad_model.dart';
 import 'package:runn_front/features/community/presentation/pages/public_profile_page.dart';
 import 'package:runn_front/features/community/presentation/pages/multimedia_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
@@ -43,6 +45,8 @@ import 'package:runn_front/features/profile/presentation/pages/settings_page.dar
 import 'package:runn_front/features/profile/presentation/pages/edit_profile_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/wearables_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_multimedia_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/run_history_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/run_detail_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -86,11 +90,26 @@ final GoRouter appRouter = GoRouter(
 
     // Sub-routes (Global) - Pushed over Bottom Bar
 
-    // Start Career (outside shell — full screen)
+    // Start Career — Vista 1: Pre-carrera
     GoRoute(
       path: '/start_career',
       name: 'start_career',
-      builder: (context, state) => const StartCareerScreen(),
+      builder: (context, state) => const PreCarreraPage(),
+    ),
+
+    // Run Active — Vista 2: Carrera en curso
+    GoRoute(
+      path: '/run_active',
+      name: 'run_active',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        return RunActivePage(
+          actividadId: extra['actividad_id']?.toString() ?? '',
+          horaInicio: extra['hora_inicio']?.toString() ?? '',
+          latInicio: extra['lat_inicio'] as double?,
+          lngInicio: extra['lng_inicio'] as double?,
+        );
+      },
     ),
 
     // Notifications (outside shell — full screen)
@@ -127,11 +146,22 @@ final GoRouter appRouter = GoRouter(
       },
     ),
 
-    // Run Results (outside shell — full screen)
+    // Run Results — Vista 3: Resultados
     GoRoute(
       path: '/run_results',
       name: 'run_results',
-      builder: (context, state) => const RunResultsScreen(),
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>? ?? {};
+        final resumen = extra['resumen'] as ActividadResumen?;
+        final puntosCrudos = (extra['puntos'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        final puntos = puntosCrudos
+            .map((p) => {'lat': (p['lat'] as num).toDouble(), 'lng': (p['lng'] as num).toDouble()})
+            .toList();
+        if (resumen == null) {
+          return const Scaffold(body: Center(child: Text('Sin datos de carrera')));
+        }
+        return RunResultsPage(resumen: resumen, puntos: puntos);
+      },
     ),
 
     // News Edit
@@ -434,6 +464,21 @@ final GoRouter appRouter = GoRouter(
                   path: 'multimedia',
                   name: 'profile_multimedia',
                   builder: (context, state) => const ProfileMultimediaPage(),
+                ),
+                GoRoute(
+                  path: 'run_history',
+                  name: 'run_history',
+                  builder: (context, state) => const RunHistoryPage(),
+                ),
+                GoRoute(
+                  path: 'run_detail',
+                  name: 'run_detail',
+                  builder: (context, state) {
+                    final extra = state.extra as Map<String, dynamic>? ?? {};
+                    return RunDetailPage(
+                      actividadId: extra['actividad_id']?.toString() ?? '',
+                    );
+                  },
                 ),
               ],
             ),

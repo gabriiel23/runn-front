@@ -11,10 +11,14 @@ class ChallengesPage extends StatefulWidget {
 }
 
 class _ChallengesPageState extends State<ChallengesPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late AnimationController _skeletonController;
   late Animation<double> _headerAnimation;
   late Animation<double> _contentAnimation;
+  late Animation<double> _pulseAnimation;
+
+  bool _isRefreshing = false;
 
   @override
   void initState() {
@@ -31,12 +35,28 @@ class _ChallengesPageState extends State<ChallengesPage>
       parent: _animationController,
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     );
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _skeletonController, curve: Curves.easeInOut),
+    );
+    _skeletonController.repeat(reverse: true);
     _animationController.forward();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (mounted) setState(() => _isRefreshing = true);
+    // Simular carga al ser datos mockup
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   @override
   void dispose() {
     _animationController.dispose();
+    _skeletonController.dispose();
     super.dispose();
   }
 
@@ -47,35 +67,42 @@ class _ChallengesPageState extends State<ChallengesPage>
       backgroundColor: c.bg,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                _buildHeader(),
-                FadeTransition(
-                  opacity: _contentAnimation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.1),
-                      end: Offset.zero,
-                    ).animate(_contentAnimation),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 28),
-                          _buildWeeklyChallenge(),
-                          const SizedBox(height: 32),
-                          _buildDailyChallenges(),
-                          const SizedBox(height: 32),
-                          _buildCommunityRaces(),
-                          const SizedBox(height: 40),
-                        ],
+          return RefreshIndicator(
+            onRefresh: _handleRefresh,
+            color: context.colors.primaryDeep,
+            backgroundColor: context.colors.surface,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  FadeTransition(
+                    opacity: _contentAnimation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.1),
+                        end: Offset.zero,
+                      ).animate(_contentAnimation),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _isRefreshing
+                          ? _buildChallengeSkeleton(context)
+                          : Column(
+                              children: [
+                                const SizedBox(height: 28),
+                                _buildWeeklyChallenge(),
+                                const SizedBox(height: 32),
+                                _buildDailyChallenges(),
+                                const SizedBox(height: 32),
+                                _buildCommunityRaces(),
+                                const SizedBox(height: 40),
+                              ],
+                            ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -791,6 +818,82 @@ class _ChallengesPageState extends State<ChallengesPage>
   }
 
   // ──────────────────────────────────────────────────────────────────────────
-  // BADGES
+  // SKELETON
   // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildChallengeSkeleton(BuildContext context) {
+    final c = context.colors;
+    return FadeTransition(
+      opacity: _pulseAnimation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 28),
+          
+          // Weekly Challenge Skeleton
+          _skeletonRow(180, 20),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(22),
+            ),
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Daily Challenges Skeleton
+          _skeletonRow(160, 20),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(3, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                width: double.infinity,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            )),
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Community Races Skeleton
+          _skeletonRow(200, 20),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(2, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                width: double.infinity,
+                height: 90,
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            )),
+          ),
+          
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _skeletonRow(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: context.colors.card,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
 }

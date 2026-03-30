@@ -1,677 +1,517 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
+import 'package:runn_front/core/services/http_client.dart';
+import '../../../start_career/services/actividades_service.dart';
+import '../../../start_career/domain/actividad_model.dart';
 
-class RunResultsScreen extends StatelessWidget {
-  const RunResultsScreen({super.key});
+class RunResultsPage extends StatefulWidget {
+  final ActividadResumen resumen;
+  final List<Map<String, double>> puntos;
+
+  const RunResultsPage({
+    super.key,
+    required this.resumen,
+    required this.puntos,
+  });
+
+  @override
+  State<RunResultsPage> createState() => _RunResultsPageState();
+}
+
+class _RunResultsPageState extends State<RunResultsPage>
+    with SingleTickerProviderStateMixin {
+  AppColors get c => context.colors;
+
+  GoogleMapController? _mapController;
+  late AnimationController _badgeCtrl;
+  bool _compartiendo = false;
+  bool _compartida = false;
+  bool _subiendoFoto = false;
+  File? _selectedPhoto;
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _badgeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+    // Animación de entrada del badge de puntos
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) _badgeCtrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _badgeCtrl.dispose();
+    _mapController?.dispose();
+    super.dispose();
+  }
+
+  Future<bool> _subirFotoSiExiste() async {
+    if (_selectedPhoto == null) return true;
+    setState(() => _subiendoFoto = true);
+    try {
+      await ActividadesService.agregarFoto(widget.resumen.actividadId, _selectedPhoto!);
+      return true;
+    } on ApiException catch (e) {
+      if (!mounted) return false;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error al subir foto: ${e.message}'), backgroundColor: const Color(0xFFFF3B30)),
+      );
+      return false; // Continues flowing but denotes failure
+    } finally {
+      if (mounted) setState(() => _subiendoFoto = false);
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70, // Optimize for faster upload
+      );
+      if (image != null && mounted) {
+        setState(() {
+          _selectedPhoto = File(image.path);
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al acceder a la galería.')),
+      );
+    }
+  }
+
+  Future<void> _guardarYVolver() async {
+    setState(() => _compartiendo = true); // Usar el mismo flag visual
+    await _subirFotoSiExiste();
+    if (!mounted) return;
+    context.go('/home');
+  }
+
+  Future<void> _compartir() async {
+    setState(() => _compartiendo = true);
+    await _subirFotoSiExiste();
+    try {
+      await ActividadesService.compartirActividad(widget.resumen.actividadId);
+      if (!mounted) return;
+      setState(() { _compartida = true; });
+      await Share.share(
+        'Acabo de correr ${widget.resumen.distanciaKm.toStringAsFixed(2)} km '
+        'en ${widget.resumen.duracionFormateada} con RUNN 🏃‍♂️\n'
+        '¡Únete a la comunidad de corredores!',
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)),
+      );
+    } finally {
+      if (mounted) setState(() => _compartiendo = false);
+    }
+  }
+
+  List<LatLng> get _latLngPuntos => widget.puntos
+      .map((p) => LatLng(p['lat']!, p['lng']!))
+      .toList();
+
+  LatLng get _centroMapa {
+    if (widget.puntos.isEmpty) return const LatLng(-0.22985, -78.52495);
+    double sumLat = 0, sumLng = 0;
+    for (final p in widget.puntos) {
+      sumLat += p['lat']!;
+      sumLng += p['lng']!;
+    }
+    return LatLng(sumLat / widget.puntos.length, sumLng / widget.puntos.length);
+  }
+
+  String _fechaFmt(DateTime dt) {
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+    return '${dt.day} de ${meses[dt.month - 1]} de ${dt.year}';
+  }
+
+  String _horaFmt(DateTime dt) {
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return '$h:$m';
+  }
 
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    const runData = (
-      distance: 5.47,
-      time: '32:15',
-      pace: '5:54',
-      calories: 328,
-      date: '20 Nov 2024',
-      startTime: '18:35',
-      endTime: '19:07',
-      avgSpeed: '10.2',
-    );
+    final r = widget.resumen;
+
     return Scaffold(
       backgroundColor: c.bg,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // ── Success Header ──────────────────────────────────────────
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [c.primaryDeep, c.primaryDark],
-                ),
+      body: CustomScrollView(
+        slivers: [
+          // ── APPBAR CON MAPA ────────────────────────────────────────
+          SliverAppBar(
+            pinned: true,
+            expandedHeight: 240,
+            backgroundColor: c.bg,
+            leading: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
               ),
-              padding: const EdgeInsets.fromLTRB(24, 64, 24, 36),
-              child: Column(
-                children: [
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    '¡Carrera completada!',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Excelente trabajo, sigue así',
-                    style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.white.withValues(alpha: 0.9),
-                    ),
-                  ),
-                ],
-              ),
+              onPressed: () => context.go('/home'),
             ),
+            flexibleSpace: FlexibleSpaceBar(
+              background: widget.puntos.length >= 2
+                  ? GoogleMap(
+                      initialCameraPosition: CameraPosition(target: _centroMapa, zoom: 14),
+                      onMapCreated: (ctrl) => _mapController = ctrl,
+                      myLocationEnabled: false,
+                      myLocationButtonEnabled: false,
+                      zoomControlsEnabled: false,
+                      compassEnabled: false,
+                      mapToolbarEnabled: false,
+                      scrollGesturesEnabled: false,
+                      zoomGesturesEnabled: false,
+                      polylines: {
+                        Polyline(
+                          polylineId: const PolylineId('ruta_final'),
+                          points: _latLngPuntos,
+                          color: c.primaryDeep,
+                          width: 5,
+                        ),
+                      },
+                      markers: {
+                        if (widget.puntos.isNotEmpty)
+                          Marker(
+                            markerId: const MarkerId('inicio'),
+                            position: _latLngPuntos.first,
+                            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+                          ),
+                        if (widget.puntos.length > 1)
+                          Marker(
+                            markerId: const MarkerId('fin'),
+                            position: _latLngPuntos.last,
+                            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+                          ),
+                      },
+                    )
+                  : Container(
+                      color: c.primaryDeep.withValues(alpha: 0.15),
+                      child: Center(
+                        child: Icon(Icons.map_outlined, size: 64, color: c.primaryDeep.withValues(alpha: 0.4)),
+                      ),
+                    ),
+            ),
+          ),
 
-            Padding(
-              padding: const EdgeInsets.all(24),
+          // ── CONTENIDO ─────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Route Map ─────────────────────────────────────────
-                  Container(
-                    decoration: BoxDecoration(
-                      color: c.card,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: c.primaryWithAlpha(0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Tu ruta',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: c.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        AspectRatio(
-                          aspectRatio: 1,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Stack(
-                              children: [
-                                // Grid background
-                                Container(color: c.primaryLight),
-                                GridView.builder(
-                                  physics: const NeverScrollableScrollPhysics(),
-                                  gridDelegate:
-                                      const SliverGridDelegateWithFixedCrossAxisCount(
-                                        crossAxisCount: 8,
-                                        mainAxisSpacing: 1,
-                                        crossAxisSpacing: 1,
-                                      ),
-                                  itemCount: 64,
-                                  itemBuilder: (_, i) => Container(
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: i % 3 == 0
-                                            ? [
-                                                c.primaryLight.withValues(
-                                                  alpha: 0.5,
-                                                ),
-                                                c.primary,
-                                              ]
-                                            : [c.bg, c.primaryLight],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                // Route path
-                                CustomPaint(
-                                  size: Size.infinite,
-                                  painter: _RouteResultPainter(c),
-                                ),
-
-                                // Start marker
-                                Positioned(
-                                  top: MediaQuery.of(context).size.width * 0.38,
-                                  left: MediaQuery.of(context).size.width * 0.1,
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        width: 22,
-                                        height: 22,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: c.primaryMid,
-                                          border: Border.all(
-                                            color: Colors.white,
-                                            width: 2.5,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: c.primaryMidWithAlpha(0.5),
-                                              blurRadius: 8,
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Center(
-                                          child: CircleAvatar(
-                                            radius: 3,
-                                            backgroundColor: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            50,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: c.primaryWithAlpha(0.3),
-                                              blurRadius: 4,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          'Inicio',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w700,
-                                            color: c.primaryDeep,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-
-                                // End marker
-                                Positioned(
-                                  top: MediaQuery.of(context).size.width * 0.62,
-                                  left:
-                                      MediaQuery.of(context).size.width * 0.35,
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6,
-                                          vertical: 2,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white,
-                                          borderRadius: BorderRadius.circular(
-                                            50,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: c.primaryWithAlpha(0.3),
-                                              blurRadius: 4,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Text(
-                                          'Fin',
-                                          style: TextStyle(
-                                            fontSize: 9,
-                                            fontWeight: FontWeight.w700,
-                                            color: c.primaryDeep,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        width: 22,
-                                        height: 22,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          color: c.primaryDeep,
-                                          border: Border.all(
-                                            color: c.surface,
-                                            width: 2.5,
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: c.primaryDeepWithAlpha(
-                                                0.5,
-                                              ),
-                                              blurRadius: 8,
-                                            ),
-                                          ],
-                                        ),
-                                        child: Center(
-                                          child: CircleAvatar(
-                                            radius: 3,
-                                            backgroundColor: c.surface,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── Main Stats ────────────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildMainStatCard(
-                          c: c,
-                          icon: Icons.location_on,
-                          iconColor: c.primaryDeep,
-                          bgColor: c.primaryWithAlpha(0.2),
-                          borderColor: c.primaryWithAlpha(0.5),
-                          label: 'Distancia total',
-                          value: '${runData.distance}',
-                          unit: 'kilómetros',
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _buildMainStatCard(
-                          c: c,
-                          icon: Icons.access_time_rounded,
-                          iconColor: c.primaryDark,
-                          bgColor: c.primaryMidWithAlpha(0.2),
-                          borderColor: c.primaryMidWithAlpha(0.5),
-                          label: 'Tiempo total',
-                          value: runData.time,
-                          unit: 'minutos',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── Additional Stats ──────────────────────────────────
-                  Container(
-                    decoration: BoxDecoration(
-                      color: c.card,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: c.primaryWithAlpha(0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Estadísticas',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: c.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _buildMiniStatRow(
-                                c: c,
-                                icon: Icons.trending_up,
-                                iconColor: c.primaryDark,
-                                iconBg: c.primaryDark.withValues(alpha: 0.12),
-                                label: 'Ritmo promedio',
-                                value: runData.pace,
-                                unit: 'min/km',
-                              ),
-                            ),
-                            Expanded(
-                              child: _buildMiniStatRow(
-                                c: c,
-                                icon: Icons.local_fire_department,
-                                iconColor: c.primaryDeep,
-                                iconBg: c.primaryDeepWithAlpha(0.12),
-                                label: 'Calorías',
-                                value: '${runData.calories}',
-                                unit: 'kcal',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        Divider(color: c.primaryWithAlpha(0.4), thickness: 1),
-                        const SizedBox(height: 16),
-                        _buildDetailRow(
-                          c,
-                          'Velocidad promedio',
-                          '${runData.avgSpeed} km/h',
-                        ),
-                        const SizedBox(height: 12),
-                        _buildDetailRow(c, 'Fecha', runData.date),
-                        const SizedBox(height: 12),
-                        _buildDetailRow(c, 'Hora de inicio', runData.startTime),
-                        const SizedBox(height: 12),
-                        _buildDetailRow(c, 'Hora de fin', runData.endTime),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // ── Action Buttons ────────────────────────────────────
-                  GestureDetector(
-                    onTap: () {},
+                  // Badge puntos ganados
+                  ScaleTransition(
+                    scale: CurvedAnimation(parent: _badgeCtrl, curve: Curves.elasticOut),
                     child: Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 20),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [c.primaryDeep, c.primaryDark],
+                          colors: [c.primaryDeep, c.primaryDeep.withValues(alpha: 0.7)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: c.primaryDeepWithAlpha(0.4),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                            color: c.primaryDeep.withValues(alpha: 0.35),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
                         children: [
-                          Icon(
-                            Icons.share_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          SizedBox(width: 8),
+                          const Text('✨ ¡Carrera completada!',
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                          const SizedBox(height: 6),
                           Text(
-                            'Compartir carrera',
-                            style: TextStyle(
+                            '+${r.puntosGanados} puntos',
+                            style: const TextStyle(
                               color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 15,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -1,
                             ),
+                          ),
+                          Text(
+                            'ganados en esta carrera',
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 20),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () {},
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: c.card,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: c.primaryMid,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.download_rounded,
-                                  size: 18,
-                                  color: c.textPrimary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Guardar',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: c.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => context.go('/home'),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            decoration: BoxDecoration(
-                              color: c.card,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: c.primaryMid,
-                                width: 1.5,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.home_rounded,
-                                  size: 18,
-                                  color: c.textPrimary,
-                                ),
-                                const SizedBox(width: 6),
-                                Text(
-                                  'Inicio',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                    color: c.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                  // ── Estadísticas principales ─────────────────────
+                  _sectionTitle(c, '🏃 Rendimiento principal'),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: _statCard(c, '📏', 'Distancia', '${r.distanciaKm.toStringAsFixed(2)} km', c.primaryDeep)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard(c, '⏱', 'Tiempo', r.duracionFormateada, c.primaryDeep)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard(c, '⚡', 'Ritmo', '${r.ritmoPromedio.toStringAsFixed(1)} m/km', c.primaryDeep)),
+                  ]),
+                  const SizedBox(height: 10),
+
+                  // ── Estadísticas secundarias ─────────────────────
+                  _sectionTitle(c, '📊 Detalles'),
+                  const SizedBox(height: 10),
+                  Row(children: [
+                    Expanded(child: _statCard(c, '🔥', 'Calorías', '${r.calorias} kcal', const Color(0xFFFF6B35))),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard(c, '💨', 'Vel. prom.', '${r.velocidadPromedio.toStringAsFixed(1)} km/h', const Color(0xFF34C759))),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard(c, '🚀', 'Vel. máx.', '${r.velocidadMax.toStringAsFixed(1)} km/h', const Color(0xFF5E5CE6))),
+                  ]),
+                  const SizedBox(height: 10),
+
+                  // ── Datos de la sesión ────────────────────────────
+                  _sectionTitle(c, '📅 Sesión'),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: c.card,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: c.primaryDeep.withValues(alpha: 0.07)),
+                    ),
+                    child: Column(
+                      children: [
+                        _sessionRow(c, Icons.calendar_today_rounded, 'Fecha', _fechaFmt(r.horaInicio)),
+                        const Divider(height: 20),
+                        _sessionRow(c, Icons.play_circle_outline_rounded, 'Hora inicio', _horaFmt(r.horaInicio)),
+                        const Divider(height: 20),
+                        _sessionRow(c, Icons.stop_circle_outlined, 'Hora fin', _horaFmt(r.horaFin)),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
+
+                  // ── SECCIÓN DE FOTO (OPCIONAL) ──────────────────
+                  _sectionTitle(c, '📸 Momentos'),
+                  const SizedBox(height: 10),
+                  _buildPhotoSection(c),
+                  const SizedBox(height: 24),
+
+                  // ── Botones de acción ─────────────────────────────
+                  Row(children: [
+                    Expanded(
+                      child: _actionBtn(
+                        icon: _compartiendo
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : Icon(_compartida ? Icons.check_rounded : Icons.share_rounded, color: Colors.white, size: 20),
+                        label: _compartida ? '¡Compartida!' : 'Compartir',
+                        color: _compartida ? const Color(0xFF34C759) : c.primaryDeep,
+                        onTap: (_compartiendo || _compartida) ? null : _compartir,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _actionBtn(
+                        icon: _compartiendo && !_compartida
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.home_rounded, color: Colors.white, size: 20),
+                        label: _selectedPhoto != null ? 'Guardar foto y volver' : 'Volver al inicio',
+                        color: const Color(0xFF636366),
+                        onTap: _compartiendo ? null : _guardarYVolver,
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMainStatCard({
-    required AppColors c,
-    required IconData icon,
-    required Color iconColor,
-    required Color bgColor,
-    required Color borderColor,
-    required String label,
-    required String value,
-    required String unit,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [bgColor, bgColor.withValues(alpha: 0.4)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor, width: 1.5),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: iconColor, size: 24),
           ),
-          const SizedBox(height: 14),
-          Text(label, style: TextStyle(color: c.textSecondary, fontSize: 13)),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              color: c.textPrimary,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(unit, style: TextStyle(color: c.textSecondary, fontSize: 13)),
         ],
       ),
     );
   }
 
-  Widget _buildMiniStatRow({
-    required AppColors c,
-    required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
-    required String label,
-    required String value,
-    required String unit,
-  }) {
+  Widget _sectionTitle(AppColors c, String text) => Padding(
+    padding: const EdgeInsets.only(top: 4, bottom: 2),
+    child: Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: c.textPrimary)),
+  );
+
+  Widget _statCard(AppColors c, String emoji, String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 10, color: c.textHint, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: c.textPrimary), textAlign: TextAlign.center),
+        ],
+      ),
+    );
+  }
+
+  Widget _sessionRow(AppColors c, IconData icon, String label, String value) {
     return Row(
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: iconBg,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(icon, color: iconColor, size: 20),
-        ),
+        Icon(icon, size: 18, color: c.primaryDeep),
         const SizedBox(width: 10),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        Text(label, style: TextStyle(color: c.textSecondary, fontSize: 13)),
+        const Spacer(),
+        Text(value, style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w700, fontSize: 13)),
+      ],
+    );
+  }
+
+  Widget _actionBtn({required Widget icon, required String label, required Color color, VoidCallback? onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: onTap == null ? color.withValues(alpha: 0.5) : color,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(label, style: TextStyle(color: c.textSecondary, fontSize: 12)),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: c.textPrimary,
+            icon,
+            const SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                label,
+                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            Text(unit, style: TextStyle(color: c.textSecondary, fontSize: 11)),
           ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildDetailRow(AppColors c, String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: TextStyle(fontSize: 14, color: c.textSecondary)),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: c.textPrimary,
-          ),
+  Widget _buildPhotoSection(AppColors c) {
+    if (_selectedPhoto != null) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: c.primaryDeep.withValues(alpha: 0.2)),
         ),
-      ],
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.file(
+                _selectedPhoto!,
+                width: 64,
+                height: 64,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Foto lista', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.w700, fontSize: 14)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      GestureDetector(
+                        onTap: _pickImage,
+                        child: Text(
+                          'Cambiar',
+                          style: TextStyle(color: c.textSecondary, fontWeight: FontWeight.w600, fontSize: 13, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: () => setState(() => _selectedPhoto = null),
+                        child: const Text(
+                          'Eliminar',
+                          style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.w600, fontSize: 13, decoration: TextDecoration.underline),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            if (_subiendoFoto)
+              const Padding(
+                padding: EdgeInsets.only(right: 8.0),
+                child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+              ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: c.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: c.primaryDeep.withValues(alpha: 0.1)),
+          boxShadow: [
+            BoxShadow(
+              color: c.primaryDeep.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ]
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: c.primaryDeep.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add_a_photo_rounded, color: c.primaryDeep, size: 28),
+            ),
+            const SizedBox(height: 12),
+            Text('Agregar foto (opcional)', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.w700, fontSize: 14)),
+            const SizedBox(height: 4),
+            Text('Comparte tu experiencia con la comunidad.', style: TextStyle(color: c.textSecondary, fontSize: 12)),
+          ],
+        ),
+      ),
     );
   }
-}
-
-class _RouteResultPainter extends CustomPainter {
-  final AppColors c;
-  _RouteResultPainter(this.c);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = c.primaryDeep
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-
-    final path = Path();
-    path.moveTo(size.width * 0.15, size.height * 0.45);
-    path.quadraticBezierTo(
-      size.width * 0.25,
-      size.height * 0.35,
-      size.width * 0.38,
-      size.height * 0.42,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.52,
-      size.height * 0.48,
-      size.width * 0.58,
-      size.height * 0.55,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.64,
-      size.height * 0.62,
-      size.width * 0.58,
-      size.height * 0.72,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.52,
-      size.height * 0.80,
-      size.width * 0.42,
-      size.height * 0.76,
-    );
-
-    // Glow
-    canvas.drawPath(
-      path,
-      paint
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5)
-        ..color = c.primaryMidWithAlpha(0.5),
-    );
-    // Line
-    canvas.drawPath(
-      path,
-      paint
-        ..maskFilter = null
-        ..color = c.primaryDeep,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RouteResultPainter old) => false;
 }

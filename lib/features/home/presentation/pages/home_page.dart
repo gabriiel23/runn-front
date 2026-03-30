@@ -7,6 +7,7 @@ import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/features/home/data/models/novedad_model.dart';
 import 'package:runn_front/features/home/services/novedades_service.dart';
 import 'package:runn_front/features/home/presentation/widgets/news_bottom_sheet.dart';
+import 'package:runn_front/features/profile/services/profile_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -17,11 +18,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late final PageController _newsPageController;
   late final PageController _quotesPageController;
   late AnimationController _animationController;
+  late AnimationController _skeletonController;
   late Animation<double> _contentAnimation;
+  late Animation<double> _pulseAnimation;
   Timer? _newsTimer;
   Timer? _quotesTimer;
 
@@ -29,7 +32,9 @@ class _HomeScreenState extends State<HomeScreen>
   int _quoteCurrentPage = 0;
 
   bool _isAdmin = false;
+  String _userName = 'Runner';
   bool _isLoadingNews = true;
+  bool _isRefreshing = false;
   List<NovedadModel> _newsItems = [];
 
   final List<Map<String, String>> _quotes = const [
@@ -59,14 +64,42 @@ class _HomeScreenState extends State<HomeScreen>
       parent: _animationController,
       curve: Curves.easeOut,
     );
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _skeletonController, curve: Curves.easeInOut),
+    );
+    _skeletonController.repeat(reverse: true);
     _animationController.forward();
     _initData();
   }
 
   Future<void> _initData() async {
+    await _loadUserData();
     await _checkRole();
     await _loadNews();
     _startAutoCarousels();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (mounted) setState(() => _isRefreshing = true);
+    await _initData();
+    if (mounted) setState(() => _isRefreshing = false);
+  }
+
+  Future<void> _loadUserData() async {
+    final data = await ProfileService.getLocalProfile();
+    final fullNombre = data['nombre'] as String? ?? '';
+    // Extraer el primer nombre
+    final primerNombre = fullNombre.trim().split(' ').first;
+
+    if (mounted) {
+      setState(() {
+        _userName = primerNombre.isNotEmpty ? primerNombre : 'Runner';
+      });
+    }
   }
 
   Future<void> _checkRole() async {
@@ -85,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen>
     _newsPageController.dispose();
     _quotesPageController.dispose();
     _animationController.dispose();
+    _skeletonController.dispose();
     super.dispose();
   }
 
@@ -122,19 +156,25 @@ class _HomeScreenState extends State<HomeScreen>
             begin: const Offset(0, 0.06),
             end: Offset.zero,
           ).animate(_contentAnimation),
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(c), // 👈 ahora SI hace scroll
+          child: RefreshIndicator(
+            onRefresh: _handleRefresh,
+            color: c.primaryDeep,
+            backgroundColor: c.surface,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(c),
 
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _startRunButton(context),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+                    child: _isRefreshing 
+                      ? _buildHomeSkeleton(context)
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _startRunButton(context),
                       const SizedBox(height: 28),
 
                       _buildSectionHeader(
@@ -144,12 +184,18 @@ class _HomeScreenState extends State<HomeScreen>
                         trailing: _isAdmin
                             ? IconButton(
                                 onPressed: () async {
-                                  final refresh = await context.push('/news/new/edit');
+                                  final refresh = await context.push(
+                                    '/news/new/edit',
+                                  );
                                   if (refresh == true) {
                                     _loadNews();
                                   }
                                 },
-                                icon: Icon(Icons.add_circle, color: context.colors.primaryDeep, size: 28),
+                                icon: Icon(
+                                  Icons.add_circle,
+                                  color: context.colors.primaryDeep,
+                                  size: 28,
+                                ),
                                 tooltip: 'Nueva Novedad',
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
@@ -172,18 +218,19 @@ class _HomeScreenState extends State<HomeScreen>
                       const SizedBox(height: 28),
                       _weeklyStats(),
 
-                      const SizedBox(height: 20),
-                      _quotesCarousel(),
-                    ],
+                            const SizedBox(height: 20),
+                            _quotesCarousel(),
+                          ],
+                        ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── HEADER ────────────────────────────────────────────────────────────────
 
@@ -238,50 +285,53 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 64, 24, 28),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Top row
-                  Row(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: c.primaryLight,
-                          image: const DecorationImage(
-                            image: AssetImage("assets/corredores.jpg"),
-                            fit: BoxFit.cover,
+                  // ── Columna 1: textos ──────────────────────────────────
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const SizedBox(height: 10),
+                        Text(
+                          '¡Hola, $_userName!',
+                          style: TextStyle(
+                            fontSize: 36,
+                            fontWeight: FontWeight.w700,
+                            color: c.textPrimary,
+                            letterSpacing: -0.6,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '¡Bienvenido de nuevo!',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: c.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 1),
-                            Text(
-                              '¡Hola, Runner!',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.w700,
-                                color: c.textPrimary,
-                                letterSpacing: -0.6,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 2),
+                        Text(
+                          '¡Bienvenido de nuevo!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: c.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  // ── Columna 2: iconos ──────────────────────────────────
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(width: 10),
+                      _HeaderIconButton(
+                        icon: Icons.notifications_outlined,
+                        color: c,
+                        onTap: () => context.push('/notifications'),
+                      ),
+                      const SizedBox(width: 8),
+                      _HeaderIconButton(
+                        icon: Icons.settings_outlined,
+                        color: c,
+                        onTap: () => context.pushNamed('profile_settings'),
                       ),
                     ],
                   ),
@@ -324,11 +374,7 @@ class _HomeScreenState extends State<HomeScreen>
             letterSpacing: -0.4,
           ),
         ),
-        if (trailing != null) ...[
-          const Spacer(),
-          trailing,
-        ] else
-          const Spacer(),
+        if (trailing != null) ...[const Spacer(), trailing] else const Spacer(),
       ],
     );
   }
@@ -776,6 +822,89 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  // ── SKELETON ──────────────────────────────────────────────────────────────
+
+  Widget _buildHomeSkeleton(BuildContext context) {
+    final c = context.colors;
+    return FadeTransition(
+      opacity: _pulseAnimation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Botón principal skeleton
+          Container(
+            width: double.infinity,
+            height: 65,
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          const SizedBox(height: 28),
+          
+          // Novedades Title Skeleton
+          _skeletonRow(120, 20),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+          
+          const SizedBox(height: 28),
+          
+          // Stats Title Skeleton
+          _skeletonRow(140, 20),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(3, (i) => Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Container(
+                  width: 150,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              )),
+            ),
+          ),
+          
+          const SizedBox(height: 28),
+          
+          // Weekly Stats Skeleton
+          _skeletonRow(160, 20),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            height: 150,
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _skeletonRow(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: context.colors.card,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
   Widget _weekStatRow({
     required IconData icon,
     required Color iconColor,
@@ -995,29 +1124,69 @@ class _HomeScreenState extends State<HomeScreen>
   }
 }
 
+// ── Icono circular reutilizable para el header ────────────────────────────
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final dynamic color;
+  final VoidCallback onTap;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color;
+    return Material(
+      color: c.primaryDeepWithAlpha(0.08),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          width: 42,
+          height: 42,
+          child: Icon(icon, size: 22, color: c.textPrimary),
+        ),
+      ),
+    );
+  }
+}
+
 // ── NEWS CARD ─────────────────────────────────────────────────────────────────
 
 class _NewsCard extends StatelessWidget {
   final NovedadModel novedad;
   final VoidCallback onTap;
 
-  const _NewsCard({
-    required this.novedad,
-    required this.onTap,
-  });
+  const _NewsCard({required this.novedad, required this.onTap});
 
   String _formatDate(DateTime? date) {
     if (date == null) return '';
     final months = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return '${date.day} de ${months[date.month - 1]}. ${date.year}';
   }
 
   String _capitalize(String s) {
     if (s.isEmpty) return '';
-    return s[0].toUpperCase() + s.substring(1).toLowerCase().replaceAll('_', ' ');
+    return s[0].toUpperCase() +
+        s.substring(1).toLowerCase().replaceAll('_', ' ');
   }
 
   @override
@@ -1059,7 +1228,10 @@ class _NewsCard extends StatelessWidget {
                   top: 0,
                   right: 0,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFFB84D),
                       borderRadius: BorderRadius.circular(8),
@@ -1069,7 +1241,14 @@ class _NewsCard extends StatelessWidget {
                       children: [
                         Icon(Icons.star_rounded, color: Colors.white, size: 14),
                         SizedBox(width: 4),
-                        Text('Destacado', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                        Text(
+                          'Destacado',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -1079,7 +1258,10 @@ class _NewsCard extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: c.primaryDeep,
                       borderRadius: BorderRadius.circular(4),

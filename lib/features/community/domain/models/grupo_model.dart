@@ -227,6 +227,7 @@ class GrupoDetalle {
   final List<MiembroGrupo> miembros;
   final int totalMiembros;
   final bool soyMiembro;
+  final bool solicitudPendiente;
   final String? miRol;          // 'creador' | 'admin' | 'miembro' | null
   final List<GrupoReto> retos;
   final List<GrupoActividad> actividades;
@@ -237,6 +238,7 @@ class GrupoDetalle {
     required this.miembros,
     required this.totalMiembros,
     required this.soyMiembro,
+    required this.solicitudPendiente,
     this.miRol,
     required this.retos,
     required this.actividades,
@@ -251,13 +253,11 @@ class GrupoDetalle {
     final multimediaJson = json['multimedia'] as List<dynamic>? ?? [];
 
     return GrupoDetalle(
-      grupo: GrupoListItem.fromJson({
-        ...grupoJson,
-        'total_miembros': (json['total_miembros'] as num?)?.toInt() ?? 0,
-      }),
+      grupo: GrupoListItem.fromJson(grupoJson),
       miembros: miembrosJson.map((m) => MiembroGrupo.fromJson(m as Map<String, dynamic>)).toList(),
-      totalMiembros: (json['total_miembros'] as num?)?.toInt() ?? 0,
-      soyMiembro: json['soy_miembro'] as bool? ?? false,
+      totalMiembros: (json['total_miembros'] as num?)?.toInt() ?? miembrosJson.length,
+      soyMiembro: json['soy_miembro'] == true,
+      solicitudPendiente: json['solicitud_pendiente'] == true,
       miRol: json['mi_rol']?.toString(),
       retos: retosJson.map((r) => GrupoReto.fromJson(r as Map<String, dynamic>)).toList(),
       actividades: actividadesJson.map((a) => GrupoActividad.fromJson(a as Map<String, dynamic>)).toList(),
@@ -294,4 +294,88 @@ class RankingEntry {
       cantidad: (json[cantidadKey] as num?)?.toInt() ?? 0,
     );
   }
+}
+
+// ─── SOLICITUD DE UNIÓN ───────────────────────────────────────────────────────
+
+class SolicitudGrupo {
+  final String id;
+  final String estado;
+  final DateTime? creadoEn;
+  final String usuarioId;
+  final String usuarioNombre;
+  final String? usuarioAvatarUrl;
+  final String? usuarioCiudad;
+  final String? usuarioNivel;
+
+  const SolicitudGrupo({
+    required this.id,
+    required this.estado,
+    this.creadoEn,
+    required this.usuarioId,
+    required this.usuarioNombre,
+    this.usuarioAvatarUrl,
+    this.usuarioCiudad,
+    this.usuarioNivel,
+  });
+
+  factory SolicitudGrupo.fromJson(Map<String, dynamic> json) {
+    final u = json['usuario'] as Map<String, dynamic>? ?? {};
+    return SolicitudGrupo(
+      id: json['id']?.toString() ?? '',
+      estado: json['estado']?.toString() ?? 'pendiente',
+      creadoEn: _parseDate(json['creado_en']),
+      usuarioId: u['id']?.toString() ?? '',
+      usuarioNombre: u['nombre']?.toString() ?? '',
+      usuarioAvatarUrl: u['avatar_url']?.toString(),
+      usuarioCiudad: u['ciudad']?.toString(),
+      usuarioNivel: u['nivel']?.toString(),
+    );
+  }
+
+  String get creadoEnFmt => _fechaFormateada(creadoEn);
+  // Getters de conveniencia para la UI
+  String get nombre => usuarioNombre;
+  String? get avatarUrl => usuarioAvatarUrl;
+}
+
+// ─── INVITACIÓN (panel del admin) ─────────────────────────────────────────────
+
+class InvitacionPanel {
+  final String id;
+  final String estado;           // 'pendiente' | 'aceptada' | 'rechazada'
+  final DateTime? creadoEn;
+  final String usuarioId;
+  final String usuarioNombre;
+  final String? usuarioAvatarUrl;
+  final String? invitadoPorNombre;
+
+  const InvitacionPanel({
+    required this.id,
+    required this.estado,
+    this.creadoEn,
+    required this.usuarioId,
+    required this.usuarioNombre,
+    this.usuarioAvatarUrl,
+    this.invitadoPorNombre,
+  });
+
+  factory InvitacionPanel.fromJson(Map<String, dynamic> json) {
+    final u = json['usuario'] as Map<String, dynamic>? ?? {};
+    final inv = json['invitado_por'] as Map<String, dynamic>?;
+    return InvitacionPanel(
+      id: json['id']?.toString() ?? '',
+      estado: json['estado']?.toString() ?? 'pendiente',
+      creadoEn: _parseDate(json['creado_en']),
+      usuarioId: u['id']?.toString() ?? '',
+      usuarioNombre: u['nombre']?.toString() ?? '',
+      usuarioAvatarUrl: u['avatar_url']?.toString(),
+      invitadoPorNombre: inv?['nombre']?.toString(),
+    );
+  }
+
+  String get creadoEnFmt => _fechaFormateada(creadoEn);
+  // Getters de conveniencia para la UI
+  String get nombre => usuarioNombre;
+  String? get avatarUrl => usuarioAvatarUrl;
 }

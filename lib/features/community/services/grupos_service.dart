@@ -116,11 +116,16 @@ class GruposService {
     await RunnHttpClient.delete('/grupos/$id');
   }
 
-  // ─── UNIRSE AL GRUPO ──────────────────────────────────────────────────────
-  // POST /grupos/:id/unirse
+  // ─── SOLICITAR UNIÓN AL GRUPO ─────────────────────────────────────────────
+  // POST /grupos/:id/unirse → ya no une directamente, crea solicitud
 
+  static Future<Map<String, dynamic>> solicitarUnion(String id) async {
+    return await RunnHttpClient.post('/grupos/$id/unirse');
+  }
+
+  /// Alias para compatibilidad con código anterior.
   static Future<void> unirseGrupo(String id) async {
-    await RunnHttpClient.post('/grupos/$id/unirse');
+    await solicitarUnion(id);
   }
 
   // ─── SALIRSE DEL GRUPO ────────────────────────────────────────────────────
@@ -128,6 +133,51 @@ class GruposService {
 
   static Future<void> salirseGrupo(String id) async {
     await RunnHttpClient.delete('/grupos/$id/unirse');
+  }
+
+  // ─── OBTENER SOLICITUDES DE UNIÓN (admin del grupo) ───────────────────────
+  // GET /grupos/:id/solicitudes
+
+  static Future<List<SolicitudGrupo>> getSolicitudesGrupo(String grupoId) async {
+    final data = await RunnHttpClient.get('/grupos/$grupoId/solicitudes');
+    final lista = data['solicitudes'] as List<dynamic>? ?? [];
+    return lista.map((s) => SolicitudGrupo.fromJson(s as Map<String, dynamic>)).toList();
+  }
+
+  // ─── RESPONDER SOLICITUD DE UNIÓN (admin del grupo) ───────────────────────
+  // PUT /grupos/:id/solicitudes/:solicitud_id  body: {accion: 'aceptar'|'rechazar'}
+
+  static Future<void> responderSolicitud(
+    String grupoId,
+    String solicitudId,
+    String accion,
+  ) async {
+    await RunnHttpClient.put(
+      '/grupos/$grupoId/solicitudes/$solicitudId',
+      body: {'accion': accion},
+    );
+  }
+
+  // ─── PANEL DE INVITACIONES ENVIADAS (admin del grupo) ─────────────────────
+  // GET /grupos/:id/invitaciones-panel
+
+  static Future<List<InvitacionPanel>> getInvitacionesPanel(String grupoId) async {
+    final data = await RunnHttpClient.get('/grupos/$grupoId/invitaciones-panel');
+    final lista = data['invitaciones'] as List<dynamic>? ?? [];
+    return lista.map((i) => InvitacionPanel.fromJson(i as Map<String, dynamic>)).toList();
+  }
+
+  // ─── BUSCAR USUARIOS PARA INVITAR (admin del grupo) ───────────────────────
+  // GET /grupos/:id/buscar-usuarios?q=texto
+
+  static Future<List<Map<String, dynamic>>> buscarUsuariosParaGrupo(
+    String grupoId, {
+    String? query,
+  }) async {
+    final q = query != null && query.length >= 2 ? '?q=$query' : '';
+    final data = await RunnHttpClient.get('/grupos/$grupoId/buscar-usuarios$q');
+    final lista = data['usuarios'] as List<dynamic>? ?? [];
+    return lista.cast<Map<String, dynamic>>();
   }
 
   // ─── AGREGAR MIEMBRO (admin del grupo) ────────────────────────────────────
@@ -145,7 +195,7 @@ class GruposService {
   }
 
   // ─── CAMBIAR ROL DE MIEMBRO (creador del grupo) ───────────────────────────
-  // PUT /grupos/:id/miembros/:usuario_id/rol  body: {rol: 'miembro'|'admin'}
+  // PUT /grupos/:id/miembros/:usuario_id/rol
 
   static Future<void> cambiarRolMiembro(
     String grupoId,
@@ -162,7 +212,7 @@ class GruposService {
     await RunnHttpClient.post('/grupos/$grupoId/invitar', body: {'usuario_id': usuarioId});
   }
 
-  // ─── RESPONDER INVITACIÓN ─────────────────────────────────────────────────
+  // ─── RESPONDER INVITACIÓN (usuario invitado) ──────────────────────────────
   // PUT /grupos/invitaciones/:id  body: {accion: 'aceptar'|'rechazar'}
 
   static Future<void> responderInvitacion(String invitacionId, String accion) async {
@@ -249,6 +299,8 @@ class GruposService {
   static Future<void> completarActividad(String grupoId, String actividadId) async {
     await RunnHttpClient.put('/grupos/$grupoId/actividades/$actividadId/completar');
   }
+
+
 
   // ─── RANKING DE ACTIVIDADES ───────────────────────────────────────────────
   // GET /grupos/:id/actividades/ranking

@@ -18,12 +18,16 @@ class CommunityScreen extends StatefulWidget {
 }
 
 class _CommunityScreenState extends State<CommunityScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   late AnimationController _animationController;
+  late AnimationController _skeletonController;
   late Animation<double> _headerAnimation;
   late Animation<double> _contentAnimation;
+  late Animation<double> _pulseAnimation;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+
+  bool _isRefreshing = false;
 
   // ─── Estado de eventos ────────────────────────────────────────────────────
   List<EventoModel> _eventos = [];
@@ -51,8 +55,22 @@ class _CommunityScreenState extends State<CommunityScreen>
       parent: _animationController,
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     );
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _skeletonController, curve: Curves.easeInOut),
+    );
+    _skeletonController.repeat(reverse: true);
     _animationController.forward();
     _loadRolYEventos();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (mounted) setState(() => _isRefreshing = true);
+    await _loadRolYEventos();
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   Future<void> _loadRolYEventos() async {
@@ -87,6 +105,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     _searchController.dispose();
     _searchFocusNode.dispose();
     _animationController.dispose();
+    _skeletonController.dispose();
     super.dispose();
   }
 
@@ -96,35 +115,42 @@ class _CommunityScreenState extends State<CommunityScreen>
       backgroundColor: context.colors.bg,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                _buildHeader(),
-                FadeTransition(
-                  opacity: _contentAnimation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 0.1),
-                      end: Offset.zero,
-                    ).animate(_contentAnimation),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 24),
-                          _buildQuickActions(),
-                          const SizedBox(height: 32),
-                          _buildEventsSection(),
-                          const SizedBox(height: 32),
-                          _buildNearbyRunners(),
-                          const SizedBox(height: 40),
-                        ],
+          return RefreshIndicator(
+            onRefresh: _handleRefresh,
+            color: context.colors.primaryDeep,
+            backgroundColor: context.colors.surface,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              child: Column(
+                children: [
+                  _buildHeader(),
+                  FadeTransition(
+                    opacity: _contentAnimation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0, 0.1),
+                        end: Offset.zero,
+                      ).animate(_contentAnimation),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: _isRefreshing
+                          ? _buildCommunitySkeleton(context)
+                          : Column(
+                              children: [
+                                const SizedBox(height: 24),
+                                _buildQuickActions(),
+                                const SizedBox(height: 32),
+                                _buildEventsSection(),
+                                const SizedBox(height: 32),
+                                _buildNearbyRunners(),
+                                const SizedBox(height: 40),
+                              ],
+                            ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
@@ -1236,6 +1262,109 @@ class _CommunityScreenState extends State<CommunityScreen>
             color: context.colors.textPrimary.withValues(alpha: 0.2),
           ),
         ],
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // SKELETON
+  // ──────────────────────────────────────────────────────────────────────────
+
+  Widget _buildCommunitySkeleton(BuildContext context) {
+    final c = context.colors;
+    return FadeTransition(
+      opacity: _pulseAnimation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          // Quick actions
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          
+          // Events Section
+          _skeletonRow(140, 20),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(3, (i) => Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Container(
+                  width: 260,
+                  height: 180,
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              )),
+            ),
+          ),
+          
+          const SizedBox(height: 32),
+          
+          // Nearby Runners Section
+          _skeletonRow(160, 20),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(3, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                width: double.infinity,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            )),
+          ),
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _skeletonRow(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: context.colors.card,
+        borderRadius: BorderRadius.circular(8),
       ),
     );
   }

@@ -1,387 +1,342 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:runn_front/core/services/http_client.dart';
+import '../../services/actividades_service.dart';
 
-class StartCareerScreen extends StatefulWidget {
-  const StartCareerScreen({super.key});
+class PreCarreraPage extends StatefulWidget {
+  const PreCarreraPage({super.key});
 
   @override
-  State<StartCareerScreen> createState() => _StartCareerScreenState();
+  State<PreCarreraPage> createState() => _PreCarreraPageState();
 }
 
-class _StartCareerScreenState extends State<StartCareerScreen>
+class _PreCarreraPageState extends State<PreCarreraPage>
     with TickerProviderStateMixin {
   AppColors get c => context.colors;
 
-  bool _isStarted = false;
-  bool _isRunning = false;
-  int _time = 0;
-  double _distance = 0;
-  Timer? _timer;
+  GoogleMapController? _mapController;
+  Position? _currentPosition;
+  bool _loadingLocation = true;
+  bool _starting = false;
+  String? _locationError;
 
-  late AnimationController _pulseController;
+  late AnimationController _pulseCtrl;
 
   @override
   void initState() {
     super.initState();
-    _pulseController = AnimationController(
+    _pulseCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
+    _loadLocation();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _pulseController.dispose();
+    _pulseCtrl.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+  Future<void> _loadLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _locationError = 'El GPS está desactivado en tu dispositivo.';
+          _loadingLocation = false;
+        });
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.deniedForever ||
+          permission == LocationPermission.denied) {
+        setState(() {
+          _locationError =
+              'Permiso de ubicación denegado. Actívalo en Ajustes.';
+          _loadingLocation = false;
+        });
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      if (!mounted) return;
       setState(() {
-        _time += 1;
-        _distance += 0.0028;
+        _currentPosition = pos;
+        _loadingLocation = false;
       });
-    });
-  }
-
-  void _stopTimer() {
-    _timer?.cancel();
-    _timer = null;
-  }
-
-  String _formatTime(int seconds) {
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    final s = seconds % 60;
-    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
-  double get _currentPace => _distance > 0 ? (_time / 60) / _distance : 0;
-
-  void _handleStart() {
-    setState(() {
-      _isStarted = true;
-      _isRunning = true;
-    });
-    _startTimer();
-  }
-
-  void _handlePauseResume() {
-    setState(() {
-      _isRunning = !_isRunning;
-    });
-    if (_isRunning) {
-      _startTimer();
-    } else {
-      _stopTimer();
+      _mapController?.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(pos.latitude, pos.longitude),
+            zoom: 16,
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _locationError = 'No se pudo obtener la ubicación.';
+        _loadingLocation = false;
+      });
     }
   }
 
-  void _handleFinish() {
-    _stopTimer();
-    setState(() => _isRunning = false);
-    context.go('/run_results');
-  }
-
-  void _handleBack() {
-    context.go('/home');
+  Future<void> _iniciarCarrera() async {
+    if (_starting) return;
+    setState(() => _starting = true);
+    try {
+      final actividad = await ActividadesService.iniciarActividad();
+      if (!mounted) return;
+      context.pushNamed(
+        'run_active',
+        extra: {
+          'actividad_id': actividad.id,
+          'hora_inicio': actividad.horaInicio.toIso8601String(),
+          'lat_inicio': _currentPosition?.latitude,
+          'lng_inicio': _currentPosition?.longitude,
+        },
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)),
+      );
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isStarted) return _buildPreStartScreen();
-    return _buildRunningScreen();
-  }
+    final c = context.colors;
+    final pos = _currentPosition;
 
-  // ─── PRE-START SCREEN ────────────────────────────────────────────────────────
-
-  Widget _buildPreStartScreen() {
     return Scaffold(
       backgroundColor: c.bg,
-      body: Column(
+      body: Stack(
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 52, 24, 20),
-            decoration: BoxDecoration(
-              color: c.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: c.primary.withValues(alpha: 0.3),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: _handleBack,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: c.primaryLight,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.arrow_back,
-                      size: 20,
-                      color: c.textPrimary,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Iniciar carrera',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w800,
-                    color: c.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Map Preview
-          Expanded(
-            child: Container(
-              color: c.primaryLight,
-              child: Stack(
-                children: [
-                  // Map Visual
-                  const GoogleMap(
+          // ── MAPA ──────────────────────────────────────────────────
+          Positioned.fill(
+            child: _locationError != null
+                ? _buildLocationError(c)
+                : GoogleMap(
                     initialCameraPosition: CameraPosition(
-                      target: LatLng(-0.22985, -78.52495), // Quito, Ecuador (ejemplo)
-                      zoom: 15,
+                      target: pos != null
+                          ? LatLng(pos.latitude, pos.longitude)
+                          : const LatLng(-0.22985, -78.52495),
+                      zoom: 16,
                     ),
+                    onMapCreated: (ctrl) => _mapController = ctrl,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
                     zoomControlsEnabled: false,
                     compassEnabled: false,
                     mapToolbarEnabled: false,
-                    myLocationButtonEnabled: false,
-                    scrollGesturesEnabled: false,
-                    zoomGesturesEnabled: false,
-                    rotateGesturesEnabled: false,
-                    tiltGesturesEnabled: false,
-                  ),
-
-                  // Location marker
-                  Center(
-                    child: AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (_, __) => Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 64 + (_pulseController.value * 16),
-                            height: 64 + (_pulseController.value * 16),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: c.primaryDeep.withValues(
-                                alpha: 0.15 - _pulseController.value * 0.1,
+                    markers: pos != null
+                        ? {
+                            Marker(
+                              markerId: const MarkerId('current'),
+                              position: LatLng(pos.latitude, pos.longitude),
+                              icon: BitmapDescriptor.defaultMarkerWithHue(
+                                BitmapDescriptor.hueAzure,
                               ),
                             ),
-                          ),
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: c.primaryDeep,
-                              border: Border.all(color: Colors.white, width: 4),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: c.primaryDeep.withValues(alpha: 0.5),
-                                  blurRadius: 12,
-                                ),
-                              ],
+                          }
+                        : {},
+                  ),
+          ),
+
+          // ── INDICADOR DE CARGA GPS ────────────────────────────────
+          if (_loadingLocation)
+            const Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black26,
+                child: Center(child: CircularProgressIndicator(color: Colors.white)),
+              ),
+            ),
+
+          // ── BARRA SUPERIOR ────────────────────────────────────────
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    _circleBtn(c, Icons.arrow_back_rounded, () => context.go('/home')),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: c.card.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8, height: 8,
+                              decoration: BoxDecoration(
+                                color: _locationError != null
+                                    ? const Color(0xFFFF3B30)
+                                    : _loadingLocation
+                                        ? Colors.orange
+                                        : const Color(0xFF34C759),
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Text(
+                              _locationError != null
+                                  ? 'Error de GPS'
+                                  : _loadingLocation
+                                      ? 'Obteniendo ubicación…'
+                                      : 'GPS listo · Señal fuerte',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: c.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-
-                  // Location card
-                  Positioned(
-                    top: 24,
-                    left: 24,
-                    right: 24,
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: c.card,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: c.primaryDeep.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.location_on,
-                              color: c.primaryDeep,
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Ubicación actual',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: c.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                'GPS listo • Señal fuerte',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: c.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
 
-          // Bottom controls
-          Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-            color: c.surface,
-            child: Column(
-              children: [
-                // Info Card
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        c.primary.withValues(alpha: 0.6),
-                        c.primary.withValues(alpha: 0.1),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: c.primaryMid.withValues(alpha: 0.5),
-                      width: 1.5,
+          // ── CONTROLES INFERIORES ──────────────────────────────────
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 40),
+              decoration: BoxDecoration(
+                color: c.bg.withValues(alpha: 0.97),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 20,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Dragger
+                  Container(
+                    width: 40, height: 4, margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: c.primaryDeep.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 32,
-                        height: 32,
-                        decoration: BoxDecoration(
-                          color: c.primaryDeep,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.info_outline,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Esta función registrará tu ruta, distancia, tiempo y calorías en tiempo real. Presiona Iniciar cuando estés listo.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: c.textPrimary,
-                            height: 1.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
 
-                // Start Button
-                GestureDetector(
-                  onTap: _handleStart,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 20),
+                  // Info card
+                  Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [c.primaryDeep, c.primaryDark],
+                        colors: [
+                          c.primaryDeep.withValues(alpha: 0.12),
+                          c.primaryDeep.withValues(alpha: 0.04),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: c.primary.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: c.primaryDeep.withValues(alpha: 0.15)),
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Row(
                       children: [
-                        Icon(
-                          Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 24,
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: c.primaryDeep,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.directions_run_rounded, color: Colors.white, size: 18),
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          'Iniciar carrera',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 16,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Se registrará tu ruta, distancia, tiempo y calorías en tiempo real. Asegúrate de estar al aire libre para mejor señal GPS.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: c.textSecondary,
+                              height: 1.4,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 16),
 
-                // Cancel Button
-                GestureDetector(
-                  onTap: _handleBack,
-                  child: Container(
+                  // Botón Iniciar
+                  SizedBox(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      color: c.card,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: c.primaryMid, width: 1.5),
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      onPressed: (_loadingLocation || _locationError != null || _starting)
+                          ? null
+                          : _iniciarCarrera,
+                      icon: _starting
+                          ? const SizedBox(
+                              width: 20, height: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 26),
+                      label: Text(
+                        _starting ? 'Iniciando…' : 'Iniciar carrera',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: c.primaryDeep,
+                        disabledBackgroundColor: c.primaryDeep.withValues(alpha: 0.4),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
                     ),
-                    child: Center(
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Botón Cancelar
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: TextButton(
+                      onPressed: () => context.go('/home'),
                       child: Text(
                         'Cancelar',
                         style: TextStyle(
@@ -392,518 +347,62 @@ class _StartCareerScreenState extends State<StartCareerScreen>
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ─── RUNNING SCREEN ──────────────────────────────────────────────────────────
-
-  Widget _buildRunningScreen() {
-    return Scaffold(
-      backgroundColor: c.bg,
-      body: Column(
-        children: [
-          // Map area
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    c.primaryDeep.withValues(alpha: 0.3),
-                    c.primaryDark.withValues(alpha: 0.2),
-                    c.bg,
-                  ],
-                ),
-              ),
-              child: Stack(
-                children: [
-                  // Map Visual
-                  const Opacity(
-                    opacity: 0.7,
-                    child: GoogleMap(
-                      initialCameraPosition: CameraPosition(
-                        target: LatLng(-0.22985, -78.52495),
-                        zoom: 16,
-                      ),
-                      zoomControlsEnabled: false,
-                      compassEnabled: false,
-                      mapToolbarEnabled: false,
-                      myLocationButtonEnabled: false,
-                      scrollGesturesEnabled: false,
-                      zoomGesturesEnabled: false,
-                      rotateGesturesEnabled: false,
-                      tiltGesturesEnabled: false,
-                    ),
-                  ),
-
-                  // Route SVG
-                  CustomPaint(
-                    size: Size.infinite,
-                    painter: _RoutePainter(color: c.primaryMid),
-                  ),
-
-                  // Start pin
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.18,
-                    left: MediaQuery.of(context).size.width * 0.25,
-                    child: Container(
-                      width: 14,
-                      height: 14,
-                      decoration: BoxDecoration(
-                        color: c.primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: c.surface, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: c.primary.withValues(alpha: 0.6),
-                            blurRadius: 8,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Current location
-                  Positioned(
-                    top: MediaQuery.of(context).size.height * 0.25,
-                    left: MediaQuery.of(context).size.width * 0.65,
-                    child: AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (_, __) => Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 48 + (_pulseController.value * 12),
-                            height: 48 + (_pulseController.value * 12),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: c.primaryDeep.withValues(
-                                alpha: 0.2 - _pulseController.value * 0.1,
-                              ),
-                            ),
-                          ),
-                          Container(
-                            width: 18,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: c.primaryDeep,
-                              border: Border.all(color: Colors.white, width: 3),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: c.primaryDeep.withValues(alpha: 0.6),
-                                  blurRadius: 10,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // Status badge
-                  Positioned(
-                    top: 56,
-                    left: 0,
-                    right: 0,
-                    child: Center(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _isRunning
-                              ? c.primaryDeep.withValues(alpha: 0.25)
-                              : Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(50),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedBuilder(
-                              animation: _pulseController,
-                              builder: (_, __) => Container(
-                                width: 8,
-                                height: 8,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: _isRunning
-                                      ? c.primary.withValues(
-                                          alpha:
-                                              0.6 +
-                                              _pulseController.value * 0.4,
-                                        )
-                                      : c.textPrimary.withValues(alpha: 0.5),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _isRunning ? 'En progreso' : 'Pausado',
-                              style: TextStyle(
-                                color: c.textPrimary,
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  // Back button
-                  Positioned(
-                    top: 48,
-                    left: 24,
-                    child: GestureDetector(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('¿Cancelar carrera?'),
-                            content: const Text(
-                              'Se perderán los datos de esta carrera.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('No'),
-                              ),
-                              TextButton(
-                                onPressed: _handleBack,
-                                child: const Text('Sí'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: c.surface.withValues(alpha: 0.12),
-                          border: Border.all(
-                            color: c.textPrimary.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.arrow_back,
-                          color: c.textPrimary,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
                 ],
               ),
             ),
           ),
-
-          // Stats Panel
-          Container(
-            color: c.bg,
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
-            child: Column(
-              children: [
-                // Timer
-                Column(
-                  children: [
-                    Text(
-                      'Tiempo',
-                      style: TextStyle(color: c.textSecondary, fontSize: 13),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _formatTime(_time),
-                      style: TextStyle(
-                        color: c.textPrimary,
-                        fontSize: 52,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -1,
-                        height: 1,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-
-                // Distance & Pace
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildStatCard(
-                        icon: Icons.location_on,
-                        iconColor: c.primaryMid,
-                        label: 'Distancia',
-                        value: _distance.toStringAsFixed(2),
-                        unit: 'km',
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildStatCard(
-                        icon: Icons.trending_up,
-                        iconColor: c.primary,
-                        label: 'Ritmo',
-                        value: _currentPace > 0
-                            ? _currentPace.toStringAsFixed(1)
-                            : '0.0',
-                        unit: 'min/km',
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // Calories & BPM
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: c.surface.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: c.textPrimary.withValues(alpha: 0.05),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildMiniStat(
-                        icon: Icons.local_fire_department,
-                        iconColor: c.primaryDark,
-                        label: 'Calorías',
-                        value: '${(_distance * 60).round()}',
-                      ),
-                      Container(
-                        width: 1,
-                        height: 48,
-                        color: Colors.white.withValues(alpha: 0.1),
-                      ),
-                      _buildMiniStat(
-                        icon: Icons.favorite,
-                        iconColor: c.primaryDeep,
-                        label: 'BPM',
-                        value: '142',
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _handlePauseResume,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _isRunning
-                                  ? [c.primaryDark, c.primaryMid]
-                                  : [c.primaryDeep, c.primaryDark],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    (_isRunning ? c.primaryMid : c.primaryDeep)
-                                        .withValues(alpha: 0.4),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                _isRunning
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                                size: 22,
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                _isRunning ? 'Pausar' : 'Reanudar',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    GestureDetector(
-                      onTap: _handleFinish,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        decoration: BoxDecoration(
-                          color: c.surface.withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: c.textPrimary.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Text(
-                          'Finalizar',
-                          style: TextStyle(
-                            color: c.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _buildStatCard({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String value,
-    required String unit,
-  }) {
+  Widget _buildLocationError(AppColors c) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: c.surface.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.textPrimary.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      color: c.bg,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: iconColor, size: 16),
-              const SizedBox(width: 8),
+              Icon(Icons.location_off_rounded, size: 64, color: c.textHint),
+              const SizedBox(height: 16),
               Text(
-                label,
-                style: TextStyle(color: c.textSecondary, fontSize: 12),
+                _locationError ?? '',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: c.textSecondary, fontSize: 15, height: 1.5),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    _locationError = null;
+                    _loadingLocation = true;
+                  });
+                  _loadLocation();
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: c.primaryDeep, foregroundColor: Colors.white),
+                child: const Text('Reintentar'),
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: TextStyle(
-              color: c.textPrimary,
-              fontSize: 30,
-              fontWeight: FontWeight.w800,
-              height: 1,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(unit, style: TextStyle(color: c.textSecondary, fontSize: 12)),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildMiniStat({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required String value,
-  }) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: iconColor, size: 16),
-            const SizedBox(width: 6),
-            Text(label, style: TextStyle(color: c.textSecondary, fontSize: 11)),
-          ],
+  Widget _circleBtn(AppColors c, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44, height: 44,
+        decoration: BoxDecoration(
+          color: c.card.withValues(alpha: 0.95),
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 8)],
         ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: c.textPrimary,
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
+        child: Icon(icon, color: c.textPrimary, size: 22),
+      ),
     );
   }
-}
-
-// Route painter
-class _RoutePainter extends CustomPainter {
-  final Color color;
-  const _RoutePainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 4
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final path = Path();
-    path.moveTo(size.width * 0.25, size.height * 0.55);
-    path.quadraticBezierTo(
-      size.width * 0.38,
-      size.height * 0.42,
-      size.width * 0.50,
-      size.height * 0.50,
-    );
-    path.quadraticBezierTo(
-      size.width * 0.62,
-      size.height * 0.58,
-      size.width * 0.70,
-      size.height * 0.52,
-    );
-
-    canvas.drawPath(
-      path,
-      paint
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4)
-        ..color = color.withValues(alpha: 0.5),
-    );
-    canvas.drawPath(
-      path,
-      paint
-        ..maskFilter = null
-        ..color = color,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RoutePainter old) => old.color != color;
 }

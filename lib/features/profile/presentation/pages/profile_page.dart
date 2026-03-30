@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import '../../services/profile_service.dart';
+import '../../../start_career/services/actividades_service.dart';
+import '../../../start_career/domain/actividad_model.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -10,16 +12,42 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _skeletonController;
+  late Animation<double> _pulseAnimation;
   Map<String, dynamic> _userData = {};
   // Lista de fotos multimedia del backend ({id, url})
   List<Map<String, String>> _mediaItems = [];
+  ActividadEstadisticas? _estadisticas;
+  List<ActividadHistorial>? _actividadesRecientes;
   bool _isLoading = true;
+  bool _isRefreshing = false;
 
   @override
   void initState() {
     super.initState();
+    _skeletonController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _pulseAnimation = Tween<double>(begin: 0.4, end: 0.8).animate(
+      CurvedAnimation(parent: _skeletonController, curve: Curves.easeInOut),
+    );
+    _skeletonController.repeat(reverse: true);
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    _skeletonController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRefresh() async {
+    if (mounted) setState(() => _isRefreshing = true);
+    await _loadProfile();
+    if (mounted) setState(() => _isRefreshing = false);
   }
 
   Future<void> _loadProfile() async {
@@ -63,6 +91,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (_) {
       // Fallback silencioso
     }
+
+    // Cargar estadísticas
+    try {
+      debugPrint('[Perfil] Cargando estadísticas...');
+      final stats = await ActividadesService.obtenerEstadisticas();
+      debugPrint('[Perfil] Stats OK: totalCarreras=${stats.totalCarreras}, distancia=${stats.distanciaTotalKm}');
+      if (mounted) setState(() => _estadisticas = stats);
+    } catch (e) {
+      debugPrint('[Perfil] ERROR estadísticas: $e');
+    }
+
+    // Cargar historial reciente (últimas 2)
+    try {
+      debugPrint('[Perfil] Cargando historial...');
+      final historyMap = await ActividadesService.obtenerHistorial(limite: 2, pagina: 1);
+      final lista = historyMap['historial'] as List<ActividadHistorial>;
+      debugPrint('[Perfil] Historial OK: ${lista.length} carreras');
+      if (mounted) setState(() => _actividadesRecientes = lista);
+    } catch (e) {
+      debugPrint('[Perfil] ERROR historial: $e');
+      // Asignar lista vacía para que la UI no se quede en "Cargando..."
+      if (mounted) setState(() => _actividadesRecientes ??= []);
+    }
   }
 
   @override
@@ -71,25 +122,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final c = context.colors;
     return Scaffold(
       backgroundColor: c.bg,
-      body: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(child: _buildHeader(context)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                const SizedBox(height: 28),
-                _buildBadgesSection(context),
-                const SizedBox(height: 28),
-                _buildStatisticsSection(context),
-                const SizedBox(height: 28),
-                _buildMultimediaSection(context),
-                const SizedBox(height: 60),
-              ]),
-            ),
-          ),
-        ],
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: c.primaryDeep,
+        backgroundColor: c.surface,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _buildHeader(context)),
+            _isRefreshing
+                ? SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: _buildProfileSkeletonBody(context),
+                    ),
+                  )
+                : SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        const SizedBox(height: 28),
+                        _buildBadgesSection(context),
+                        const SizedBox(height: 28),
+                        _buildStatisticsSection(context),
+                        const SizedBox(height: 28),
+                        _buildHistorialSection(context),
+                        const SizedBox(height: 28),
+                        _buildMultimediaSection(context),
+                        const SizedBox(height: 60),
+                      ]),
+                    ),
+                  ),
+          ],
+        ),
       ),
     );
   }
@@ -466,36 +531,273 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   // ────────────────────────────────────────────────────────────────────────────
+  // HISTORIAL DE CARRERAS
+  // ────────────────────────────────────────────────────────────────────────────
+
+  Widget _buildHistorialSection(BuildContext context) {
+    final c = context.colors;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildSectionHeader(
+          context,
+          'Historial de Carreras',
+          'Ver todo',
+          () => context.pushNamed('run_history'),
+        ),
+        const SizedBox(height: 16),
+
+        // Estado: cargando
+        if (_actividadesRecientes == null)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28),
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.primaryDeep.withValues(alpha: 0.08)),
+            ),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.5, color: c.primaryDeep),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  'Cargando historial...',
+                  style: TextStyle(fontSize: 13, color: c.textHint, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          )
+
+        // Estado: sin carreras
+        else if (_actividadesRecientes!.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: c.primaryDeep.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: c.primaryDeep.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.directions_run_rounded, size: 28, color: c.primaryDeep.withValues(alpha: 0.5)),
+                ),
+                const SizedBox(height: 14),
+                Text(
+                  'Aún no tienes carreras',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: c.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Completa tu primera carrera para verla aquí',
+                  style: TextStyle(fontSize: 12, color: c.textHint),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          )
+
+        // Estado: con datos
+        else
+          Column(
+            children: _actividadesRecientes!.map((a) {
+              final isRunning = a.tipo == 'correr';
+              final color = isRunning ? c.primaryDeep : const Color(0xFF34C759);
+              final icon = isRunning ? Icons.directions_run_rounded : Icons.terrain_rounded;
+              final label = isRunning ? 'Carrera' : 'Senderismo';
+
+              // Formatear fecha
+              final meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+              final fechaStr = '${a.fecha.day} ${meses[a.fecha.month - 1]}. ${a.fecha.year}';
+
+              return GestureDetector(
+                onTap: () => context.pushNamed('run_detail', extra: {'actividad_id': a.id}),
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(color: color.withValues(alpha: 0.12)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      // Ícono / Foto
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: a.fotoUrl != null && a.fotoUrl!.isNotEmpty
+                            ? Image.network(a.fotoUrl!, fit: BoxFit.cover)
+                            : Icon(icon, color: color, size: 28),
+                      ),
+                      const SizedBox(width: 14),
+
+                      // Info central
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    label,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 15,
+                                      color: c.textPrimary,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (a.compartida)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: c.primaryDeep.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                    child: Text(
+                                      'Compartida',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w700,
+                                        color: c.primaryDeep,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${a.distanciaKm.toStringAsFixed(2)} km  •  ${a.duracionFormateada}',
+                              style: TextStyle(
+                                color: c.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              fechaStr,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: c.textHint,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Puntos
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.star_rounded, color: Color(0xFFFFB84D), size: 18),
+                          const SizedBox(height: 2),
+                          Text(
+                            '+${a.puntosGanados}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                              color: c.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            'pts',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: c.textHint,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right_rounded, color: c.textHint, size: 20),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
   // ESTADÍSTICAS
   // ────────────────────────────────────────────────────────────────────────────
 
   Widget _buildStatisticsSection(BuildContext context) {
+    if (_estadisticas == null) return const SizedBox.shrink();
+
     final c = context.colors;
+    final stats = _estadisticas!;
+    
     final previewStats = [
       {
         'label': 'Total km',
-        'value': '–',
+        'value': stats.distanciaTotalKm.toStringAsFixed(1),
         'unit': 'km',
         'icon': Icons.route_rounded,
         'color': c.primaryDeep,
       },
       {
-        'label': 'Velocidad máx.',
-        'value': '–',
+        'label': 'Velocidad prom.',
+        'value': stats.velocidadPromedioGeneral.toStringAsFixed(1),
         'unit': 'km/h',
         'icon': Icons.speed_rounded,
         'color': const Color(0xFFE8698A),
       },
       {
-        'label': 'Ritmo promedio',
-        'value': '–',
+        'label': 'Ritmo prom.',
+        'value': stats.ritmoPromedioGeneral.toStringAsFixed(1),
         'unit': 'min/km',
         'icon': Icons.timer_rounded,
         'color': const Color(0xFF7ED957),
       },
       {
         'label': 'Carreras',
-        'value': '–',
+        'value': '${stats.totalCarreras}',
         'unit': 'total',
         'icon': Icons.flag_rounded,
         'color': const Color(0xFFFFB84D),
@@ -511,7 +813,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'Ver más',
           () => context.pushNamed('profile_stats'),
         ),
-        const SizedBox(height: 16),
         GridView(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -699,6 +1000,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // SKELETON
+  // ────────────────────────────────────────────────────────────────────────────
+
+  Widget _buildProfileSkeletonBody(BuildContext context) {
+    final c = context.colors;
+    return FadeTransition(
+      opacity: _pulseAnimation,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 28),
+          
+          // Badges Section
+          _skeletonRow(140, 20),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(4, (i) => Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: Container(
+                  width: 80,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              )),
+            ),
+          ),
+          
+          const SizedBox(height: 28),
+          
+          // Statistics Section
+          _skeletonRow(120, 20),
+          const SizedBox(height: 16),
+          Column(
+            children: List.generate(3, (i) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                width: double.infinity,
+                height: 70,
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+            )),
+          ),
+          
+          const SizedBox(height: 28),
+          
+          // Multimedia Section
+          _skeletonRow(150, 20),
+          const SizedBox(height: 16),
+          GridView.builder(
+            padding: EdgeInsets.zero,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1,
+            ),
+            itemCount: 6,
+            itemBuilder: (context, index) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              );
+            },
+          ),
+          
+          const SizedBox(height: 60),
+        ],
+      ),
+    );
+  }
+
+  Widget _skeletonRow(double width, double height) {
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: context.colors.card,
+        borderRadius: BorderRadius.circular(8),
+      ),
     );
   }
 }

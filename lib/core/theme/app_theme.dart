@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 // ── Enums ─────────────────────────────────────────────────────────────────────
 
@@ -10,21 +11,21 @@ enum AppBrightness { light, dark }
 
 class AppColors {
   // Accent palette
-  final Color primary; // base accent  (#FFD3E0 | #84DEFA)
-  final Color primaryLight; // very light bg tint
-  final Color primaryMid; // medium tone
-  final Color primaryDark; // darker tone
-  final Color primaryDeep; // deepest / text-on-light
+  final Color primary;
+  final Color primaryLight;
+  final Color primaryMid;
+  final Color primaryDark;
+  final Color primaryDeep;
 
   // Backgrounds
-  final Color bg; // page background
-  final Color surface; // slightly elevated (cards background in light)
-  final Color card; // card fill
-  final Color cardBorder; // card border color
+  final Color bg;
+  final Color surface;
+  final Color card;
+  final Color cardBorder;
 
   // Nav bar
   final Color navBg;
-  final Color navActive; // same as primaryDeep usually
+  final Color navActive;
   final Color navInactive;
 
   // Text
@@ -34,11 +35,11 @@ class AppColors {
 
   // Input
   final Color inputFill;
-  final Color inputBorder; // enabled border
+  final Color inputBorder;
   final Color inputBorderFocused;
 
-  // Dark overlay tints (for dark card backgrounds in dark mode sections)
-  final Color darkBg; // used in start_career running screen
+  // Dark overlay tints
+  final Color darkBg;
   final Color darkCard;
   final Color darkSurface;
 
@@ -187,7 +188,6 @@ class AppColors {
 
   // ── Derived helpers ───────────────────────────────────────────────────────
 
-  /// Semi-transparent primary for backgrounds/shadows
   Color primaryWithAlpha(double alpha) => primary.withValues(alpha: alpha);
   Color primaryDeepWithAlpha(double alpha) =>
       primaryDeep.withValues(alpha: alpha);
@@ -196,7 +196,49 @@ class AppColors {
   Color cardBorderWithAlpha(double alpha) =>
       cardBorder.withValues(alpha: alpha);
 
-  /// MaterialApp ThemeData for this token set
+  // ── TextTheme ─────────────────────────────────────────────────────────────
+
+  /// Anton  → display* + headline*  (impacto máximo, títulos y KPIs)
+  /// Barlow Condensed → title* + body* + label*  (legible, compacto, deportivo)
+  TextTheme buildTextTheme() {
+    // Colores base para cada nivel
+    final primary   = TextStyle(color: textPrimary);
+    final secondary = TextStyle(color: textSecondary);
+    final hint      = TextStyle(color: textHint);
+
+    // Barlow Condensed como base de todo el árbol
+    final base = GoogleFonts.barlowCondensedTextTheme(
+      TextTheme(
+        displayLarge:   primary,
+        displayMedium:  primary,
+        displaySmall:   primary,
+        headlineLarge:  primary,
+        headlineMedium: primary,
+        headlineSmall:  primary,
+        titleLarge:     primary,
+        titleMedium:    primary,
+        titleSmall:     secondary,
+        bodyLarge:      primary,
+        bodyMedium:     primary,
+        bodySmall:      secondary,
+        labelLarge:     primary,
+        labelMedium:    secondary,
+        labelSmall:     hint,
+      ),
+    );
+
+    // Anton sobreescribe los niveles de display y headline
+    return base.copyWith(
+      displayLarge:   GoogleFonts.anton(textStyle: base.displayLarge?.copyWith(fontSize: 57, letterSpacing: 1.5)),
+      displayMedium:  GoogleFonts.anton(textStyle: base.displayMedium?.copyWith(fontSize: 45, letterSpacing: 1.2)),
+      displaySmall:   GoogleFonts.anton(textStyle: base.displaySmall?.copyWith(fontSize: 36, letterSpacing: 1.0)),
+      headlineLarge:  GoogleFonts.anton(textStyle: base.headlineLarge?.copyWith(fontSize: 32, letterSpacing: 0.8)),
+      headlineMedium: GoogleFonts.anton(textStyle: base.headlineMedium?.copyWith(fontSize: 28, letterSpacing: 0.6)),
+      headlineSmall:  GoogleFonts.anton(textStyle: base.headlineSmall?.copyWith(fontSize: 24, letterSpacing: 0.4)),
+    );
+  }
+
+  /// MaterialApp ThemeData para este token set
   ThemeData toMaterialTheme() {
     return ThemeData(
       useMaterial3: true,
@@ -215,10 +257,7 @@ class AppColors {
       scaffoldBackgroundColor: bg,
       cardColor: card,
       dividerColor: cardBorderWithAlpha(0.15),
-      textTheme: TextTheme(
-        bodyMedium: TextStyle(color: textPrimary),
-        bodySmall: TextStyle(color: textSecondary),
-      ),
+      textTheme: buildTextTheme(),
     );
   }
 }
