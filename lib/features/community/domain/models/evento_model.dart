@@ -44,6 +44,18 @@ class EventoModel {
   final String? rutaSugerida;
   final int participantes;
 
+  // Nuevos campos
+  final bool esPago;
+  final double precio;
+  final int? limiteParticipantes;
+  final int? limiteListaEspera;
+  final List<dynamic>? waypoints;
+  final Map<String, dynamic>? puntoInicio;
+  final Map<String, dynamic>? puntoFin;
+  final int participantesConfirmados;
+  final int enListaEspera;
+  final int? cupoDisponible;
+
   const EventoModel({
     required this.id,
     required this.titulo,
@@ -55,6 +67,16 @@ class EventoModel {
     this.fotoUrl,
     this.rutaSugerida,
     required this.participantes,
+    this.esPago = false,
+    this.precio = 0.0,
+    this.limiteParticipantes,
+    this.limiteListaEspera,
+    this.waypoints,
+    this.puntoInicio,
+    this.puntoFin,
+    this.participantesConfirmados = 0,
+    this.enListaEspera = 0,
+    this.cupoDisponible,
   });
 
   factory EventoModel.fromJson(Map<String, dynamic> json) {
@@ -68,7 +90,17 @@ class EventoModel {
       distanciaKm: json['distancia_km']?.toString(),
       fotoUrl: json['foto_url']?.toString(),
       rutaSugerida: json['ruta_sugerida']?.toString(),
-      participantes: (json['participantes'] as num?)?.toInt() ?? 0,
+      participantes: int.tryParse(json['participantes']?.toString() ?? '') ?? 0,
+      esPago: json['es_pago'] == true || json['es_pago'] == 'true',
+      precio: double.tryParse(json['precio']?.toString() ?? '') ?? 0.0,
+      limiteParticipantes: int.tryParse(json['limite_participantes']?.toString() ?? ''),
+      limiteListaEspera: int.tryParse(json['limite_lista_espera']?.toString() ?? ''),
+      waypoints: json['waypoints'] as List<dynamic>?,
+      puntoInicio: json['punto_inicio'] as Map<String, dynamic>?,
+      puntoFin: json['punto_fin'] as Map<String, dynamic>?,
+      participantesConfirmados: int.tryParse(json['participantes_confirmados']?.toString() ?? '') ?? 0,
+      enListaEspera: int.tryParse(json['en_lista_espera']?.toString() ?? '') ?? 0,
+      cupoDisponible: int.tryParse(json['cupo_disponible']?.toString() ?? ''),
     );
   }
 
@@ -98,12 +130,16 @@ class EventoDetalleModel {
   final List<ParticipanteModel> participantes;
   final int totalParticipantes;
   final bool yaInscrito;
+  final String? enListaEsperaStatus;
+  final Map<String, dynamic>? miCodigo;
 
   const EventoDetalleModel({
     required this.evento,
     required this.participantes,
     required this.totalParticipantes,
     required this.yaInscrito,
+    this.enListaEsperaStatus,
+    this.miCodigo,
   });
 
   factory EventoDetalleModel.fromJson(Map<String, dynamic> json) {
@@ -116,7 +152,9 @@ class EventoDetalleModel {
           .map((p) => ParticipanteModel.fromJson(p as Map<String, dynamic>))
           .toList(),
       totalParticipantes: (json['total_participantes'] as num?)?.toInt() ?? 0,
-      yaInscrito: json['ya_inscrito'] as bool? ?? false,
+      yaInscrito: json['ya_inscrito'] == true || json['ya_inscrito'] == 'true',
+      enListaEsperaStatus: json['en_lista_espera']?.toString(),
+      miCodigo: json['mi_codigo'] as Map<String, dynamic>?,
     );
   }
 }

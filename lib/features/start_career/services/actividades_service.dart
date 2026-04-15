@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:runn_front/core/services/http_client.dart';
 import '../domain/actividad_model.dart';
+import '../../home/data/models/home_stats_model.dart';
 
 class ActividadesService {
   // ─── INICIAR ACTIVIDAD ──────────────────────────────────────────────────────
@@ -124,5 +125,14 @@ class ActividadesService {
     final response = await RunnHttpClient.get('/actividades/$id');
     final data = response as Map<String, dynamic>;
     return ActividadHistorial.fromJson(data['actividad'] as Map<String, dynamic>);
+  }
+
+  // ─── OBTENER RESUMEN HOME ──────────────────────────────────────────────────
+  // GET /actividades/mis-actividades/resumen-home
+  static Future<HomeStatsModel> obtenerResumenHome() async {
+    // ignore: avoid_print
+    print('[ActividadesService] GET /actividades/mis-actividades/resumen-home');
+    final response = await RunnHttpClient.get('/actividades/mis-actividades/resumen-home');
+    return HomeStatsModel.fromJson(response as Map<String, dynamic>);
   }
 }

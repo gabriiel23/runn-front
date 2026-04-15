@@ -1326,7 +1326,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (primerReto != null)
           _buildRetoCard(c, primerReto, d)
         else
-          _emptyHint(c, 'Sin retos creados aún'),
+          _emptyActionHint(
+            c,
+            'Sin retos creados aún',
+            'Ver / Crear retos',
+            () => context.pushNamed(
+              'group_challenges',
+              pathParameters: {'grupoId': widget.grupoId},
+              extra: {'mi_rol': d.miRol},
+            ),
+          ),
       ],
     );
   }
@@ -1599,7 +1608,16 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
         if (primeraActividad != null)
           _buildActividadCard(c, primeraActividad, d)
         else
-          _emptyHint(c, 'Sin actividades creadas aún'),
+          _emptyActionHint(
+            c,
+            'Sin actividades creadas aún',
+            'Ver / Crear actividades',
+            () => context.pushNamed(
+              'group_activities',
+              pathParameters: {'grupoId': widget.grupoId},
+              extra: {'mi_rol': d.miRol},
+            ),
+          ),
       ],
     );
   }
@@ -1792,6 +1810,37 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
       ),
     ),
   );
+
+  Widget _emptyActionHint(dynamic c, String text, String label, VoidCallback onTap) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      decoration: BoxDecoration(
+        color: c.primaryDeep.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.primaryDeep.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        children: [
+          Icon(Icons.inbox_rounded, color: c.textHint, size: 32),
+          const SizedBox(height: 8),
+          Text(text, style: TextStyle(color: c.textHint, fontSize: 13)),
+          const SizedBox(height: 12),
+          ElevatedButton(
+            onPressed: onTap,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: c.primaryDeep.withValues(alpha: 0.1),
+              foregroundColor: c.primaryDeep,
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              minimumSize: const Size(0, 36),
+            ),
+            child: Text(label, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _buildBottomButton(dynamic c, GrupoDetalle d) {
     if (d.solicitudPendiente) {

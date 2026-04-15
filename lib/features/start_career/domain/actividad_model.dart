@@ -1,3 +1,5 @@
+import 'package:runn_front/features/challenges/data/models/reto_models.dart';
+
 // ─── INICIO DE ACTIVIDAD ──────────────────────────────────────────────────────
 
 class ActividadInicio {
@@ -30,6 +32,7 @@ class ActividadResumen {
   final int puntosGanados;
   final DateTime horaInicio;
   final DateTime horaFin;
+  final LogrosCarrera? logros;
 
   const ActividadResumen({
     required this.actividadId,
@@ -43,6 +46,7 @@ class ActividadResumen {
     required this.puntosGanados,
     required this.horaInicio,
     required this.horaFin,
+    this.logros,
   });
 
   factory ActividadResumen.fromApiResponse({
@@ -50,6 +54,7 @@ class ActividadResumen {
     required Map<String, dynamic> resumen,
     required Map<String, dynamic> actividad,
     required int puntosGanados,
+    Map<String, dynamic>? logros,
   }) {
     return ActividadResumen(
       actividadId: actividadId,
@@ -69,6 +74,7 @@ class ActividadResumen {
       horaFin:
           DateTime.tryParse(actividad['hora_fin']?.toString() ?? '') ??
           DateTime.now(),
+      logros: logros != null ? LogrosCarrera.fromJson(logros) : null,
     );
   }
 }

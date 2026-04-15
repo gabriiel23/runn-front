@@ -1,10 +1,13 @@
+import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../services/eventos_service.dart';
 import '../../domain/models/evento_model.dart';
+import 'route_picker_page.dart';
 import '../../../../core/services/http_client.dart';
 
 /// Pantalla para Crear o Editar un evento. Solo accesible para admin.
@@ -12,11 +15,7 @@ class EventEditPage extends StatefulWidget {
   final String? eventId;
   final EventoModel? evento;
 
-  const EventEditPage({
-    super.key,
-    this.eventId,
-    this.evento,
-  });
+  const EventEditPage({super.key, this.eventId, this.evento});
 
   @override
   State<EventEditPage> createState() => _EventEditPageState();
@@ -35,9 +34,16 @@ class _EventEditPageState extends State<EventEditPage> {
   TimeOfDay? _selectedTime;
   bool _isSaving = false;
 
+  bool _esPago = false;
+  late TextEditingController _precioCtrl;
+  late TextEditingController _limiteParticipantesCtrl;
+  late TextEditingController _limiteListaEsperaCtrl;
+
   // Nueva foto seleccionada (si el admin la cambia)
   XFile? _newPhotoFile;
   Uint8List? _newPhotoBytes;
+  
+  List<LatLng> _routePoints = [];
 
   @override
   void initState() {
@@ -47,15 +53,40 @@ class _EventEditPageState extends State<EventEditPage> {
     _titleCtrl = TextEditingController(text: e?.titulo);
     _descCtrl = TextEditingController(text: e?.descripcion ?? '');
     _placeCtrl = TextEditingController(text: e?.lugar ?? '');
-    _distanceCtrl = TextEditingController(text: e?.distanciaKm?.toString() ?? '');
-    
+    _distanceCtrl = TextEditingController(
+      text: e?.distanciaKm?.toString() ?? '',
+    );
+
     _selectedDate = e?.fecha;
     _dateCtrl = TextEditingController(text: e != null ? e.fechaFormateada : '');
-    
+
     _selectedTime = e?.hora != null
         ? TimeOfDay(hour: e!.hora!.hour, minute: e.hora!.minute)
         : null;
     _timeCtrl = TextEditingController(text: e != null ? e.horaFormateada : '');
+
+    _esPago = e?.esPago ?? false;
+    _precioCtrl = TextEditingController(
+      text: e != null && e.precio > 0 ? e.precio.toString() : '',
+    );
+    _limiteParticipantesCtrl = TextEditingController(
+      text: e?.limiteParticipantes?.toString() ?? '',
+    );
+    _limiteListaEsperaCtrl = TextEditingController(
+      text: e?.limiteListaEspera?.toString() ?? '',
+    );
+
+    if (e?.puntoInicio != null && e?.puntoFin != null) {
+      _routePoints.add(LatLng(e!.puntoInicio!['lat'], e.puntoInicio!['lng']));
+      if (e.waypoints != null && e.waypoints!.isNotEmpty) {
+        final sortedList = List.from(e.waypoints!);
+        sortedList.sort((a, b) => (a['orden'] as int).compareTo(b['orden'] as int));
+        for (var wp in sortedList) {
+          _routePoints.add(LatLng(wp['lat'], wp['lng']));
+        }
+      }
+      _routePoints.add(LatLng(e.puntoFin!['lat'], e.puntoFin!['lng']));
+    }
   }
 
   @override
@@ -66,7 +97,22 @@ class _EventEditPageState extends State<EventEditPage> {
     _distanceCtrl.dispose();
     _dateCtrl.dispose();
     _timeCtrl.dispose();
+    _precioCtrl.dispose();
+    _limiteParticipantesCtrl.dispose();
+    _limiteListaEsperaCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _openRoutePicker() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => RoutePickerPage(initialPoints: _routePoints)),
+    );
+    if (result != null && result is List<LatLng>) {
+      setState(() {
+        _routePoints = result;
+      });
+    }
   }
 
   Future<void> _pickDate() async {
@@ -87,8 +133,19 @@ class _EventEditPageState extends State<EventEditPage> {
 
   String _formatDateLabel(DateTime d) {
     const meses = [
-      '', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      '',
+      'Enero',
+      'Febrero',
+      'Marzo',
+      'Abril',
+      'Mayo',
+      'Junio',
+      'Julio',
+      'Agosto',
+      'Septiembre',
+      'Octubre',
+      'Noviembre',
+      'Diciembre',
     ];
     return '${d.day} de ${meses[d.month]} de ${d.year}';
   }
@@ -110,7 +167,10 @@ class _EventEditPageState extends State<EventEditPage> {
 
   Future<void> _pickPhoto() async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
+    final file = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes(); // Returns Uint8List
     setState(() {
@@ -121,7 +181,7 @@ class _EventEditPageState extends State<EventEditPage> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     // Si estamos creando, hay campos obligatorios que el form no puede tener nulos si pasa validación,
     // pero debemos asegurarnos de la fecha y hora.
     final esCreacion = widget.eventId == null;
@@ -144,13 +204,33 @@ class _EventEditPageState extends State<EventEditPage> {
     try {
       final campos = <String, String>{
         'titulo': _titleCtrl.text.trim(),
-        if (_descCtrl.text.trim().isNotEmpty) 'descripcion': _descCtrl.text.trim(),
+        if (_descCtrl.text.trim().isNotEmpty)
+          'descripcion': _descCtrl.text.trim(),
         if (_placeCtrl.text.trim().isNotEmpty) 'lugar': _placeCtrl.text.trim(),
-        if (_distanceCtrl.text.trim().isNotEmpty) 'distancia_km': _distanceCtrl.text.trim(),
+        if (_distanceCtrl.text.trim().isNotEmpty)
+          'distancia_km': _distanceCtrl.text.trim(),
         if (_selectedDate != null)
           'fecha': _selectedDate!.toIso8601String().split('T').first,
         if (_selectedTime != null)
-          'hora': '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
+          'hora':
+              '${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}',
+        'es_pago': _esPago.toString(),
+        if (_esPago && _precioCtrl.text.trim().isNotEmpty)
+          'precio': _precioCtrl.text.trim(),
+        if (_limiteParticipantesCtrl.text.trim().isNotEmpty)
+          'limite_participantes': _limiteParticipantesCtrl.text.trim(),
+        if (_limiteListaEsperaCtrl.text.trim().isNotEmpty)
+          'limite_lista_espera': _limiteListaEsperaCtrl.text.trim(),
+        if (_routePoints.length >= 2) ...{
+          'punto_inicio': jsonEncode({'lat': _routePoints.first.latitude, 'lng': _routePoints.first.longitude, 'nombre': 'Inicio'}),
+          'punto_fin': jsonEncode({'lat': _routePoints.last.latitude, 'lng': _routePoints.last.longitude, 'nombre': 'Meta'}),
+          if (_routePoints.length > 2)
+            'waypoints': jsonEncode(_routePoints.sublist(1, _routePoints.length - 1).asMap().entries.map((e) => {
+              'lat': e.value.latitude,
+              'lng': e.value.longitude,
+              'orden': e.key + 1
+            }).toList()),
+        }
       };
 
       if (esCreacion) {
@@ -188,7 +268,9 @@ class _EventEditPageState extends State<EventEditPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(msg),
-        backgroundColor: success ? const Color(0xFF34C759) : const Color(0xFFFF3B30),
+        backgroundColor: success
+            ? const Color(0xFF34C759)
+            : const Color(0xFFFF3B30),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(20),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -282,7 +364,10 @@ class _EventEditPageState extends State<EventEditPage> {
                               bottom: 8,
                               right: 8,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.black.withValues(alpha: 0.6),
                                   borderRadius: BorderRadius.circular(12),
@@ -290,46 +375,71 @@ class _EventEditPageState extends State<EventEditPage> {
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.edit_rounded, color: Colors.white, size: 14),
+                                    Icon(
+                                      Icons.edit_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
                                     SizedBox(width: 4),
-                                    Text('Cambiar', style: TextStyle(color: Colors.white, fontSize: 12)),
+                                    Text(
+                                      'Cambiar',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
                                   ],
                                 ),
                               ),
                             ),
                           ],
                         )
-                      : (widget.evento?.fotoUrl != null && widget.evento!.fotoUrl!.isNotEmpty)
-                          ? Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                Image.network(
-                                  widget.evento!.fotoUrl!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => _buildPhotoPlaceholder(c),
+                      : (widget.evento?.fotoUrl != null &&
+                            widget.evento!.fotoUrl!.isNotEmpty)
+                      ? Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              widget.evento!.fotoUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) =>
+                                  _buildPhotoPlaceholder(c),
+                            ),
+                            Positioned(
+                              bottom: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
                                 ),
-                                Positioned(
-                                  bottom: 8,
-                                  right: 8,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withValues(alpha: 0.6),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.edit_rounded, color: Colors.white, size: 14),
-                                        SizedBox(width: 4),
-                                        Text('Cambiar', style: TextStyle(color: Colors.white, fontSize: 12)),
-                                      ],
-                                    ),
-                                  ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              ],
-                            )
-                          : _buildPhotoPlaceholder(c),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.edit_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Cambiar',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        )
+                      : _buildPhotoPlaceholder(c),
                 ),
               ),
               const SizedBox(height: 28),
@@ -341,8 +451,9 @@ class _EventEditPageState extends State<EventEditPage> {
                 c: c,
                 controller: _titleCtrl,
                 hint: 'Ej: Carrera 10K Loja',
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'El título es obligatorio' : null,
+                validator: (v) => (v == null || v.trim().isEmpty)
+                    ? 'El título es obligatorio'
+                    : null,
               ),
               const SizedBox(height: 20),
 
@@ -426,6 +537,126 @@ class _EventEditPageState extends State<EventEditPage> {
                 keyboardType: TextInputType.number,
                 prefixIcon: Icons.straighten_rounded,
               ),
+              const SizedBox(height: 20),
+
+              // ─── Pago y Precio ──────────────────────────────────────────────
+              Container(
+                decoration: BoxDecoration(
+                  color: c.inputFill,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: c.inputBorder, width: 1.5),
+                ),
+                child: SwitchListTile(
+                  title: _buildSectionLabel(c, 'Evento de Pago'),
+                  subtitle: Text(
+                    '¿El evento requiere pago para unirse?',
+                    style: TextStyle(color: c.textHint, fontSize: 13),
+                  ),
+                  activeThumbColor: c.primaryDeep,
+                  value: _esPago,
+                  onChanged: (val) => setState(() => _esPago = val),
+                ),
+              ),
+              if (_esPago) ...[
+                const SizedBox(height: 16),
+                _buildSectionLabel(c, 'Precio (\$)'),
+                const SizedBox(height: 8),
+                _buildTextField(
+                  c: c,
+                  controller: _precioCtrl,
+                  hint: 'Ej: 15.50',
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  prefixIcon: Icons.attach_money_rounded,
+                ),
+              ],
+              const SizedBox(height: 20),
+
+              // ─── Aforo y Listas de Espera ──────────────────────────────────
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionLabel(c, 'Límite Participantes'),
+                        const SizedBox(height: 8),
+                        _buildTextField(
+                          c: c,
+                          controller: _limiteParticipantesCtrl,
+                          hint: 'Ej: 100',
+                          keyboardType: TextInputType.number,
+                          prefixIcon: Icons.groups_rounded,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSectionLabel(c, 'Límite Cola Espera'),
+                        const SizedBox(height: 8),
+                        _buildTextField(
+                          c: c,
+                          controller: _limiteListaEsperaCtrl,
+                          hint: 'Ej: 50',
+                          keyboardType: TextInputType.number,
+                          prefixIcon: Icons.queue_rounded,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // ─── Ruta y Mapa ──────────────────────────────────────────────────
+              _buildSectionLabel(c, 'Ruta del Evento'),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: c.primaryLight,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.primaryDeepWithAlpha(0.1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.map_rounded, color: c.primaryDeep),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _routePoints.isEmpty
+                                ? 'No se ha definido ruta en el mapa.'
+                                : 'Ruta definida: Inicio, Meta${_routePoints.length > 2 ? ' y ${_routePoints.length - 2} Waypoint(s)' : ''}.',
+                            style: TextStyle(color: c.textPrimary, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      height: 44,
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: _openRoutePicker,
+                        icon: const Icon(Icons.add_location_alt_rounded),
+                        label: Text(_routePoints.isEmpty ? 'Trazar ruta en mapa' : 'Editar ruta'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: c.primaryDeep,
+                          side: BorderSide(color: c.primaryDeep),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 40),
 
               // ─── Guardar ──────────────────────────────────────────────────
@@ -452,8 +683,13 @@ class _EventEditPageState extends State<EventEditPage> {
                           ),
                         )
                       : Text(
-                          widget.eventId == null ? 'Crear Evento' : 'Guardar cambios',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                          widget.eventId == null
+                              ? 'Crear Evento'
+                              : 'Guardar cambios',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                 ),
               ),
@@ -481,7 +717,11 @@ class _EventEditPageState extends State<EventEditPage> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.add_photo_alternate_rounded, size: 40, color: c.primaryDeepWithAlpha(0.4)),
+        Icon(
+          Icons.add_photo_alternate_rounded,
+          size: 40,
+          color: c.primaryDeepWithAlpha(0.4),
+        ),
         const SizedBox(height: 8),
         Text(
           'Toca para agregar foto',
@@ -514,7 +754,10 @@ class _EventEditPageState extends State<EventEditPage> {
             : null,
         filled: true,
         fillColor: c.inputFill,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide(color: c.inputBorder, width: 1.5),

@@ -249,12 +249,14 @@ class _RunActivePageState extends State<RunActivePage>
       final resumen = data['resumen'] as Map<String, dynamic>? ?? {};
       final actividad = data['actividad'] as Map<String, dynamic>? ?? {};
       final puntosGanados = (data['puntos_ganados'] as num?)?.toInt() ?? 0;
+      final logros = data['logros'] as Map<String, dynamic>?;
 
       final actResumen = ActividadResumen.fromApiResponse(
         actividadId: widget.actividadId,
         resumen: resumen,
         actividad: actividad,
         puntosGanados: puntosGanados,
+        logros: logros,
       );
 
       context.goNamed(

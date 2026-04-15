@@ -876,12 +876,12 @@ class _CommunityScreenState extends State<CommunityScreen>
 
         if (_eventosLoading)
           const SizedBox(
-            height: 190,
+            height: 240,
             child: Center(child: CircularProgressIndicator()),
           )
         else if (_eventosError.isNotEmpty)
           SizedBox(
-            height: 190,
+            height: 240,
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -903,7 +903,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           )
         else if (_eventos.isEmpty)
           SizedBox(
-            height: 190,
+            height: 240,
             child: Center(
               child: Text(
                 'No hay eventos próximos',
@@ -913,7 +913,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           )
         else
           SizedBox(
-            height: 190,
+            height: 240,
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               scrollDirection: Axis.horizontal,
@@ -978,10 +978,53 @@ class _CommunityScreenState extends State<CommunityScreen>
                       end: Alignment.bottomCenter,
                       colors: [
                         Colors.black.withValues(alpha: 0.1),
-                        Colors.black.withValues(alpha: 0.8),
+                        Colors.black.withValues(alpha: 0.85),
                       ],
                     ),
                   ),
+                ),
+              ),
+              // Chips de estado (Precio / Lista de espera)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: evento.esPago ? Colors.blue.withValues(alpha: 0.9) : Colors.green.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        evento.esPago ? 'De pago \$${evento.precio.toInt()}' : 'Gratuito',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    if (evento.cupoDisponible == 0) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Lista de espera',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
               // Contenido
@@ -1046,13 +1089,28 @@ class _CommunityScreenState extends State<CommunityScreen>
                             color: Colors.white.withValues(alpha: 0.8), size: 14),
                         const SizedBox(width: 6),
                         Text(
-                          '${evento.participantes} participantes',
+                          '${evento.participantesConfirmados} participantes',
                           style: TextStyle(
                             color: Colors.white.withValues(alpha: 0.8),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
+                        if (evento.cupoDisponible != null) ...[
+                          const Spacer(),
+                          Text(
+                            evento.cupoDisponible == 0
+                                ? 'Cupo lleno'
+                                : '${evento.cupoDisponible} lugares',
+                            style: TextStyle(
+                              color: evento.cupoDisponible == 0
+                                  ? Colors.orangeAccent
+                                  : Colors.greenAccent,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],

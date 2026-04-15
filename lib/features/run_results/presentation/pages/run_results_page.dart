@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 import 'package:runn_front/core/services/http_client.dart';
+import 'package:runn_front/features/challenges/data/models/reto_models.dart';
 import '../../../start_career/services/actividades_service.dart';
 import '../../../start_career/domain/actividad_model.dart';
 
@@ -48,6 +49,13 @@ class _RunResultsPageState extends State<RunResultsPage>
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _badgeCtrl.forward();
     });
+    // Mostrar logros si los hay
+    final logros = widget.resumen.logros;
+    if (logros != null && logros.tieneLogros) {
+      Future.delayed(const Duration(milliseconds: 900), () {
+        if (mounted) _mostrarLogrosSheet(logros);
+      });
+    }
   }
 
   @override
@@ -55,6 +63,16 @@ class _RunResultsPageState extends State<RunResultsPage>
     _badgeCtrl.dispose();
     _mapController?.dispose();
     super.dispose();
+  }
+
+  void _mostrarLogrosSheet(LogrosCarrera logros) {
+    final c = context.colors;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _LogrosSheet(logros: logros, c: c),
+    );
   }
 
   Future<bool> _subirFotoSiExiste() async {
@@ -515,3 +533,222 @@ class _RunResultsPageState extends State<RunResultsPage>
     );
   }
 }
+
+// ─── LOGROS SHEET ─────────────────────────────────────────────────────────────
+
+class _LogrosSheet extends StatefulWidget {
+  final LogrosCarrera logros;
+  final dynamic c;
+
+  const _LogrosSheet({required this.logros, required this.c});
+
+  @override
+  State<_LogrosSheet> createState() => _LogrosSheetState();
+}
+
+class _LogrosSheetState extends State<_LogrosSheet>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+    _scaleAnim = CurvedAnimation(parent: _ctrl, curve: Curves.elasticOut);
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  static const Map<String, String> _nivelEmoji = {
+    'sin_nivel': '🏅',
+    'normal': '🏅',
+    'oro': '🥇',
+    'diamante': '💎',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    final logros = widget.logros;
+    final totalPts = logros.totalPuntosLogros;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: c.bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom + 32,
+        top: 8,
+        left: 24,
+        right: 24,
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: c.primaryDeepWithAlpha(0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            ScaleTransition(
+              scale: _scaleAnim,
+              child: Container(
+                width: 72, height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [c.primaryDeep, c.primaryDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: c.primaryDeepWithAlpha(0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: const Center(child: Text('🏆', style: TextStyle(fontSize: 32))),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '¡Logros desbloqueados!',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: c.textPrimary, letterSpacing: -0.4),
+            ),
+            const SizedBox(height: 6),
+            Text('Increíble carrera 💪', style: TextStyle(fontSize: 14, color: c.textSecondary)),
+            const SizedBox(height: 24),
+
+            // Nuevas insignias
+            ...logros.nuevasInsignias.map((ins) => _logroTile(
+              c,
+              emoji: _nivelEmoji[ins.nivel] ?? '🏅',
+              titulo: ins.nombre,
+              subtitulo: ins.descripcion ?? 'Nueva insignia desbloqueada',
+              color: const Color(0xFFFFD700),
+            )),
+
+            // Reto diario
+            if (logros.retoDiario.completado)
+              _logroTile(c,
+                emoji: '✅',
+                titulo: 'Reto diario completado',
+                subtitulo: logros.retoDiario.titulo,
+                puntos: logros.retoDiario.puntosRecompensa,
+                color: const Color(0xFF7ED957),
+              ),
+
+            // Reto semanal
+            if (logros.retoSemanal.completado)
+              _logroTile(c,
+                emoji: '🗓',
+                titulo: 'Reto semanal completado',
+                subtitulo: logros.retoSemanal.titulo,
+                puntos: logros.retoSemanal.puntosRecompensa,
+                color: const Color(0xFF3B82F6),
+              ),
+
+            const SizedBox(height: 8),
+
+            if (totalPts > 0)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: [c.primaryDeep.withValues(alpha: 0.15), c.primaryDeep.withValues(alpha: 0.05)]),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.primaryDeepWithAlpha(0.15)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.star_rounded, color: c.primaryDeep, size: 22),
+                    const SizedBox(width: 8),
+                    Text('+$totalPts puntos totales ganados',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: c.primaryDeep)),
+                  ],
+                ),
+              ),
+
+            SizedBox(
+              width: double.infinity, height: 52,
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: c.primaryDeep,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: const Text('¡Genial!', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _logroTile(dynamic c, {
+    required String emoji,
+    required String titulo,
+    required String subtitulo,
+    int? puntos,
+    required Color color,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Text(emoji, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(titulo, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: c.textPrimary)),
+                if (subtitulo.isNotEmpty)
+                  Text(subtitulo, style: TextStyle(fontSize: 12, color: c.textSecondary)),
+              ],
+            ),
+          ),
+          if (puntos != null && puntos > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text('+$puntos pts',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color)),
+            ),
+        ],
+      ),
+    );
+  }
+}
+

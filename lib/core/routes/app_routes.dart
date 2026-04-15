@@ -30,6 +30,9 @@ import 'package:runn_front/features/challenges/presentation/pages/weekly_challen
 import 'package:runn_front/features/challenges/presentation/pages/past_weekly_challenges_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/challenge_item_detail_page.dart';
 import 'package:runn_front/features/challenges/presentation/pages/community_race_detail_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/daily_challenge_history_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/weekly_challenge_history_page.dart';
+import 'package:runn_front/features/challenges/presentation/pages/challenge_admin_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/profile_page.dart';
 import 'package:runn_front/features/start_career/presentation/pages/start_career_page.dart';
 import 'package:runn_front/features/start_career/presentation/pages/run_active_page.dart';
@@ -39,6 +42,9 @@ import 'package:runn_front/features/community/presentation/pages/public_profile_
 import 'package:runn_front/features/community/presentation/pages/multimedia_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_detail_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_participants_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_ticket_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_waiting_list_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_scanner_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
@@ -330,6 +336,30 @@ final GoRouter appRouter = GoRouter(
                   },
                 ),
                 GoRoute(
+                  path: 'event/:eventId/ticket',
+                  name: 'event_ticket',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventTicketPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId/waiting-list',
+                  name: 'event_waiting_list',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventWaitingListPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'event/:eventId/scanner',
+                  name: 'event_scanner',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventScannerPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
                   path: 'event/:eventId/participant/:userId',
                   name: 'participant_profile',
                   builder: (context, state) {
@@ -420,6 +450,21 @@ final GoRouter appRouter = GoRouter(
                     final id = state.pathParameters['raceId']!;
                     return CommunityRaceDetailPage(raceId: id);
                   },
+                ),
+                GoRoute(
+                  path: 'daily-history',
+                  name: 'challenge_daily_history',
+                  builder: (context, state) => const DailyChallengeHistoryPage(),
+                ),
+                GoRoute(
+                  path: 'weekly-history',
+                  name: 'challenge_weekly_history',
+                  builder: (context, state) => const WeeklyChallengeHistoryPage(),
+                ),
+                GoRoute(
+                  path: 'admin',
+                  name: 'challenge_admin',
+                  builder: (context, state) => const ChallengeAdminPage(),
                 ),
               ],
             ),

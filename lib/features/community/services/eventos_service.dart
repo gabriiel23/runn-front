@@ -25,8 +25,8 @@ class EventosService {
   // ─── UNIRSE AL EVENTO ─────────────────────────────────────────────────────
   // POST /eventos/:id/unirse
 
-  static Future<void> unirseEvento(String id) async {
-    await RunnHttpClient.post('/eventos/$id/unirse');
+  static Future<Map<String, dynamic>> unirseEvento(String id) async {
+    return await RunnHttpClient.post('/eventos/$id/unirse');
   }
 
   // ─── SALIRSE DEL EVENTO ───────────────────────────────────────────────────
@@ -100,6 +100,37 @@ class EventosService {
 
   static Future<void> eliminarParticipante(String id, String usuarioId) async {
     await RunnHttpClient.delete('/eventos/$id/participantes/$usuarioId');
+  }
+
+  // ─── OBTENER LISTA DE ESPERA (solo admin) ───────────────────────────────
+  // GET /eventos/:id/lista-espera
+
+  static Future<Map<String, dynamic>> getListaEspera(String id) async {
+    return await RunnHttpClient.get('/eventos/$id/lista-espera');
+  }
+
+  // ─── ADMITIR/RECHAZAR EN LISTA DE ESPERA (solo admin) ───────────────────
+  // PUT /eventos/:id/lista-espera/:usuarioId
+
+  static Future<void> admitirRechazarListaEspera(
+    String id,
+    String usuarioId,
+    String accion, {
+    String? motivo,
+  }) async {
+    await RunnHttpClient.put('/eventos/$id/lista-espera/$usuarioId', body: {
+      'accion': accion,
+      if (motivo != null) 'motivo': motivo,
+    });
+  }
+
+  // ─── VERIFICAR CÓDIGO QR (solo admin) ───────────────────────────────────
+  // POST /eventos/:id/verificar-codigo
+
+  static Future<Map<String, dynamic>> verificarCodigo(String id, String codigo) async {
+    return await RunnHttpClient.post('/eventos/$id/verificar-codigo', body: {
+      'codigo': codigo,
+    });
   }
 }
 

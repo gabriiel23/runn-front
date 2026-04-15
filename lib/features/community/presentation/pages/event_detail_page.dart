@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import '../../services/eventos_service.dart';
@@ -45,14 +48,33 @@ class _EventDetailPageState extends State<EventDetailPage> {
     }
   }
 
-  Future<void> _toggleInscripcion() async {
+  Future<void> _handlePrimaryAction() async {
     if (_detalle == null || _isActionLoading) return;
+    
+    // Si ya inscrito o admitido, ir al ticket
+    if (_detalle!.yaInscrito || _detalle!.enListaEsperaStatus == 'admitido') {
+      context.pushNamed('event_ticket', pathParameters: {'eventId': widget.eventId});
+      return;
+    }
+
     setState(() => _isActionLoading = true);
     try {
-      if (_detalle!.yaInscrito) {
-        await EventosService.salirseEvento(widget.eventId);
+      final res = await EventosService.unirseEvento(widget.eventId);
+      final estado = res['estado'];
+      
+      if (!mounted) return;
+      if (estado == 'pago_requerido') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Próximamente: pago en línea', style: TextStyle(fontWeight: FontWeight.w600)),
+            backgroundColor: context.colors.primaryDeep,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          ),
+        );
       } else {
-        await EventosService.unirseEvento(widget.eventId);
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(res['mensaje'] ?? 'Solicitud enviada')));
       }
       await _loadDetalle();
     } on ApiException catch (e) {
@@ -62,7 +84,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
           content: Text(e.message),
           backgroundColor: const Color(0xFFFF3B30),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.all(20),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
       );
@@ -215,12 +236,16 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildMainInfo(context, evento),
+                  const SizedBox(height: 24),
+                  _buildCapacityBar(context, evento),
                   const SizedBox(height: 32),
+                  if (isAdmin) _buildAdminControls(context),
+                  if (isAdmin) const SizedBox(height: 32),
                   _buildDescription(context, evento),
                   const SizedBox(height: 32),
-                  if (evento.lugar != null || evento.rutaSugerida != null)
+                  if (evento.puntoInicio != null || evento.rutaSugerida != null || evento.lugar != null)
                     _buildRouteSection(context, evento),
-                  if (evento.lugar != null || evento.rutaSugerida != null)
+                  if (evento.puntoInicio != null || evento.rutaSugerida != null || evento.lugar != null)
                     const SizedBox(height: 32),
                   _buildParticipantsSection(context),
                   const SizedBox(height: 100),
@@ -230,7 +255,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
           ),
         ],
       ),
-      bottomSheet: _buildBottomSheet(context),
+      bottomSheet: _detalle == null ? null : _buildBottomSheet(context),
     );
   }
 
@@ -301,29 +326,59 @@ class _EventDetailPageState extends State<EventDetailPage> {
             ]
           : null,
       flexibleSpace: FlexibleSpaceBar(
-        background: Stack(
-          fit: StackFit.expand,
-          children: [
-            evento.fotoUrl != null && evento.fotoUrl!.isNotEmpty
-                ? Image.network(
-                    evento.fotoUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _buildFotoPlaceholder(c),
-                  )
-                : _buildFotoPlaceholder(c),
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.2),
-                    Colors.black.withValues(alpha: 0.5),
-                  ],
+        background: GestureDetector(
+          onTap: () {
+            if (evento.fotoUrl == null || evento.fotoUrl!.isEmpty) return;
+            showDialog(
+              context: context,
+              barrierColor: Colors.black.withValues(alpha: 0.9),
+              builder: (dialogContext) => Stack(
+                children: [
+                  Positioned.fill(
+                    child: InteractiveViewer(
+                      maxScale: 5.0,
+                      child: Image.network(evento.fotoUrl!, fit: BoxFit.contain),
+                    ),
+                  ),
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: IconButton(
+                        icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32),
+                        onPressed: () => Navigator.pop(dialogContext),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              evento.fotoUrl != null && evento.fotoUrl!.isNotEmpty
+                  ? Image.network(
+                      evento.fotoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _buildFotoPlaceholder(c),
+                    )
+                  : _buildFotoPlaceholder(c),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.2),
+                      Colors.black.withValues(alpha: 0.5),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -385,23 +440,114 @@ class _EventDetailPageState extends State<EventDetailPage> {
               _buildInfoChip(context, Icons.straighten_rounded, '${evento.distanciaKm} km'),
             if (evento.lugar != null && evento.lugar!.isNotEmpty)
               _buildInfoChip(context, Icons.location_on_rounded, evento.lugar!),
+            _buildInfoChip(
+              context, 
+              evento.esPago ? Icons.monetization_on_rounded : Icons.money_off_rounded, 
+              evento.esPago ? '\$${evento.precio.toInt()}' : 'Gratuito',
+              color: evento.esPago ? Colors.blueAccent : Colors.green,
+            ),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildInfoChip(BuildContext context, IconData icon, String text) {
+  Widget _buildCapacityBar(BuildContext context, EventoModel evento) {
+    if (evento.limiteParticipantes == null) {
+      return Text('Sin límite de participantes', style: TextStyle(color: context.colors.textSecondary, fontSize: 13));
+    }
+    
+    final int ocupados = evento.participantesConfirmados;
+    final int limite = evento.limiteParticipantes!;
+    final double percent = ocupados / limite;
     final c = context.colors;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Lugares ocupados', style: TextStyle(color: c.textSecondary, fontSize: 13, fontWeight: FontWeight.w600)),
+            Text('$ocupados de $limite', style: TextStyle(color: c.textPrimary, fontSize: 13, fontWeight: FontWeight.w700)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: percent,
+            backgroundColor: c.primaryDeepWithAlpha(0.1),
+            valueColor: AlwaysStoppedAnimation<Color>(
+                percent >= 1.0 ? Colors.orange : c.primaryDeep),
+            minHeight: 8,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAdminControls(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.primaryLight,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: c.primaryDeepWithAlpha(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Controles Administrativos', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: c.primaryDeep)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.pushNamed('event_waiting_list', pathParameters: {'eventId': widget.eventId}),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: c.primaryDeep,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.list_alt_rounded, size: 16),
+                  label: const Text('Lista espera'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () => context.pushNamed('event_scanner', pathParameters: {'eventId': widget.eventId}),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: c.primaryDeep,
+                    side: BorderSide(color: c.primaryDeep),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
+                  label: const Text('Escanear QR'),
+                ),
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip(BuildContext context, IconData icon, String text, {Color? color}) {
+    final c = context.colors;
+    final itemColor = color ?? c.textPrimary.withValues(alpha: 0.6);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 16, color: c.textPrimary.withValues(alpha: 0.4)),
+        Icon(icon, size: 16, color: itemColor),
         const SizedBox(width: 6),
         Text(
           text,
           style: TextStyle(
-            color: c.textPrimary.withValues(alpha: 0.6),
+            color: itemColor,
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
@@ -434,6 +580,48 @@ class _EventDetailPageState extends State<EventDetailPage> {
   Widget _buildRouteSection(BuildContext context, EventoModel evento) {
     final c = context.colors;
     final texto = evento.rutaSugerida ?? evento.lugar ?? '';
+
+    Set<Marker> markers = {};
+    Set<Polyline> polylines = {};
+    LatLng? initialMapPosition;
+
+    if (evento.puntoInicio != null && evento.puntoFin != null) {
+      final start = LatLng(evento.puntoInicio!['lat'], evento.puntoInicio!['lng']);
+      final end = LatLng(evento.puntoFin!['lat'], evento.puntoFin!['lng']);
+      initialMapPosition = start;
+
+      markers.add(Marker(
+        markerId: const MarkerId('start'),
+        position: start,
+        infoWindow: InfoWindow(title: evento.puntoInicio!['nombre'] ?? 'Inicio'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      ));
+
+      markers.add(Marker(
+        markerId: const MarkerId('end'),
+        position: end,
+        infoWindow: InfoWindow(title: evento.puntoFin!['nombre'] ?? 'Meta'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+      ));
+
+      List<LatLng> points = [start];
+      if (evento.waypoints != null && evento.waypoints!.isNotEmpty) {
+        final sortedList = List.from(evento.waypoints!);
+        sortedList.sort((a, b) => (a['orden'] as int).compareTo(b['orden'] as int));
+        for (var wp in sortedList) {
+          points.add(LatLng(wp['lat'], wp['lng']));
+        }
+      }
+      points.add(end);
+
+      polylines.add(Polyline(
+        polylineId: const PolylineId('route'),
+        points: points,
+        color: c.primaryDeep,
+        width: 4,
+      ));
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -463,12 +651,23 @@ class _EventDetailPageState extends State<EventDetailPage> {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Container(
-              height: 120,
+              height: 200,
               width: double.infinity,
               color: c.primaryLight,
-              child: Center(
-                child: Icon(Icons.route_rounded, size: 40, color: c.textHint),
-              ),
+              child: initialMapPosition != null
+                  ? GoogleMap(
+                      initialCameraPosition: CameraPosition(target: initialMapPosition, zoom: 14),
+                      markers: markers,
+                      polylines: polylines,
+                      mapType: MapType.normal,
+                      zoomControlsEnabled: true,
+                      scrollGesturesEnabled: true,
+                      zoomGesturesEnabled: true,
+                      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                        Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+                      },
+                    )
+                  : Center(child: Icon(Icons.route_rounded, size: 40, color: c.textHint)),
             ),
           ),
         ],
@@ -547,7 +746,38 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   Widget _buildBottomSheet(BuildContext context) {
     final c = context.colors;
-    final yaInscrito = _detalle?.yaInscrito ?? false;
+    final isAdmin = _userRol == 'admin';
+    if (_detalle == null || isAdmin) return const SizedBox.shrink();
+
+    final yaInscrito = _detalle!.yaInscrito;
+    final status = _detalle!.enListaEsperaStatus;
+    final cupo = _detalle!.evento.cupoDisponible;
+
+    // Lógica inteligente de botón
+    Widget buttonChild;
+    Color bgColor = c.primaryDeep;
+    Color fgColor = Colors.white;
+    Function()? onPressed = _handlePrimaryAction;
+
+    if (yaInscrito || status == 'admitido') {
+      buttonChild = Row(mainAxisSize: MainAxisSize.min, children: const [Icon(Icons.confirmation_number_outlined), SizedBox(width: 8), Text('Ver mi ticket')]);
+    } else if (status == 'pendiente') {
+      buttonChild = const Text('En lista de espera — Pendiente', style: TextStyle(color: Colors.orangeAccent));
+      bgColor = Colors.orange.withValues(alpha: 0.1);
+      onPressed = null;
+    } else if (status == 'rechazado') {
+      buttonChild = const Text('Solicitud rechazada', style: TextStyle(color: Colors.redAccent));
+      bgColor = Colors.red.withValues(alpha: 0.1);
+      onPressed = null;
+    } else if (cupo == 0) {
+      buttonChild = const Text('Unirse a lista de espera');
+    } else {
+      buttonChild = const Text('Inscribirme');
+    }
+
+    if (_isActionLoading) {
+      buttonChild = SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: fgColor));
+    }
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
@@ -556,32 +786,18 @@ class _EventDetailPageState extends State<EventDetailPage> {
         border: Border(top: BorderSide(color: c.primaryDeepWithAlpha(0.05))),
       ),
       child: ElevatedButton(
-        onPressed: _isActionLoading ? null : _toggleInscripcion,
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: yaInscrito ? c.primaryDeepWithAlpha(0.1) : c.primaryDeep,
-          foregroundColor: yaInscrito ? c.primaryDeep : Colors.white,
+          backgroundColor: bgColor,
+          foregroundColor: fgColor,
           minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: yaInscrito
-                ? BorderSide(color: c.primaryDeepWithAlpha(0.3))
-                : BorderSide.none,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           elevation: 0,
         ),
-        child: _isActionLoading
-            ? SizedBox(
-                width: 22,
-                height: 22,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.5,
-                  color: yaInscrito ? c.primaryDeep : Colors.white,
-                ),
-              )
-            : Text(
-                yaInscrito ? 'Desinscribirse ✓' : 'Unirse al evento',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
+        child: DefaultTextStyle(
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: fgColor),
+          child: buttonChild,
+        ),
       ),
     );
   }

@@ -8,6 +8,8 @@ import 'package:runn_front/features/home/data/models/novedad_model.dart';
 import 'package:runn_front/features/home/services/novedades_service.dart';
 import 'package:runn_front/features/home/presentation/widgets/news_bottom_sheet.dart';
 import 'package:runn_front/features/profile/services/profile_service.dart';
+import 'package:runn_front/features/start_career/services/actividades_service.dart';
+import 'package:runn_front/features/home/data/models/home_stats_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -34,8 +36,10 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isAdmin = false;
   String _userName = 'Runner';
   bool _isLoadingNews = true;
+  bool _isLoadingStats = true;
   bool _isRefreshing = false;
   List<NovedadModel> _newsItems = [];
+  HomeStatsModel? _homeStats;
 
   final List<Map<String, String>> _quotes = const [
     {
@@ -79,8 +83,27 @@ class _HomeScreenState extends State<HomeScreen>
   Future<void> _initData() async {
     await _loadUserData();
     await _checkRole();
-    await _loadNews();
+    await Future.wait([
+      _loadNews(),
+      _loadStats(),
+    ]);
     _startAutoCarousels();
+  }
+
+  Future<void> _loadStats() async {
+    try {
+      final stats = await ActividadesService.obtenerResumenHome();
+      if (mounted) {
+        setState(() {
+          _homeStats = stats;
+          _isLoadingStats = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingStats = false);
+      }
+    }
   }
 
   Future<void> _handleRefresh() async {
@@ -516,6 +539,12 @@ class _HomeScreenState extends State<HomeScreen>
   // ── STATS ROW ─────────────────────────────────────────────────────────────
 
   Widget _statsRow() {
+    if (_isLoadingStats) {
+      return const SizedBox(
+        height: 100,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -523,33 +552,33 @@ class _HomeScreenState extends State<HomeScreen>
           _statCard(
             icon: Icons.straighten_rounded,
             title: 'Distancia\ntotal',
-            value: '12.5',
+            value: _homeStats?.distanciaTotalKm.toStringAsFixed(2) ?? '0.00',
             unit: 'km',
-            foot: '↑ 15% esta semana',
+            foot: _homeStats?.tendencias['distancia'] ?? 'Actividad constante',
           ),
           const SizedBox(width: 12),
           _statCard(
             icon: Icons.map_rounded,
-            title: 'Territorios\nnuevos',
-            value: '3',
+            title: 'Territorios\nuevos',
+            value: _homeStats?.territoriosNuevos.toString() ?? '0',
             unit: 'nuevos',
-            foot: '↑ 2% vs ayer',
+            foot: _homeStats?.tendencias['territorios'] ?? '0 nuevos',
           ),
           const SizedBox(width: 12),
           _statCard(
             icon: Icons.timer_rounded,
             title: 'Tiempo\ntotal',
-            value: '3.5',
+            value: _homeStats?.tiempoTotalHoras.toStringAsFixed(2) ?? '0.00',
             unit: 'horas',
-            foot: '↑ 10% vs ayer',
+            foot: _homeStats?.tendencias['tiempo'] ?? 'Buen esfuerzo',
           ),
           const SizedBox(width: 12),
           _statCard(
             icon: Icons.favorite_rounded,
             title: 'Ritmo\ncardiaco',
-            value: '120',
+            value: _homeStats?.ritmoCardiacoPromedio.toString() ?? '0',
             unit: 'bpm',
-            foot: 'Promedio',
+            foot: _homeStats?.tendencias['ritmo'] ?? 'Promedio',
           ),
           const SizedBox(width: 12),
         ],
@@ -652,29 +681,6 @@ class _HomeScreenState extends State<HomeScreen>
   // ── WEEKLY STATS ──────────────────────────────────────────────────────────
 
   Widget _weeklyStats() {
-    final c = context.colors;
-    final stats = [
-      {
-        'icon': Icons.timer_rounded,
-        'iconColor': c.primaryDeep,
-        'label': 'Tiempo',
-        'value': '3h 42',
-        'unit': 'min',
-        'progress': 0.62,
-        'color': c.primaryDeep,
-        'change': '+25 min vs semana ant.',
-      },
-      {
-        'icon': Icons.local_fire_department_rounded,
-        'iconColor': const Color(0xFFFFB84D),
-        'label': 'Calorias',
-        'value': '1,840',
-        'unit': 'kcal',
-        'progress': 0.84,
-        'color': const Color(0xFFFFB84D),
-        'change': 'Meta casi alcanzada',
-      },
-    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -687,7 +693,7 @@ class _HomeScreenState extends State<HomeScreen>
         const SizedBox(height: 16),
         _weekBarChart(),
         const SizedBox(height: 12),
-        ...stats.map(
+        ...[].map(
           (s) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: _weekStatRow(
@@ -707,10 +713,18 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _weekBarChart() {
+    if (_isLoadingStats) {
+      return const SizedBox(
+        height: 180,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final c = context.colors;
     const days = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
-    const values = [0.1, 2.0, 4.0, 6.0, 4.0, 2.0, 1.0];
-    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final values = _homeStats?.barrasDias ?? [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
+    final maxVal = values.isNotEmpty ? values.reduce((a, b) => a > b ? a : b) : 10.0;
+    final maxDenom = maxVal > 0 ? maxVal : 1.0;
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -750,7 +764,7 @@ class _HomeScreenState extends State<HomeScreen>
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
-                  '24.5 km totales',
+                  '${_homeStats?.distanciaSemanaKm.toStringAsFixed(2) ?? '0.00'} km totales',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -765,7 +779,7 @@ class _HomeScreenState extends State<HomeScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: List.generate(days.length, (i) {
-              final ratio = maxVal > 0 ? values[i] / maxVal : 0.0;
+              final ratio = values[i] / maxDenom;
               final hasRun = values[i] > 0;
               final barHeight = hasRun ? (ratio * 52).clamp(8.0, 52.0) : 8.0;
               final isHigh = hasRun && ratio >= 0.75;
