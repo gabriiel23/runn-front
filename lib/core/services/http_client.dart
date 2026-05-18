@@ -8,11 +8,12 @@ import '../config/api_config.dart';
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
+  final String? codigoError; // Campo estructurado del backend (ej: 'ruta_incompleta')
 
-  const ApiException(this.message, {this.statusCode});
+  const ApiException(this.message, {this.statusCode, this.codigoError});
 
   @override
-  String toString() => 'ApiException($statusCode): $message';
+  String toString() => 'ApiException($statusCode, $codigoError): $message';
 }
 
 /// Cliente HTTP centralizado para la API de RUNN.
@@ -248,10 +249,16 @@ class RunnHttpClient {
 
     // Extraer mensaje de error del body si existe
     String errorMessage = 'Error del servidor (${response.statusCode})';
-    if (body is Map && body.containsKey('mensaje')) {
-      errorMessage = body['mensaje'] as String;
+    String? codigoError;
+    if (body is Map) {
+      if (body.containsKey('mensaje')) {
+        errorMessage = body['mensaje'] as String;
+      }
+      if (body.containsKey('codigo_error')) {
+        codigoError = body['codigo_error'] as String?;
+      }
     }
 
-    throw ApiException(errorMessage, statusCode: response.statusCode);
+    throw ApiException(errorMessage, statusCode: response.statusCode, codigoError: codigoError);
   }
 }

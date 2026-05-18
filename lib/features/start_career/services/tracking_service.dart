@@ -32,9 +32,9 @@ class _TrackingTaskHandler extends TaskHandler {
     _posSub = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        // 10 m: el OS no dispara el evento a menos que haya desplazamiento
-        // real >= 10 m, reduciendo significativamente el ruido de GPS drift.
-        distanceFilter: 10,
+        // 2 m: el OS dispara el evento continuamente al moverse,
+        // garantizando respuesta inmediata desde el primer paso.
+        distanceFilter: 2,
       ),
     ).listen(_onNuevaPos, onError: (_) {});
   }
@@ -48,10 +48,10 @@ class _TrackingTaskHandler extends TaskHandler {
   // 10-30 m; ser más estrictos descarta la mayoría de lecturas de interior.
   static const double _kAccuracyMaxima = 20.0;
 
-  // Delta mínimo real entre dos puntos consecutivos para sumarlo: 8 m.
-  // El distanceFilter del OS ya filtró ruido menor, pero el drift residual
-  // puede producir "saltos" de 5-7 m que aquí descartamos.
-  static const double _kDeltaMinimoM = 8.0;
+  // Delta mínimo real para acumular distancia: 3.5 m.
+  // Al mantener la última posición aceptada como referencia, acumulamos
+  // perfectamente trayectos continuos cortos sin sufrir por drift estático.
+  static const double _kDeltaMinimoM = 3.5;
 
   // Delta máximo: descarta teletransportaciones imposibles (> 200 m en 1 tick).
   static const double _kDeltaMaximoM = 200.0;
@@ -62,9 +62,10 @@ class _TrackingTaskHandler extends TaskHandler {
     if (pos.accuracy > _kAccuracyMaxima) return;
 
     // Filtro 2 — Velocidad mínima: no sumar distancia si el usuario está quieto.
-    // Esto soluciona el caso de "GPS drift estático" (bug 1) y el de
-    // "metros que siguen acumulando después de parar" (bug 2).
-    if (pos.speed < _kVelocidadMinimaMs) {
+    // CORRECCIÓN CLAVE: Solo aplicamos este filtro si el dispositivo reporta una velocidad mayor a 0.
+    // En muchos teléfonos (como TECNO, Xiaomi, etc.) el hardware de GPS no calcula la velocidad en tiempo real
+    // y devuelve siempre 0.0 constante, lo que bloqueaba por completo la acumulación de metros.
+    if (pos.speed > 0.0 && pos.speed < _kVelocidadMinimaMs) {
       // Aun así actualizamos la última posición para no crear saltos cuando
       // el usuario empiece a moverse de nuevo.
       _lastPosition = pos;
@@ -91,22 +92,30 @@ class _TrackingTaskHandler extends TaskHandler {
         pos.longitude,
       );
       // Filtro 3 — Delta mínimo y máximo: acepta solo desplazamientos reales.
-      // >= 8 m elimina drift residual; < 200 m elimina saltos de GPS imposibles.
+      // >= 3.5 m elimina drift residual; < 200 m elimina saltos de GPS imposibles.
       if (delta >= _kDeltaMinimoM && delta < _kDeltaMaximoM) {
         _distanciaKm += delta / 1000;
+        
+        // CORRECCIÓN CLAVE: Solo actualizamos la posición de referencia cuando el punto es ACEPTADO.
+        // Así no perdemos distancias de movimientos continuos pequeños.
+        _lastPosition = pos;
+        _lastLat = pos.latitude;
+        _lastLng = pos.longitude;
       }
+    } else {
+      // Primer punto válido de la carrera
+      _lastPosition = pos;
+      _lastLat = pos.latitude;
+      _lastLng = pos.longitude;
     }
 
-    _lastPosition = pos;
-    _lastLat = pos.latitude;
-    _lastLng = pos.longitude;
     _lastSpeed = pos.speed;
     _hasPosition = true;
 
     // Notificar a la UI inmediatamente cuando hay nueva posición
     FlutterForegroundTask.sendDataToMain({
-      'lat': pos.latitude,
-      'lng': pos.longitude,
+      'lat': _lastLat,
+      'lng': _lastLng,
       'speed': pos.speed,
       'distanciaKm': _distanciaKm,
       'duracionSegs': _duracionSegs,
