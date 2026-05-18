@@ -583,7 +583,11 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
 
   void _mostrarResultadoConquista(Map<String, dynamic> resultado) {
     final tc = context.colors;
+    // 'conquistado'  → territorio libre, primera toma
+    // 'ganado'       → disputado y ganado al dueño anterior
+    // 'aporte_registrado' → aporte a disputa grupal
     final ganado =
+        resultado['resultado'] == 'conquistado' ||
         resultado['resultado'] == 'ganado' ||
         resultado['resultado'] == 'aporte_registrado';
     final mensaje = resultado['mensaje'] as String? ?? '';

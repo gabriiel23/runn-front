@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/features/profile/domain/models/user_statistics.dart';
+import 'package:runn_front/features/start_career/services/actividades_service.dart';
 
 class MyStatisticsPage extends StatefulWidget {
   const MyStatisticsPage({super.key});
@@ -26,13 +27,19 @@ class _MyStatisticsPageState extends State<MyStatisticsPage>
   Future<void> _fetchStatistics() async {
     setState(() => _isLoading = true);
 
-    // Simulación de llamada al backend
-    await Future.delayed(const Duration(milliseconds: 800));
-
-    setState(() {
-      _statistics = UserStatistics.mock; // Usamos el mock del modelo
-      _isLoading = false;
-    });
+    try {
+      final stats = await ActividadesService.obtenerGraficos();
+      if (mounted) {
+        setState(() {
+          _statistics = stats;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   @override

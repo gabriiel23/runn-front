@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:runn_front/core/services/http_client.dart';
+import 'package:runn_front/features/profile/domain/models/user_statistics.dart';
 import '../domain/actividad_model.dart';
 import '../../home/data/models/home_stats_model.dart';
 
@@ -140,5 +141,13 @@ class ActividadesService {
     print('[ActividadesService] GET /actividades/mis-actividades/resumen-home');
     final response = await RunnHttpClient.get('/actividades/mis-actividades/resumen-home');
     return HomeStatsModel.fromJson(response as Map<String, dynamic>);
+  }
+  // ─── OBTENER GRÁFICOS ───────────────────────────────────────────────────────
+  // GET /actividades/mis-actividades/graficos
+  static Future<UserStatistics> obtenerGraficos() async {
+    // ignore: avoid_print
+    print('[ActividadesService] GET /actividades/mis-actividades/graficos');
+    final response = await RunnHttpClient.get('/actividades/mis-actividades/graficos');
+    return UserStatistics.fromJson(response as Map<String, dynamic>);
   }
 }

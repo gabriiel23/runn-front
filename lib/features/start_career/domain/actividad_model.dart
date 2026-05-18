@@ -185,6 +185,7 @@ class ActividadEstadisticas {
   final int caloriasTotales;
   final Map<String, dynamic>? mejorCarrera;
   final Map<String, int> porTipo;
+  final int territoriosConquistados;
 
   const ActividadEstadisticas({
     required this.totalCarreras,
@@ -195,6 +196,7 @@ class ActividadEstadisticas {
     required this.caloriasTotales,
     this.mejorCarrera,
     required this.porTipo,
+    required this.territoriosConquistados,
   });
 
   factory ActividadEstadisticas.fromJson(Map<String, dynamic> json) {
@@ -210,6 +212,7 @@ class ActividadEstadisticas {
         'correr': (json['por_tipo']?['correr'] as num?)?.toInt() ?? 0,
         'senderismo': (json['por_tipo']?['senderismo'] as num?)?.toInt() ?? 0,
       },
+      territoriosConquistados: (json['territorios_conquistados'] as num?)?.toInt() ?? 0,
     );
   }
 }

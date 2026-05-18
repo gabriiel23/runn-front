@@ -31,12 +31,18 @@ class UserStatistics {
 
   factory UserStatistics.fromJson(Map<String, dynamic> json) {
     return UserStatistics(
-      totalDistance: json['totalDistance'] as String,
-      averageDistance: json['averageDistance'] as String,
-      distanceGoal: json['distanceGoal'] as String,
-      kmPoints: (json['kmPoints'] as List).map((e) => StatPoint.fromJson(e)).toList(),
-      speedPoints: (json['speedPoints'] as List).map((e) => StatPoint.fromJson(e)).toList(),
-      pacePoints: (json['pacePoints'] as List).map((e) => StatPoint.fromJson(e)).toList(),
+      totalDistance: (json['total_distance'] ?? json['totalDistance'] ?? '0 km') as String,
+      averageDistance: (json['average_distance'] ?? json['averageDistance'] ?? '0 km') as String,
+      distanceGoal: (json['distance_goal'] ?? json['distanceGoal'] ?? '20.0 km') as String,
+      kmPoints: ((json['km_points'] ?? json['kmPoints'] ?? []) as List)
+          .map((e) => StatPoint.fromJson(e))
+          .toList(),
+      speedPoints: ((json['speed_points'] ?? json['speedPoints'] ?? []) as List)
+          .map((e) => StatPoint.fromJson(e))
+          .toList(),
+      pacePoints: ((json['pace_points'] ?? json['pacePoints'] ?? []) as List)
+          .map((e) => StatPoint.fromJson(e))
+          .toList(),
     );
   }
 

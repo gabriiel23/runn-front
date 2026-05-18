@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import '../../services/profile_service.dart';
+import '../../domain/models/insignia_model.dart';
 import '../../../start_career/services/actividades_service.dart';
 import '../../../start_career/domain/actividad_model.dart';
 
@@ -21,6 +22,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   List<Map<String, String>> _mediaItems = [];
   ActividadEstadisticas? _estadisticas;
   List<ActividadHistorial>? _actividadesRecientes;
+  InsigniasResult? _insignias;
   bool _isLoading = true;
   bool _isRefreshing = false;
 
@@ -111,9 +113,14 @@ class _ProfileScreenState extends State<ProfileScreen>
       if (mounted) setState(() => _actividadesRecientes = lista);
     } catch (e) {
       debugPrint('[Perfil] ERROR historial: $e');
-      // Asignar lista vacía para que la UI no se quede en "Cargando..."
       if (mounted) setState(() => _actividadesRecientes ??= []);
     }
+
+    // Cargar insignias (preview)
+    try {
+      final ins = await ProfileService.getInsignias();
+      if (mounted) setState(() => _insignias = ins);
+    } catch (_) {}
   }
 
   @override
@@ -160,6 +167,21 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   // ────────────────────────────────────────────────────────────────────────────
+  // NIVEL POR KM
+  // ────────────────────────────────────────────────────────────────────────────
+
+  /// Devuelve (label, gradientColors) según los km acumulados del usuario.
+  ({String label, List<Color> colors}) _nivelPorKm(double km) {
+    if (km >= 1000) return (label: 'LEYENDA',       colors: [const Color(0xFF56CCF2), const Color(0xFF2F80ED)]);
+    if (km >= 500)  return (label: 'CLASE MUNDIAL', colors: [const Color(0xFF9B51E0), const Color(0xFF6E2DB8)]);
+    if (km >= 100)  return (label: 'EXPERTO',       colors: [const Color(0xFFFFB84D), const Color(0xFFFF6B35)]);
+    if (km >= 50)   return (label: 'AVANZADO',      colors: [const Color(0xFF7ED957), const Color(0xFF34C759)]);
+    if (km >= 20)   return (label: 'INTERMEDIO',    colors: [const Color(0xFF34C759), const Color(0xFF7ED957)]);
+    if (km >= 5)    return (label: 'PRINCIPIANTE',  colors: [const Color(0xFF69C2E8), const Color(0xFF56CCF2)]);
+    return            (label: 'PRINCIPIANTE',        colors: [const Color(0xFF69C2E8), const Color(0xFF56CCF2)]);
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
   // HEADER
   // ────────────────────────────────────────────────────────────────────────────
 
@@ -170,8 +192,9 @@ class _ProfileScreenState extends State<ProfileScreen>
     final ciudad = _userData['ciudad'] as String?;
     final pais = _userData['pais'] as String?;
     final avatarUrl = _userData['avatar_url'] as String?;
-    final nivel = _userData['nivel'] as String?;
     final puntos = (_userData['puntos'] as num?)?.toInt() ?? 0;
+    final kmTotales = _estadisticas?.distanciaTotalKm ?? 0.0;
+    final tierData = _nivelPorKm(kmTotales);
 
     final ubicacion = [
       ciudad,
@@ -240,10 +263,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         gradient: LinearGradient(
-                          colors: [
-                            const Color(0xFFFFB84D),
-                            const Color(0xFFFFB84D).withValues(alpha: 0.4),
-                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: tierData.colors,
                         ),
                       ),
                       child: ClipOval(
@@ -276,15 +298,25 @@ class _ProfileScreenState extends State<ProfileScreen>
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFFB84D),
+                          gradient: LinearGradient(
+                            colors: tierData.colors,
+                          ),
                           borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: tierData.colors[0].withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
                         ),
                         child: Text(
-                          nivel ?? 'PRINCIPIANTE',
+                          tierData.label,
                           style: const TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.w800,
                             color: Colors.white,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),
@@ -366,14 +398,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                 children: [
                   _buildStatCircle(
                     context,
-                    '–',
+                    _estadisticas != null ? '${_estadisticas!.territoriosConquistados}' : '–',
                     'Territorios',
                     Icons.flag_rounded,
                     const Color(0xFFE8698A),
                   ),
                   _buildStatCircle(
                     context,
-                    '–',
+                    _estadisticas != null ? _estadisticas!.distanciaTotalKm.toStringAsFixed(1) : '–',
                     'KM Totales',
                     Icons.directions_run_rounded,
                     c.primaryDeep,
@@ -444,34 +476,51 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // INSIGNIAS
-  // ────────────────────────────────────────────────────────────────────────────
+  IconData _iconForBadge(InsigniaModel b) {
+    if (b.kmRequeridos != null) {
+      final km = b.kmRequeridos!;
+      if (km >= 5000) return Icons.diamond_rounded;
+      if (km >= 2500) return Icons.military_tech_rounded;
+      if (km >= 1000) return Icons.emoji_events_rounded;
+      if (km >= 500)  return Icons.fitness_center_rounded;
+      if (km >= 200)  return Icons.local_fire_department_rounded;
+      if (km >= 100)  return Icons.shield_rounded;
+      if (km >= 50)   return Icons.speed_rounded;
+      if (km >= 25)   return Icons.explore_rounded;
+      if (km >= 10)   return Icons.route_rounded;
+      return Icons.flag_rounded; // 1 km
+    }
+    final name = '${b.nombre} ${b.condicion ?? ''}'.toLowerCase();
+    if (name.contains('primer') || name.contains('primera') || name.contains('inicio')) return Icons.directions_run_rounded;
+    if (name.contains('territori') || name.contains('conquist')) return Icons.flag_rounded;
+    if (name.contains('veloci') || name.contains('rapid')) return Icons.bolt_rounded;
+    if (name.contains('explor') || name.contains('ciudad')) return Icons.explore_rounded;
+    if (name.contains('maratonist') || name.contains('42')) return Icons.straighten_rounded;
+    if (name.contains('colina') || name.contains('elevac')) return Icons.terrain_rounded;
+    if (name.contains('km') || name.contains('distancia') || name.contains('kilom')) return Icons.route_rounded;
+    if (name.contains('caloria') || name.contains('energia')) return Icons.local_fire_department_rounded;
+    if (name.contains('racha') || name.contains('consistente')) return Icons.calendar_today_rounded;
+    return Icons.emoji_events_rounded;
+  }
+
+  Color _badgeColor(int index) {
+    const colors = [
+      Color(0xFFE8698A), Color(0xFFFFB84D), Color(0xFF7ED957),
+      Color(0xFF56CCF2), Color(0xFF9B51E0), Color(0xFFFF6B35),
+      Color(0xFF34C759), Color(0xFF69C2E8),
+    ];
+    return colors[index % colors.length];
+  }
 
   Widget _buildBadgesSection(BuildContext context) {
     final c = context.colors;
-    const previewBadges = [
-      {
-        'icon': Icons.directions_run_rounded,
-        'color': Color(0xFFE8698A),
-        'title': 'Primer paso',
-      },
-      {
-        'icon': Icons.emoji_events_rounded,
-        'color': Color(0xFFFFB84D),
-        'title': 'Conquistador',
-      },
-      {
-        'icon': Icons.bolt_rounded,
-        'color': Color(0xFF7ED957),
-        'title': 'Velocista',
-      },
-      {
-        'icon': Icons.explore_rounded,
-        'color': Color(0xFF56CCF2),
-        'title': 'Explorador',
-      },
-    ];
+
+    // Tomar hasta 4 insignias: primero las desbloqueadas, luego las bloqueadas
+    final todas = _insignias?.todas ?? [];
+    final desbloqueadas = todas.where((i) => i.desbloqueada).take(4).toList();
+    final preview = desbloqueadas.isNotEmpty
+        ? desbloqueadas
+        : todas.take(4).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -483,52 +532,103 @@ class _ProfileScreenState extends State<ProfileScreen>
           () => context.pushNamed('profile_badges'),
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: previewBadges.map((b) {
-            final color = b['color'] as Color;
-            final icon = b['icon'] as IconData;
-            final title = b['title'] as String;
-            return Expanded(
+        if (_insignias == null)
+          // Esqueleto de carga
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(4, (i) => Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: color.withValues(alpha: 0.12),
-                        border: Border.all(
-                          color: color.withValues(alpha: 0.25),
-                          width: 1.5,
+                child: Column(children: [
+                  Container(
+                    width: 60, height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: c.primaryLight,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(width: 40, height: 10, color: c.primaryLight),
+                ]),
+              ),
+            )),
+          )
+        else if (preview.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+            decoration: BoxDecoration(
+              color: c.card,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: c.primaryDeep.withValues(alpha: 0.08)),
+            ),
+            child: Column(children: [
+              Icon(Icons.emoji_events_outlined, color: c.textHint, size: 36),
+              const SizedBox(height: 8),
+              Text(
+                'Completa carreras para obtener insignias',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: c.textHint, fontSize: 12),
+              ),
+            ]),
+          )
+        else
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: preview.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final badge = entry.value;
+              final color = _badgeColor(idx);
+              final icon = _iconForBadge(badge);
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: badge.desbloqueada
+                              ? color.withValues(alpha: 0.12)
+                              : c.card,
+                          border: Border.all(
+                            color: badge.desbloqueada
+                                ? color.withValues(alpha: 0.3)
+                                : c.textHint.withValues(alpha: 0.15),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: badge.desbloqueada ? color : c.textHint.withValues(alpha: 0.35),
+                          size: 26,
                         ),
                       ),
-                      child: Icon(icon, color: color, size: 26),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                        color: c.textSecondary,
-                        height: 1.3,
+                      const SizedBox(height: 6),
+                      Text(
+                        badge.nombre,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: badge.desbloqueada ? c.textSecondary : c.textHint,
+                          height: 1.3,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            );
-          }).toList(),
-        ),
+              );
+            }).toList(),
+          ),
       ],
     );
   }
+
 
   // ────────────────────────────────────────────────────────────────────────────
   // HISTORIAL DE CARRERAS

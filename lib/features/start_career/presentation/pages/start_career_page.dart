@@ -7,8 +7,6 @@ import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 import 'package:runn_front/core/services/http_client.dart';
 import '../../services/actividades_service.dart';
-import '../../services/tracking_service.dart';
-import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 
 class PreCarreraPage extends StatefulWidget {
   const PreCarreraPage({super.key});
@@ -99,20 +97,9 @@ class _PreCarreraPageState extends State<PreCarreraPage>
   Future<void> _iniciarCarrera() async {
     if (_starting) return;
     setState(() => _starting = true);
-    
-    bool serviceStarted = false;
+
     try {
-      // 1. Pedir permiso de notificación si no lo tiene (necesario para arrancar el servicio en foreground)
-      final bgStatus = await FlutterForegroundTask.checkNotificationPermission();
-      if (bgStatus != NotificationPermission.granted) {
-        await FlutterForegroundTask.requestNotificationPermission();
-      }
-
-      // 2. Arrancar el servicio de tracking de inmediato para que empiece a grabar tu GPS ya mismo!
-      await TrackingService.start();
-      serviceStarted = true;
-
-      // 3. Crear el registro de actividad en el servidor (en segundo plano / red móvil)
+      // Crear el registro de actividad en el servidor
       final actividad = await ActividadesService.iniciarActividad();
       if (!mounted) return;
 
@@ -126,23 +113,23 @@ class _PreCarreraPageState extends State<PreCarreraPage>
         },
       );
     } on ApiException catch (e) {
-      // Si la API falla, detenemos el servicio inmediatamente para no dejarlo huérfano
-      if (serviceStarted) {
-        await TrackingService.stop();
-      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.message), backgroundColor: const Color(0xFFFF3B30)),
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: const Color(0xFFFF3B30),
+        ),
       );
     } catch (e) {
-      if (serviceStarted) {
-        await TrackingService.stop();
-      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error inesperado al iniciar la actividad.'), backgroundColor: Color(0xFFFF3B30)),
+        const SnackBar(
+          content: Text('Error inesperado al iniciar la actividad.'),
+          backgroundColor: Color(0xFFFF3B30),
+        ),
       );
     } finally {
+
       if (mounted) setState(() => _starting = false);
     }
   }

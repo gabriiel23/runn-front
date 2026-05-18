@@ -2,6 +2,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/config/api_config.dart';
 import '../../../core/services/http_client.dart';
 import '../domain/models/usuario_model.dart';
+import '../domain/models/insignia_model.dart';
 
 /// Servicio para el perfil propio del usuario logueado.
 /// Cubre los endpoints que afectan al usuario autenticado.
@@ -200,5 +201,12 @@ class ProfileService {
   static Future<Map<String, dynamic>> getMisSiguiendo() async {
     return await RunnHttpClient.get('/usuarios/yo/siguiendo')
         as Map<String, dynamic>;
+  }
+  // ─── MIS INSIGNIAS ─────────────────────────────────────────────────────────
+  // GET /actividades/mis-actividades/insignias
+
+  static Future<InsigniasResult> getInsignias() async {
+    final data = await RunnHttpClient.get('/actividades/mis-actividades/insignias');
+    return InsigniasResult.fromJson(data as Map<String, dynamic>);
   }
 }
