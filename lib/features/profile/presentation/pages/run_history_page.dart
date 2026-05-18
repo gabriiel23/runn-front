@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/core/utils/format_utils.dart';
 import '../../../start_career/domain/actividad_model.dart';
 import '../../../start_career/services/actividades_service.dart';
 
@@ -173,7 +174,12 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
     final icon = isRunning ? Icons.directions_run_rounded : Icons.terrain_rounded;
 
     return GestureDetector(
-      onTap: () => context.pushNamed('run_detail', extra: {'actividad_id': a.id}),
+      onTap: () async {
+        final recargar = await context.pushNamed<bool>('run_detail', extra: {'actividad_id': a.id});
+        if (recargar == true) {
+          _fetchHistory(isRefresh: true);
+        }
+      },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(16),
@@ -252,15 +258,18 @@ class _RunHistoryPageState extends State<RunHistoryPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '${a.distanciaKm.toStringAsFixed(2)} km',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                          color: c.textPrimary,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
+                      Builder(builder: (_) {
+                        final dist = formatDistancia(a.distanciaKm);
+                        return Text(
+                          '${dist.valor} ${dist.unidad}',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: c.textPrimary,
+                            letterSpacing: -0.5,
+                          ),
+                        );
+                      }),
                       const SizedBox(height: 4),
                       Text(
                         '${a.duracionFormateada} • ${a.ritmoPromedio.toStringAsFixed(1)} min/km',

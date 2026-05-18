@@ -5,6 +5,8 @@ import 'package:runn_front/core/services/http_client.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/features/challenges/data/models/reto_models.dart';
 import 'package:runn_front/features/challenges/services/retos_service.dart';
+import 'package:runn_front/features/notifications/services/notificaciones_notifier.dart';
+import 'package:runn_front/features/notifications/presentation/widgets/notification_bell.dart';
 
 // ─── COLORES DE NIVEL ─────────────────────────────────────────────────────────
 const Map<String, Color> _nivelColor = {
@@ -78,6 +80,7 @@ class _ChallengesPageState extends State<ChallengesPage>
     _cargarDiario();
     _cargarSemanal();
     _cargarInsignias();
+    NotificacionesNotifier.instance.fetchUnreadCount();
     final rol = await ApiConfig.getUserRol();
     if (mounted) setState(() => _esAdmin = rol == 'admin');
   }
@@ -244,22 +247,7 @@ class _ChallengesPageState extends State<ChallengesPage>
                           size: 22,
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () => context.go('/notifications'),
-                        child: Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: c.primaryLight,
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: Icon(
-                            Icons.notifications_outlined,
-                            color: c.primaryDeepWithAlpha(0.8),
-                            size: 22,
-                          ),
-                        ),
-                      ),
+                      const NotificationBell(),
                     ],
                   ),
                   const SizedBox(height: 24),

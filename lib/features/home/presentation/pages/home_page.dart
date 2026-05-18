@@ -10,7 +10,11 @@ import 'package:runn_front/features/home/presentation/widgets/news_bottom_sheet.
 import 'package:runn_front/features/profile/services/profile_service.dart';
 import 'package:runn_front/features/start_career/services/actividades_service.dart';
 import 'package:runn_front/features/home/data/models/home_stats_model.dart';
+import 'package:runn_front/features/notifications/services/notificaciones_notifier.dart';
+import 'package:runn_front/features/notifications/presentation/widgets/notification_bell.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:runn_front/features/home/data/models/frase_model.dart';
+import 'package:runn_front/features/home/services/frases_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,6 +25,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen>
     with TickerProviderStateMixin {
+  late final ScrollController _scrollController;
   late final PageController _newsPageController;
   late final PageController _quotesPageController;
   late AnimationController _animationController;
@@ -37,27 +42,16 @@ class _HomeScreenState extends State<HomeScreen>
   String _userName = 'Runner';
   bool _isLoadingNews = true;
   bool _isLoadingStats = true;
+  bool _isLoadingQuotes = true;
   bool _isRefreshing = false;
   List<NovedadModel> _newsItems = [];
   HomeStatsModel? _homeStats;
-
-  final List<Map<String, String>> _quotes = const [
-    {
-      'quote':
-          '"No importa que tan lento vayas, siempre y cuando no te detengas."',
-      'author': 'CONFUCIO',
-    },
-    {'quote': '"Cada paso te acerca a tu mejor version."', 'author': 'RUNN'},
-    {
-      'quote':
-          '"La disciplina vence al talento cuando el talento no se disciplina."',
-      'author': 'ANONIMO',
-    },
-  ];
+  List<FraseModel> _quotes = [];
 
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     _newsPageController = PageController();
     _quotesPageController = PageController();
     _animationController = AnimationController(
@@ -86,8 +80,26 @@ class _HomeScreenState extends State<HomeScreen>
     await Future.wait([
       _loadNews(),
       _loadStats(),
+      _loadQuotes(),
+      NotificacionesNotifier.instance.fetchUnreadCount(),
     ]);
     _startAutoCarousels();
+  }
+
+  Future<void> _loadQuotes() async {
+    try {
+      final items = await FrasesService.getFrasesActivas();
+      if (mounted) {
+        setState(() {
+          _quotes = items;
+          _isLoadingQuotes = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingQuotes = false);
+      }
+    }
   }
 
   Future<void> _loadStats() async {
@@ -136,6 +148,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _newsTimer?.cancel();
     _quotesTimer?.cancel();
     _newsPageController.dispose();
@@ -146,6 +159,9 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   void _startAutoCarousels() {
+    _newsTimer?.cancel();
+    _quotesTimer?.cancel();
+    
     _newsTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       if (!mounted || _newsItems.isEmpty) return;
       final next = (_newsCurrentPage + 1) % _newsItems.length;
@@ -157,7 +173,7 @@ class _HomeScreenState extends State<HomeScreen>
     });
 
     _quotesTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
+      if (!mounted || _quotes.isEmpty) return;
       final next = (_quoteCurrentPage + 1) % _quotes.length;
       _quotesPageController.animateToPage(
         next,
@@ -170,90 +186,206 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
+    final sw = MediaQuery.of(context).size.width;
+    final sh = MediaQuery.of(context).size.height;
+    final safeTop = MediaQuery.of(context).padding.top;
+
     return Scaffold(
       backgroundColor: c.bg,
-      body: FadeTransition(
-        opacity: _contentAnimation,
-        child: SlideTransition(
-          position: Tween<Offset>(
-            begin: const Offset(0, 0.06),
-            end: Offset.zero,
-          ).animate(_contentAnimation),
-          child: RefreshIndicator(
-            onRefresh: _handleRefresh,
-            color: c.primaryDeep,
-            backgroundColor: c.surface,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(c),
+      body: Stack(
+        children: [
+          FadeTransition(
+            opacity: _contentAnimation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0, 0.06),
+                end: Offset.zero,
+              ).animate(_contentAnimation),
+              child: RefreshIndicator(
+                onRefresh: _handleRefresh,
+                color: c.primaryDeep,
+                backgroundColor: c.surface,
+                child: SingleChildScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(c),
 
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
-                    child: _isRefreshing 
-                      ? _buildHomeSkeleton(context)
-                      : Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _startRunButton(context),
-                      const SizedBox(height: 28),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+                        child: _isRefreshing 
+                          ? _buildHomeSkeleton(context)
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 62), // Placeholder del botón Iniciar Carrera
+                                const SizedBox(height: 28),
 
-                      _buildSectionHeader(
-                        'Novedades',
-                        Icons.newspaper_rounded,
-                        context,
-                        trailing: _isAdmin
-                            ? IconButton(
-                                onPressed: () async {
-                                  final refresh = await context.push(
-                                    '/news/new/edit',
-                                  );
-                                  if (refresh == true) {
-                                    _loadNews();
-                                  }
-                                },
-                                icon: Icon(
-                                  Icons.add_circle,
-                                  color: context.colors.primaryDeep,
-                                  size: 28,
+                                _buildSectionHeader(
+                                  'Novedades',
+                                  Icons.newspaper_rounded,
+                                  context,
+                                  trailing: _isAdmin
+                                      ? IconButton(
+                                          onPressed: () async {
+                                            final refresh = await context.push(
+                                              '/news/new/edit',
+                                            );
+                                            if (refresh == true) {
+                                              _loadNews();
+                                            }
+                                          },
+                                          icon: Icon(
+                                            Icons.add_circle,
+                                            color: context.colors.primaryDeep,
+                                            size: 28,
+                                          ),
+                                          tooltip: 'Nueva Novedad',
+                                          padding: EdgeInsets.zero,
+                                          constraints: const BoxConstraints(),
+                                        )
+                                      : null,
                                 ),
-                                tooltip: 'Nueva Novedad',
-                                padding: EdgeInsets.zero,
-                                constraints: const BoxConstraints(),
-                              )
-                            : null,
+                                const SizedBox(height: 16),
+                                _newsCarousel(),
+
+                                const SizedBox(height: 28),
+
+                                _buildSectionHeader(
+                                  'Stats rápidas',
+                                  Icons.bolt_rounded,
+                                  context,
+                                ),
+                                const SizedBox(height: 16),
+                                _statsRow(),
+
+                                const SizedBox(height: 28),
+                                _weeklyStats(),
+
+                                const SizedBox(height: 32),
+                                _buildSectionHeader(
+                                  'Motivación',
+                                  Icons.local_fire_department_rounded,
+                                  context,
+                                  trailing: _isAdmin
+                                      ? ElevatedButton.icon(
+                                          onPressed: () {
+                                            context.push('/admin_frases');
+                                          },
+                                          icon: const Icon(Icons.settings_rounded, size: 14),
+                                          label: const Text('Administrar Frases', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: context.colors.primaryDeepWithAlpha(0.12),
+                                            foregroundColor: context.colors.primaryDeep,
+                                            elevation: 0,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                                const SizedBox(height: 16),
+                                _quotesCarousel(),
+                              ],
+                            ),
                       ),
-                      const SizedBox(height: 16),
-                      _newsCarousel(),
-
-                      const SizedBox(height: 28),
-
-                      _buildSectionHeader(
-                        'Stats rápidas',
-                        Icons.bolt_rounded,
-                        context,
-                      ),
-                      const SizedBox(height: 16),
-                      _statsRow(),
-
-                      const SizedBox(height: 28),
-                      _weeklyStats(),
-
-                            const SizedBox(height: 20),
-                            _quotesCarousel(),
-                          ],
-                        ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
+          AnimatedBuilder(
+            animation: _scrollController,
+            builder: (context, child) {
+              final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+              
+              // Calcular transición del botón 
+              final dockTop = safeTop + 130.0 - scrollOffset; 
+              final floatTop = sh - 175.0; // Mucho más arriba para no taparlo con el bottom nav
+              const double targetFabSize = 86.0; // FAB más grande y visible
+              
+              // Suavizamos estirando el recorrido del scroll necesario a 200px para que no sea tosco
+              double t = ((scrollOffset - 30) / 200).clamp(0.0, 1.0);
+              // Curva más suave para inicio y fin limpios
+              t = Curves.easeInOutCubic.transform(t);
+
+              final currentTop = dockTop + (floatTop - dockTop) * t;
+              final currentLeft = 24.0 + (sw - 24.0 - targetFabSize - 24.0) * t;
+              final currentWidth = (sw - 48.0) + (targetFabSize - (sw - 48.0)) * t;
+              final currentHeight = 62.0 + (targetFabSize - 62.0) * t;
+              final currentRadius = 20.0 + ((targetFabSize / 2) - 20.0) * t;
+              final textOpacity = (1.0 - t * 2.5).clamp(0.0, 1.0); // Desvanece el texto más rápido
+              final iconSize = 26.0 + (34.0 - 26.0) * t; // El icono crece
+              final shadowBlur = 16.0 + (24.0 - 16.0) * t; // Sombra más pronunciada al flotar
+
+              return Positioned(
+                top: currentTop,
+                left: currentLeft,
+                width: currentWidth,
+                height: currentHeight,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [c.primaryDeep, c.primaryDark],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(currentRadius),
+                    boxShadow: [
+                      BoxShadow(
+                        color: c.primaryDeepWithAlpha(0.35),
+                        blurRadius: shadowBlur,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () => context.go('/start_career'),
+                      borderRadius: BorderRadius.circular(currentRadius),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_circle_fill_rounded,
+                            color: c.primaryLight,
+                            size: iconSize,
+                          ),
+                          if (textOpacity > 0) ...[
+                            SizedBox(width: 10 * textOpacity),
+                            Opacity(
+                              opacity: textOpacity,
+                              child: Text(
+                                'Iniciar Carrera',
+                                overflow: TextOverflow.visible,
+                                softWrap: false,
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w900,
+                                  color: c.primaryLight,
+                                  letterSpacing: -0.5,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
-    ),
-  );
-}
+    );
+  }
 
   // ── HEADER ────────────────────────────────────────────────────────────────
 
@@ -345,11 +477,7 @@ class _HomeScreenState extends State<HomeScreen>
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const SizedBox(width: 10),
-                      _HeaderIconButton(
-                        icon: Icons.notifications_outlined,
-                        color: c,
-                        onTap: () => context.push('/notifications'),
-                      ),
+                      const NotificationBell(),
                       const SizedBox(width: 8),
                       _HeaderIconButton(
                         icon: Icons.settings_outlined,
@@ -399,60 +527,6 @@ class _HomeScreenState extends State<HomeScreen>
         ),
         if (trailing != null) ...[const Spacer(), trailing] else const Spacer(),
       ],
-    );
-  }
-
-  // ── START RUN BUTTON ──────────────────────────────────────────────────────
-
-  Widget _startRunButton(BuildContext context) {
-    final c = context.colors;
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [c.primaryDeep, c.primaryDark],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: c.primaryDeepWithAlpha(0.30),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => context.go('/start_career'),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.play_circle_fill_rounded,
-                  color: c.primaryLight,
-                  size: 26,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  'Iniciar Carrera',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: c.primaryLight,
-                    letterSpacing: -0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -1027,11 +1101,36 @@ class _HomeScreenState extends State<HomeScreen>
   // ── QUOTES CAROUSEL ───────────────────────────────────────────────────────
 
   Widget _quotesCarousel() {
+    if (_isLoadingQuotes) {
+      return const SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_quotes.isEmpty) {
+      return Container(
+        height: 165,
+        decoration: BoxDecoration(
+          color: context.colors.primaryDeepWithAlpha(0.05),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          'Generando motivación...',
+          style: TextStyle(
+            color: context.colors.textHint,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
     final c = context.colors;
     return Column(
       children: [
         SizedBox(
-          height: 200,
+          height: 220,
           child: PageView.builder(
             controller: _quotesPageController,
             itemCount: _quotes.length,
@@ -1039,66 +1138,83 @@ class _HomeScreenState extends State<HomeScreen>
             itemBuilder: (_, index) {
               final quote = _quotes[index];
               return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 1),
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                margin: const EdgeInsets.symmetric(horizontal: 2),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [c.primaryDeep, c.primaryDark],
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: c.primaryDeepWithAlpha(0.1),
+                    width: 1,
                   ),
-                  borderRadius: BorderRadius.circular(22),
                   boxShadow: [
                     BoxShadow(
-                      color: c.primaryDeepWithAlpha(0.25),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Stack(
                   children: [
-                    Text(
-                      '"',
-                      style: TextStyle(
-                        fontSize: 44,
-                        height: 0.9,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Expanded(
+                    // Comilla gigante de fondo (marca de agua)
+                    Positioned(
+                      top: -15,
+                      right: 15,
                       child: Text(
-                        quote['quote']!,
+                        '"',
                         style: TextStyle(
-                          fontSize: 18,
-                          height: 1.35,
-                          fontStyle: FontStyle.italic,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white.withValues(alpha: 0.95),
-                          letterSpacing: -0.2,
+                          fontSize: 140,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'serif',
+                          color: c.primaryDeepWithAlpha(0.06),
+                          height: 1.0,
                         ),
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        quote['author']!,
-                        style: const TextStyle(
-                          letterSpacing: 1.5,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.white,
-                          fontSize: 10,
-                        ),
+                    
+                    // Contenido alineado al centro
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(28, 36, 28, 28),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: Text(
+                                '"${quote.frase}"',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 17,
+                                  height: 1.45,
+                                  fontWeight: FontWeight.w700,
+                                  fontStyle: FontStyle.italic,
+                                  color: c.textPrimary.withValues(alpha: 0.9),
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: c.primaryDeepWithAlpha(0.08),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              quote.autor.toUpperCase(),
+                              style: TextStyle(
+                                letterSpacing: 1.5,
+                                fontWeight: FontWeight.w800,
+                                color: c.primaryDeep,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -1107,7 +1223,7 @@ class _HomeScreenState extends State<HomeScreen>
             },
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 16),
         _dotIndicator(_quotes.length, _quoteCurrentPage),
       ],
     );

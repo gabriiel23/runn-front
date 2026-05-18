@@ -55,6 +55,9 @@ class EventoModel {
   final int participantesConfirmados;
   final int enListaEspera;
   final int? cupoDisponible;
+  final List<String>? indicaciones;
+  final List<dynamic>? cuentasBancarias;
+  final bool finalizado;
 
   const EventoModel({
     required this.id,
@@ -77,6 +80,9 @@ class EventoModel {
     this.participantesConfirmados = 0,
     this.enListaEspera = 0,
     this.cupoDisponible,
+    this.indicaciones,
+    this.cuentasBancarias,
+    this.finalizado = false,
   });
 
   factory EventoModel.fromJson(Map<String, dynamic> json) {
@@ -101,6 +107,9 @@ class EventoModel {
       participantesConfirmados: int.tryParse(json['participantes_confirmados']?.toString() ?? '') ?? 0,
       enListaEspera: int.tryParse(json['en_lista_espera']?.toString() ?? '') ?? 0,
       cupoDisponible: int.tryParse(json['cupo_disponible']?.toString() ?? ''),
+      indicaciones: (json['indicaciones'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      cuentasBancarias: json['cuentas_bancarias'] as List<dynamic>?,
+      finalizado: json['finalizado'] == true || json['finalizado'] == 'true',
     );
   }
 

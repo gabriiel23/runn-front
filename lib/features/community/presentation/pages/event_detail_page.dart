@@ -9,6 +9,7 @@ import '../../domain/models/evento_model.dart';
 import '../../../../core/config/api_config.dart';
 import '../../../../core/services/http_client.dart';
 import 'event_edit_page.dart';
+import 'event_payment_page.dart';
 
 class EventDetailPage extends StatefulWidget {
   final String eventId;
@@ -19,12 +20,36 @@ class EventDetailPage extends StatefulWidget {
   State<EventDetailPage> createState() => _EventDetailPageState();
 }
 
-class _EventDetailPageState extends State<EventDetailPage> {
+class _EventDetailPageState extends State<EventDetailPage> with RouteAware {
   EventoDetalleModel? _detalle;
   bool _isLoading = true;
   bool _isActionLoading = false;
   String _errorMsg = '';
   String? _userRol;
+
+  GoogleMapController? _mapController;
+
+  // RouteObserver to detect when we return to this page
+  static final RouteObserver<ModalRoute<void>> _routeObserver = RouteObserver<ModalRoute<void>>();
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null) _routeObserver.subscribe(this, route);
+  }
+
+  @override
+  void dispose() {
+    _routeObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  /// Called when this route becomes active again (e.g., after Navigator.pop from participants page)
+  @override
+  void didPopNext() {
+    _loadDetalle();
+  }
 
   @override
   void initState() {
@@ -57,25 +82,25 @@ class _EventDetailPageState extends State<EventDetailPage> {
       return;
     }
 
+    if (_detalle!.evento.esPago) {
+      final subio = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => EventPaymentPage(evento: _detalle!.evento)),
+      );
+      if (subio == true && mounted) {
+        _loadDetalle();
+      }
+      return;
+    }
+
     setState(() => _isActionLoading = true);
     try {
       final res = await EventosService.unirseEvento(widget.eventId);
-      final estado = res['estado'];
       
       if (!mounted) return;
-      if (estado == 'pago_requerido') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Próximamente: pago en línea', style: TextStyle(fontWeight: FontWeight.w600)),
-            backgroundColor: context.colors.primaryDeep,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(res['mensaje'] ?? 'Solicitud enviada')));
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(res['mensaje'] ?? 'Solicitud enviada')));
+
       await _loadDetalle();
     } on ApiException catch (e) {
       if (!mounted) return;
@@ -248,7 +273,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                   if (evento.puntoInicio != null || evento.rutaSugerida != null || evento.lugar != null)
                     const SizedBox(height: 32),
                   _buildParticipantsSection(context),
-                  const SizedBox(height: 100),
+                  const SizedBox(height: 120), // Aumentado para que el botón flotante no tape a los participantes
                 ],
               ),
             ),
@@ -295,30 +320,41 @@ class _EventDetailPageState extends State<EventDetailPage> {
                       await _irAEditar();
                     } else if (value == 'Eliminar evento') {
                       await _confirmarEliminar();
+                    } else if (value == 'Ver participantes') {
+                      context.pushNamed('event_participants', pathParameters: {'eventId': widget.eventId});
+                    } else if (value == 'Escanear QR') {
+                      context.pushNamed('event_scanner', pathParameters: {'eventId': widget.eventId});
+                    } else if (value == 'Ver escaneados') {
+                      context.pushNamed('event_scanned_list', pathParameters: {'eventId': widget.eventId});
+                    } else if (value == 'Lista de espera') {
+                      context.pushNamed('event_waiting_list', pathParameters: {'eventId': widget.eventId});
                     }
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem(
                       value: 'Editar evento',
-                      child: Row(
-                        children: [
-                          Icon(Icons.edit_rounded, color: c.primaryDeep, size: 18),
-                          const SizedBox(width: 12),
-                          Text('Editar evento',
-                              style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600)),
-                        ],
-                      ),
+                      child: Row(children: [Icon(Icons.edit_rounded, color: c.primaryDeep, size: 18), const SizedBox(width: 12), Text('Editar evento', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600))]),
                     ),
                     PopupMenuItem(
+                      value: 'Ver participantes',
+                      child: Row(children: [Icon(Icons.group_rounded, color: c.primaryDeep, size: 18), const SizedBox(width: 12), Text('Ver participantes', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600))]),
+                    ),
+                    PopupMenuItem(
+                      value: 'Lista de espera',
+                      child: Row(children: [Icon(Icons.queue_rounded, color: c.primaryDeep, size: 18), const SizedBox(width: 12), Text('Lista de espera', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600))]),
+                    ),
+                    PopupMenuItem(
+                      value: 'Escanear QR',
+                      child: Row(children: [Icon(Icons.qr_code_scanner_rounded, color: c.primaryDeep, size: 18), const SizedBox(width: 12), Text('Escanear códigos', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600))]),
+                    ),
+                    PopupMenuItem(
+                      value: 'Ver escaneados',
+                      child: Row(children: [Icon(Icons.checklist_rounded, color: Colors.green, size: 18), const SizedBox(width: 12), Text('Ver escaneados', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.w600))]),
+                    ),
+                    const PopupMenuDivider(),
+                    PopupMenuItem(
                       value: 'Eliminar evento',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.delete_rounded, color: Color(0xFFFF3B30), size: 18),
-                          const SizedBox(width: 12),
-                          const Text('Eliminar evento',
-                              style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.w600)),
-                        ],
-                      ),
+                      child: Row(children: [const Icon(Icons.delete_rounded, color: Color(0xFFFF3B30), size: 18), const SizedBox(width: 12), const Text('Eliminar evento', style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.w600))]),
                     ),
                   ],
                 ),
@@ -655,17 +691,44 @@ class _EventDetailPageState extends State<EventDetailPage> {
               width: double.infinity,
               color: c.primaryLight,
               child: initialMapPosition != null
-                  ? GoogleMap(
-                      initialCameraPosition: CameraPosition(target: initialMapPosition, zoom: 14),
-                      markers: markers,
-                      polylines: polylines,
-                      mapType: MapType.normal,
-                      zoomControlsEnabled: true,
-                      scrollGesturesEnabled: true,
-                      zoomGesturesEnabled: true,
-                      gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
-                        Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
-                      },
+                  ? Stack(
+                      children: [
+                        GoogleMap(
+                          initialCameraPosition: CameraPosition(target: initialMapPosition, zoom: 14),
+                          markers: markers,
+                          polylines: polylines,
+                          mapType: MapType.normal,
+                          zoomControlsEnabled: false, // Desactivado para mayor limpieza
+                          scrollGesturesEnabled: true,
+                          zoomGesturesEnabled: true,
+                          onMapCreated: (controller) => _mapController = controller,
+                          gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                            Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+                          },
+                        ),
+                        // Botón para centrar mapa
+                        Positioned(
+                          right: 12,
+                          bottom: 12,
+                          child: Material(
+                            color: Colors.white,
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(10),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () {
+                                _mapController?.animateCamera(
+                                  CameraUpdate.newLatLng(initialMapPosition!),
+                                );
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                child: Icon(Icons.my_location_rounded, color: c.primaryDeep, size: 20),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     )
                   : Center(child: Icon(Icons.route_rounded, size: 40, color: c.textHint)),
             ),
@@ -766,9 +829,15 @@ class _EventDetailPageState extends State<EventDetailPage> {
       bgColor = Colors.orange.withValues(alpha: 0.1);
       onPressed = null;
     } else if (status == 'rechazado') {
-      buttonChild = const Text('Solicitud rechazada', style: TextStyle(color: Colors.redAccent));
-      bgColor = Colors.red.withValues(alpha: 0.1);
-      onPressed = null;
+      if (_detalle!.evento.esPago) {
+        buttonChild = const Text('Prueba de pago rechazada. Reintentar', style: TextStyle(color: Colors.redAccent));
+        bgColor = Colors.red.withValues(alpha: 0.1);
+        onPressed = _handlePrimaryAction;
+      } else {
+        buttonChild = const Text('Solicitud rechazada', style: TextStyle(color: Colors.redAccent));
+        bgColor = Colors.red.withValues(alpha: 0.1);
+        onPressed = null;
+      }
     } else if (cupo == 0) {
       buttonChild = const Text('Unirse a lista de espera');
     } else {
@@ -780,23 +849,43 @@ class _EventDetailPageState extends State<EventDetailPage> {
     }
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       decoration: BoxDecoration(
-        color: c.card,
-        border: Border(top: BorderSide(color: c.primaryDeepWithAlpha(0.05))),
-      ),
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: bgColor,
-          foregroundColor: fgColor,
-          minimumSize: const Size(double.infinity, 56),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          elevation: 0,
+        color: c.bg.withValues(alpha: 0.8), // Glassmorphism sutil
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            c.bg.withValues(alpha: 0.0),
+            c.bg.withValues(alpha: 1.0),
+          ],
         ),
-        child: DefaultTextStyle(
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: fgColor),
-          child: buttonChild,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: bgColor.withValues(alpha: 0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: bgColor,
+            foregroundColor: fgColor,
+            minimumSize: const Size(double.infinity, 60),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            elevation: 0,
+          ),
+          child: DefaultTextStyle(
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: fgColor, letterSpacing: 0.5),
+            child: buttonChild,
+          ),
         ),
       ),
     );

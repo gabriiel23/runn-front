@@ -5,6 +5,7 @@ library;
 /// Tipos de notificacion soportados por el backend.
 /// Cada tipo tiene un color asociado en la UI.
 enum TipoNotificacion {
+  // ── Grupos ──────────────────────────────────────────────
   invitacionGrupo('invitacion_grupo'),
   invitacionAceptada('invitacion_aceptada'),
   eliminadoGrupo('eliminado_grupo'),
@@ -16,6 +17,21 @@ enum TipoNotificacion {
   nuevoRetoGrupo('nuevo_reto_grupo'),
   nuevaActividadGrupo('nueva_actividad_grupo'),
   nuevaFotoGrupo('nueva_foto_grupo'),
+  // ── Retos y logros ──────────────────────────────────────
+  retoDiarioNuevo('reto_diario_nuevo'),
+  retoSemanalNuevo('reto_semanal_nuevo'),
+  retoCompletado('reto_completado'),
+  retoCercaCompletar('reto_cerca_completar'),
+  logroDesbloqueado('logro_desbloqueado'),
+  progresoLogro('progreso_logro'),
+  // ── Eventos ─────────────────────────────────────────────
+  nuevoEvento('nuevo_evento'),
+  inscripcionAdmitida('inscripcion_admitida'),
+  inscripcionRechazada('inscripcion_rechazada'),
+  eliminadoEvento('eliminado_evento'),
+  eventoFinalizado('evento_finalizado'),
+  listaEsperaEvento('lista_espera_evento'),
+  // ── Otros ───────────────────────────────────────────────
   otros('otros');
 
   final String value;
@@ -52,6 +68,30 @@ enum TipoNotificacion {
         return 'Actividad';
       case TipoNotificacion.nuevaFotoGrupo:
         return 'Galería';
+      case TipoNotificacion.retoDiarioNuevo:
+        return '🔥 Reto diario';
+      case TipoNotificacion.retoSemanalNuevo:
+        return '📅 Reto semanal';
+      case TipoNotificacion.retoCompletado:
+        return '✅ Completado';
+      case TipoNotificacion.retoCercaCompletar:
+        return '⚡ ¡Casi!';
+      case TipoNotificacion.logroDesbloqueado:
+        return '🏅 Logro';
+      case TipoNotificacion.progresoLogro:
+        return '📈 Progreso';
+      case TipoNotificacion.nuevoEvento:
+        return '🎉 Nuevo evento';
+      case TipoNotificacion.inscripcionAdmitida:
+        return '✅ Admitido';
+      case TipoNotificacion.inscripcionRechazada:
+        return '❌ Rechazado';
+      case TipoNotificacion.eliminadoEvento:
+        return 'Eliminado';
+      case TipoNotificacion.eventoFinalizado:
+        return '🏁 Finalizado';
+      case TipoNotificacion.listaEsperaEvento:
+        return '⏳ En espera';
       case TipoNotificacion.otros:
         return 'Otros';
     }
@@ -122,7 +162,14 @@ class NotificacionModel {
   /// Extrae el actividad_id embebido al final del mensaje si existe.
   /// Formato del servidor: `...mensaje... actividad_id:<uuid>`
   String? get actividadIdEmbebida {
-    final match = RegExp(r'actividad_id:([\w-]+)').firstMatch(mensaje);
+    final match = RegExp(r'actividad_id:(\w[\w-]+)').firstMatch(mensaje);
+    return match?.group(1);
+  }
+
+  /// Extrae el evento_id embebido al final del mensaje si existe.
+  /// Formato del servidor: `...mensaje... evento_id:<uuid>`
+  String? get eventoIdEmbebido {
+    final match = RegExp(r'evento_id:([\w-]+)').firstMatch(mensaje);
     return match?.group(1);
   }
 
@@ -132,6 +179,7 @@ class NotificacionModel {
       .replaceAll(RegExp(r'\s*invitacion_id:[\w-]+'), '')
       .replaceAll(RegExp(r'\s*reto_id:[\w-]+'), '')
       .replaceAll(RegExp(r'\s*actividad_id:[\w-]+'), '')
+      .replaceAll(RegExp(r'\s*evento_id:[\w-]+'), '')
       .trim();
 }
 

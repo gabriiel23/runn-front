@@ -825,6 +825,10 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildGroupInfo(c, d),
+                      if (d.disputaActiva != null) ...[
+                        const SizedBox(height: 24),
+                        _buildDisputaBanner(c, d.disputaActiva!),
+                      ],
                       const SizedBox(height: 24),
                       _buildChips(c, d),
                       const SizedBox(height: 24),
@@ -995,6 +999,48 @@ class _GroupDetailPageState extends State<GroupDetailPage> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildDisputaBanner(dynamic c, GrupoDisputaActiva disputa) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE91E63).withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE91E63).withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Color(0xFFE91E63), size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '¡Disputa Activa!',
+                  style: const TextStyle(
+                    color: Color(0xFFE91E63),
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'El grupo está conquistando "${disputa.territorioNombre}". ¡Registra tu tiempo individual en las próximas ${disputa.horasRestantes} horas para sumar al promedio!',
+            style: TextStyle(
+              color: c.textPrimary,
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

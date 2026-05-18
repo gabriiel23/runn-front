@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:runn_front/core/routes/app_routes.dart';
 import 'package:runn_front/core/theme/theme_provider.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/features/start_career/services/tracking_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  TrackingService.init();
   final themeNotifier = await ThemeNotifier.load();
   runApp(MyApp(themeNotifier: themeNotifier));
 }

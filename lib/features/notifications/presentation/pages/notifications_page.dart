@@ -127,8 +127,10 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
     // 2. Acción según tipo
     final grupoId = notif.grupoIdEmbebido;
-    
+    final eventoId = notif.eventoIdEmbebido;
+
     switch (notif.tipo) {
+      // ── GRUPOS ─────────────────────────────────────────────
       case TipoNotificacion.invitacionGrupo:
         final invId = notif.invitacionIdEmbebida;
         if (grupoId != null && invId != null) {
@@ -137,7 +139,6 @@ class _NotificationsScreenState extends State<NotificationsScreen>
             grupoId: grupoId,
             invitacionId: invId,
             onHandled: (_) async {
-              // Eliminar la notificación al haber sido gestionada (aceptar/rechazar)
               try {
                 await NotificacionesService.eliminarNotificacion(notif.id);
               } catch (_) {}
@@ -151,43 +152,37 @@ class _NotificationsScreenState extends State<NotificationsScreen>
 
       case TipoNotificacion.solicitudUnion:
         if (grupoId != null) {
-          context.pushNamed('group_members',
+          context.goNamed('group_members',
               pathParameters: {'grupoId': grupoId});
         }
         break;
 
       case TipoNotificacion.invitacionAceptada:
       case TipoNotificacion.solicitudAceptada:
-        if (grupoId != null) {
-          context.pushNamed('group_detail',
-              pathParameters: {'grupoId': grupoId});
-        }
-        break;
-
       case TipoNotificacion.nuevoAdmin:
         if (grupoId != null) {
-          context.pushNamed('group_detail',
+          context.goNamed('group_detail',
               pathParameters: {'grupoId': grupoId});
         }
         break;
 
       case TipoNotificacion.nuevoRetoGrupo:
         if (grupoId != null) {
-          context.pushNamed('group_challenges',
+          context.goNamed('group_challenges',
               pathParameters: {'grupoId': grupoId});
         }
         break;
 
       case TipoNotificacion.nuevaActividadGrupo:
         if (grupoId != null) {
-          context.pushNamed('group_activities',
+          context.goNamed('group_activities',
               pathParameters: {'grupoId': grupoId});
         }
         break;
 
       case TipoNotificacion.nuevaFotoGrupo:
         if (grupoId != null) {
-          context.pushNamed('group_gallery',
+          context.goNamed('group_gallery',
               pathParameters: {'grupoId': grupoId});
         }
         break;
@@ -195,8 +190,47 @@ class _NotificationsScreenState extends State<NotificationsScreen>
       case TipoNotificacion.solicitudRechazada:
       case TipoNotificacion.eliminadoGrupo:
       case TipoNotificacion.grupoEliminado:
+        // Sin navegación específica
+        break;
+
+      // ── RETOS ─────────────────────────────────────────────
+      case TipoNotificacion.retoDiarioNuevo:
+      case TipoNotificacion.retoCompletado:
+      case TipoNotificacion.retoCercaCompletar:
+        // Navegar a la sección de retos del home (retos diario/semanal)
+        context.goNamed('retos');
+        break;
+
+      case TipoNotificacion.retoSemanalNuevo:
+        context.goNamed('retos');
+        break;
+
+      case TipoNotificacion.logroDesbloqueado:
+      case TipoNotificacion.progresoLogro:
+        // Navegar a la vista de insignias/logros
+        context.goNamed('retos');
+        break;
+
+      // ── EVENTOS ────────────────────────────────────────────
+      case TipoNotificacion.nuevoEvento:
+      case TipoNotificacion.inscripcionAdmitida:
+      case TipoNotificacion.eventoFinalizado:
+      case TipoNotificacion.listaEsperaEvento:
+        if (eventoId != null) {
+          context.goNamed('event_detail',
+              pathParameters: {'eventId': eventoId});
+        } else {
+          // Sin ID, ir a la lista general
+          context.goNamed('event_all');
+        }
+        break;
+
+      case TipoNotificacion.inscripcionRechazada:
+      case TipoNotificacion.eliminadoEvento:
+        // Mostrar el mensaje sin navegar (ya contienen el detalle en el texto)
+        break;
+
       case TipoNotificacion.otros:
-        // No hay navegación específica
         break;
     }
   }
@@ -741,6 +775,32 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return 'Nueva actividad en el grupo';
       case TipoNotificacion.nuevaFotoGrupo:
         return 'Nueva foto en la galería';
+      // ── Retos
+      case TipoNotificacion.retoDiarioNuevo:
+        return '🔥 Nuevo reto diario';
+      case TipoNotificacion.retoSemanalNuevo:
+        return '📅 Nuevo reto semanal';
+      case TipoNotificacion.retoCompletado:
+        return '¡Reto completado!';
+      case TipoNotificacion.retoCercaCompletar:
+        return '¡Estás cerca de completarlo!';
+      case TipoNotificacion.logroDesbloqueado:
+        return '🏅 Nuevo logro desbloqueado';
+      case TipoNotificacion.progresoLogro:
+        return 'Progreso en tu logro';
+      // ── Eventos
+      case TipoNotificacion.nuevoEvento:
+        return '🎉 Nuevo evento disponible';
+      case TipoNotificacion.inscripcionAdmitida:
+        return '¡Has sido admitido!';
+      case TipoNotificacion.inscripcionRechazada:
+        return 'Solicitud rechazada';
+      case TipoNotificacion.eliminadoEvento:
+        return 'Eliminado del evento';
+      case TipoNotificacion.eventoFinalizado:
+        return '🏁 Evento finalizado';
+      case TipoNotificacion.listaEsperaEvento:
+        return 'En lista de espera';
       case TipoNotificacion.otros:
         return 'Notificacion';
     }
@@ -765,6 +825,32 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return Icons.directions_run_rounded;
       case TipoNotificacion.nuevaFotoGrupo:
         return Icons.photo_library_rounded;
+      // Retos
+      case TipoNotificacion.retoDiarioNuevo:
+        return Icons.whatshot_rounded;
+      case TipoNotificacion.retoSemanalNuevo:
+        return Icons.calendar_month_rounded;
+      case TipoNotificacion.retoCompletado:
+        return Icons.check_circle_rounded;
+      case TipoNotificacion.retoCercaCompletar:
+        return Icons.bolt_rounded;
+      case TipoNotificacion.logroDesbloqueado:
+        return Icons.emoji_events_rounded;
+      case TipoNotificacion.progresoLogro:
+        return Icons.trending_up_rounded;
+      // Eventos
+      case TipoNotificacion.nuevoEvento:
+        return Icons.celebration_rounded;
+      case TipoNotificacion.inscripcionAdmitida:
+        return Icons.verified_rounded;
+      case TipoNotificacion.inscripcionRechazada:
+        return Icons.cancel_rounded;
+      case TipoNotificacion.eliminadoEvento:
+        return Icons.person_remove_rounded;
+      case TipoNotificacion.eventoFinalizado:
+        return Icons.flag_rounded;
+      case TipoNotificacion.listaEsperaEvento:
+        return Icons.hourglass_bottom_rounded;
       case TipoNotificacion.otros:
         return Icons.notifications_rounded;
     }
@@ -791,6 +877,32 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return const Color(0xFF00BCD4); // Cian
       case TipoNotificacion.nuevaFotoGrupo:
         return const Color(0xFF9C27B0); // Púrpura
+      // Retos
+      case TipoNotificacion.retoDiarioNuevo:
+        return const Color(0xFFFF5722); // Naranja intenso
+      case TipoNotificacion.retoSemanalNuevo:
+        return const Color(0xFF3F51B5); // Indigo
+      case TipoNotificacion.retoCompletado:
+        return const Color(0xFF4CAF50); // Verde
+      case TipoNotificacion.retoCercaCompletar:
+        return const Color(0xFFFFC107); // Amarillo
+      case TipoNotificacion.logroDesbloqueado:
+        return const Color(0xFFFFD700); // Dorado
+      case TipoNotificacion.progresoLogro:
+        return const Color(0xFF00BCD4); // Cian
+      // Eventos
+      case TipoNotificacion.nuevoEvento:
+        return const Color(0xFF4CAF50); // Verde
+      case TipoNotificacion.inscripcionAdmitida:
+        return const Color(0xFF4CAF50); // Verde
+      case TipoNotificacion.inscripcionRechazada:
+        return const Color(0xFFF44336); // Rojo
+      case TipoNotificacion.eliminadoEvento:
+        return const Color(0xFFF44336); // Rojo
+      case TipoNotificacion.eventoFinalizado:
+        return const Color(0xFF607D8B); // Gris azulado
+      case TipoNotificacion.listaEsperaEvento:
+        return const Color(0xFFFF9800); // Naranja
       case TipoNotificacion.otros:
         return context.colors.textHint; // Gris
     }

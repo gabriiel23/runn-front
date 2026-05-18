@@ -101,6 +101,7 @@ class ActividadHistorial {
   final int puntosGanados;
   final String? fotoUrl;
   final bool compartida;
+  final List<Map<String, double>>? puntosRuta;
 
   const ActividadHistorial({
     required this.id,
@@ -122,6 +123,7 @@ class ActividadHistorial {
     required this.puntosGanados,
     this.fotoUrl,
     required this.compartida,
+    this.puntosRuta,
   });
 
   factory ActividadHistorial.fromJson(Map<String, dynamic> json) {
@@ -135,6 +137,16 @@ class ActividadHistorial {
       if (v == null) return null;
       if (v is num) return v.toDouble();
       return double.tryParse(v.toString());
+    }
+
+    List<Map<String, double>>? puntosRutaParsed;
+    if (json['puntos_ruta'] != null && json['puntos_ruta'] is List) {
+      puntosRutaParsed = (json['puntos_ruta'] as List).map((p) {
+        return {
+          'lat': (p['lat'] as num).toDouble(),
+          'lng': (p['lng'] as num).toDouble(),
+        };
+      }).toList();
     }
 
     return ActividadHistorial(
@@ -157,6 +169,7 @@ class ActividadHistorial {
       puntosGanados: (json['puntos_ganados'] as num?)?.toInt() ?? 0,
       fotoUrl: json['foto_url']?.toString(),
       compartida: json['compartida'] == true,
+      puntosRuta: puntosRutaParsed,
     );
   }
 }

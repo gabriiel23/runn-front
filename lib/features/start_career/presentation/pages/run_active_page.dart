@@ -1,16 +1,16 @@
-import 'dart:async';
-import 'dart:math';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 import 'package:runn_front/core/config/api_config.dart';
 import 'package:runn_front/core/services/http_client.dart';
+import 'package:runn_front/core/utils/format_utils.dart';
 import '../../services/actividades_service.dart';
+import '../../services/tracking_service.dart';
 import '../../domain/actividad_model.dart';
 
 class RunActivePage extends StatefulWidget {
@@ -35,20 +35,19 @@ class _RunActivePageState extends State<RunActivePage>
     with TickerProviderStateMixin {
   AppColors get c => context.colors;
 
-  // Cronometro
+  // Cronometro (lo mantiene el isolate del servicio, UI lo refleja)
   int _duracionSegs = 0;
   bool _corriendo = true;
-  Timer? _timer;
 
-  // Metricas
+  // Metricas (actualizadas desde el isolate)
   List<LatLng> _puntos = [];
   double _distanciaKm = 0;
   double _velocidadMaxKmh = 0;
+  double _velocidadActualKmh = 0;
   double _pesoKg = 70;
 
   // GPS
-  StreamSubscription<Position>? _gpsSub;
-  Position? _lastPosition;
+  // (el GPS lo maneja el foreground service; aquí solo recibimos datos)
 
   // Mapa
   GoogleMapController? _mapController;
@@ -66,19 +65,17 @@ class _RunActivePageState extends State<RunActivePage>
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
 
-    _cargarPeso();
-    _startTimer();
-    _startGps();
-
     if (widget.latInicio != null && widget.lngInicio != null) {
       _puntos = [LatLng(widget.latInicio!, widget.lngInicio!)];
     }
+
+    _cargarPeso();
+    _iniciarServicio();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _gpsSub?.cancel();
+    TrackingService.removeDataCallback(_onDataFromIsolate);
     _pulseCtrl.dispose();
     _mapController?.dispose();
     super.dispose();
@@ -90,75 +87,63 @@ class _RunActivePageState extends State<RunActivePage>
     if (peso != null && mounted) setState(() => _pesoKg = peso);
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _duracionSegs++);
+  // ─── FOREGROUND SERVICE ────────────────────────────────────────────────────
+
+  Future<void> _iniciarServicio() async {
+    // Pedir permiso de notificación si no lo tiene
+    final bgStatus = await FlutterForegroundTask.checkNotificationPermission();
+    if (bgStatus != NotificationPermission.granted) {
+      await FlutterForegroundTask.requestNotificationPermission();
+    }
+
+    // Registrar el callback ANTES de arrancar el servicio
+    TrackingService.addDataCallback(_onDataFromIsolate);
+
+    await TrackingService.start();
+  }
+
+  void _onDataFromIsolate(dynamic data) {
+    if (!mounted || data is! Map) return;
+
+    final lat = data['lat'] as double?;
+    final lng = data['lng'] as double?;
+    final speed = data['speed'] as double?; // m/s
+    final distancia = data['distanciaKm'] as double?;
+    final duracion = data['duracionSegs'] as int?;
+
+    setState(() {
+      if (distancia != null) _distanciaKm = distancia;
+      if (duracion != null) _duracionSegs = duracion;
+      if (speed != null) {
+        _velocidadActualKmh = speed * 3.6;
+        if (_velocidadActualKmh > _velocidadMaxKmh) {
+          _velocidadMaxKmh = _velocidadActualKmh;
+        }
+      }
+      if (lat != null && lng != null) {
+        final nuevo = LatLng(lat, lng);
+        _puntos = [..._puntos, nuevo];
+        _mapController?.animateCamera(CameraUpdate.newLatLng(nuevo));
+      }
     });
   }
 
   void _pausarReanudar() {
     if (_corriendo) {
-      _timer?.cancel();
-      _gpsSub?.cancel();
+      FlutterForegroundTask.stopService();
+      TrackingService.removeDataCallback(_onDataFromIsolate);
     } else {
-      _startTimer();
-      _startGps();
+      TrackingService.addDataCallback(_onDataFromIsolate);
+      TrackingService.start();
+      TrackingService.syncState(
+        distanciaKm: _distanciaKm,
+        duracionSegs: _duracionSegs,
+      );
     }
     setState(() => _corriendo = !_corriendo);
   }
 
-  void _startGps() {
-    _gpsSub?.cancel();
-    _gpsSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-      ),
-    ).listen(_onNewPosition, onError: (_) {});
-  }
-
-  void _onNewPosition(Position pos) {
-    if (!mounted) return;
-    final nuevo = LatLng(pos.latitude, pos.longitude);
-
-    double delta = 0;
-    if (_lastPosition != null) {
-      delta = _haversineKm(
-        _lastPosition!.latitude,
-        _lastPosition!.longitude,
-        pos.latitude,
-        pos.longitude,
-      );
-    }
-
-    if (pos.speed > 0) {
-      final velKmh = pos.speed * 3.6;
-      if (velKmh > _velocidadMaxKmh) _velocidadMaxKmh = velKmh;
-    }
-
-    setState(() {
-      _puntos = [..._puntos, nuevo];
-      _distanciaKm += delta;
-      _lastPosition = pos;
-    });
-
-    _mapController?.animateCamera(CameraUpdate.newLatLng(nuevo));
-  }
-
-  double _haversineKm(double lat1, double lng1, double lat2, double lng2) {
-    const R = 6371.0;
-    final dLat = _deg2rad(lat2 - lat1);
-    final dLng = _deg2rad(lng2 - lng1);
-    final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_deg2rad(lat1)) *
-            cos(_deg2rad(lat2)) *
-            sin(dLng / 2) *
-            sin(dLng / 2);
-    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return R * c;
-  }
-
-  double _deg2rad(double deg) => deg * (pi / 180);
+  // ─── MÉTRICAS DERIVADAS ────────────────────────────────────────────────────
 
   double get _ritmoMinkm =>
       _distanciaKm > 0 ? (_duracionSegs / 60) / _distanciaKm : 0;
@@ -217,9 +202,62 @@ class _RunActivePageState extends State<RunActivePage>
     await _finalizarCarrera();
   }
 
+  Future<void> _confirmarCancelar() async {
+    final tc = context.colors;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: tc.bg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('¿Cancelar carrera?',
+              style: TextStyle(
+                  color: tc.textPrimary, fontWeight: FontWeight.bold)),
+          content: Text(
+            'Esta actividad se eliminará y no se guardará en tu historial.',
+            style: TextStyle(color: tc.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child:
+                  Text('Seguir corriendo', style: TextStyle(color: tc.textHint)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF3B30),
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Cancelar',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+    if (ok != true) return;
+    await _cancelarCarrera();
+  }
+
+  Future<void> _cancelarCarrera() async {
+    await TrackingService.stop();
+    TrackingService.removeDataCallback(_onDataFromIsolate);
+    try {
+      // Intentamos borrar la actividad del servidor ya que no se va a guardar
+      await ActividadesService.eliminarActividad(widget.actividadId);
+      if (mounted) context.go('/home');
+    } catch (e) {
+      if (mounted) context.go('/home');
+    }
+  }
+
   Future<void> _finalizarCarrera() async {
-    _timer?.cancel();
-    _gpsSub?.cancel();
+    await TrackingService.stop();
+    TrackingService.removeDataCallback(_onDataFromIsolate);
     setState(() {
       _finalizando = true;
       _errorFinalizar = null;
@@ -292,9 +330,8 @@ class _RunActivePageState extends State<RunActivePage>
       backgroundColor: tc.bg,
       body: Column(
         children: [
-          // MAPA (mitad superior)
+          // MAPA (mitad superior expandible libremente)
           Expanded(
-            flex: 5,
             child: Stack(
               children: [
                 GoogleMap(
@@ -334,101 +371,143 @@ class _RunActivePageState extends State<RunActivePage>
                       : {},
                 ),
 
-                // Badge de estado
+                // TOP BAR (Badge y Cancelar alineados a los extremos)
                 Positioned(
-                  top: MediaQuery.of(context).padding.top + 8,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: tc.card.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(50),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 8)
-                        ],
+                  top: MediaQuery.of(context).padding.top + 12,
+                  left: 16,
+                  right: 16,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // Botón Cancelar (Inicio)
+                      GestureDetector(
+                        onTap: _confirmarCancelar,
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF3B30),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF3B30).withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          child: const Icon(Icons.close_rounded, color: Colors.white, size: 20),
+                        ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          AnimatedBuilder(
-                            animation: _pulseCtrl,
-                            builder: (_, __) => Container(
-                              width: 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: _corriendo
-                                    ? Color.lerp(
-                                        tc.primaryDeep,
-                                        tc.primaryDeep.withValues(alpha: 0.4),
-                                        _pulseCtrl.value)!
-                                    : Colors.orange,
+
+                      // Badge de estado (Final)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: tc.card.withValues(alpha: 0.95),
+                          borderRadius: BorderRadius.circular(50),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 8)
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedBuilder(
+                              animation: _pulseCtrl,
+                              builder: (_, __) => Container(
+                                width: 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: _corriendo
+                                      ? Color.lerp(
+                                          tc.primaryDeep,
+                                          tc.primaryDeep.withValues(alpha: 0.4),
+                                          _pulseCtrl.value)!
+                                      : Colors.orange,
+                                ),
                               ),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            _corriendo ? 'En progreso' : 'Pausado',
-                            style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                color: tc.textPrimary,
-                                fontSize: 13),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Text(
+                              _corriendo ? 'En progreso' : 'Pausado',
+                              style: TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  color: tc.textPrimary,
+                                  fontSize: 13),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
 
-          // METRICAS (mitad inferior)
-          Expanded(
-            flex: 6,
-            child: SingleChildScrollView(
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                color: tc.bg,
-                child: Column(
+          // METRICAS (mitad inferior) - Ajustable a su contenido
+          Container(
+            padding: EdgeInsets.fromLTRB(20, 24, 20, MediaQuery.of(context).padding.bottom > 0 ? MediaQuery.of(context).padding.bottom + 8 : 28),
+            decoration: BoxDecoration(
+              color: tc.bg,
+              boxShadow: [
+                BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, -4))
+              ]
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min, // Esto hace que crezca solo lo necesario
+              children: [
+                // Cronometro Central
+                Column(
                   children: [
-                    // Cronometro
-                    Text('Tiempo',
+                    Text('TIEMPO TOTAL',
                         style: TextStyle(
                             color: tc.textHint,
-                            fontSize: 12,
-                            letterSpacing: 1)),
-                    const SizedBox(height: 2),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2)),
+                    const SizedBox(height: 1),
                     Text(
                       _fmt(_duracionSegs),
                       style: TextStyle(
                         color: tc.textPrimary,
-                        fontSize: 52,
+                        fontSize: 48,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: -2,
+                        letterSpacing: -1.5,
                         height: 1,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                  ],
+                ),
+                const SizedBox(height: 20),
 
-                    // Distancia + Ritmo
-                    Row(
-                      children: [
-                        Expanded(
-                            child: _metricCard(
-                                tc,
-                                Icons.straighten_rounded,
-                                tc.primaryDeep,
-                                'Distancia',
-                                _distanciaKm.toStringAsFixed(2),
-                                'km')),
-                        const SizedBox(width: 12),
-                        Expanded(
+                // Cuadrícula de Métricas
+                LayoutBuilder(builder: (context, constraints) {
+                  final cardWidth = (constraints.maxWidth - 12) / 2;
+                  return Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            width: cardWidth,
+                            child: Builder(builder: (_) {
+                              final dist = formatDistancia(_distanciaKm);
+                              return _metricCard(
+                                  tc,
+                                  Icons.straighten_rounded,
+                                  tc.primaryDeep,
+                                  'Distancia',
+                                  dist.valor,
+                                  dist.unidad);
+                            }),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
                             child: _metricCard(
                                 tc,
                                 Icons.speed_rounded,
@@ -437,147 +516,132 @@ class _RunActivePageState extends State<RunActivePage>
                                 _ritmoMinkm > 0
                                     ? _ritmoMinkm.toStringAsFixed(1)
                                     : '--',
-                                'min/km')),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Calorias + Velocidad
-                    Row(
-                      children: [
-                        Expanded(
+                                'min/km'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SizedBox(
+                            width: cardWidth,
                             child: _metricCard(
                                 tc,
                                 Icons.local_fire_department_rounded,
                                 const Color(0xFFFF6B35),
-                                'Calorias',
+                                'Calorías',
                                 '$_calorias',
-                                'kcal')),
-                        const SizedBox(width: 12),
-                        Expanded(
+                                'kcal'),
+                          ),
+                          SizedBox(
+                            width: cardWidth,
                             child: _metricCard(
                                 tc,
                                 Icons.trending_up_rounded,
                                 const Color(0xFF34C759),
                                 'Velocidad',
-                                _velocidadPromedioKmh.toStringAsFixed(1),
-                                'km/h')),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
+                                _velocidadActualKmh.toStringAsFixed(1),
+                                'km/h'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }),
 
-                    // Error de finalizar
-                    if (_errorFinalizar != null) ...[
+                const SizedBox(height: 16),
+
+                // Botones de Acción y Errores
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Error de finalizar (si existe)
+                    if (_errorFinalizar != null)
                       Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        margin: const EdgeInsets.only(bottom: 12),
                         decoration: BoxDecoration(
-                          color:
-                              const Color(0xFFFF3B30).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: const Color(0xFFFF3B30)
-                                  .withValues(alpha: 0.3)),
+                          color: const Color(0xFFFF3B30).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFFF3B30).withValues(alpha: 0.2)),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.warning_rounded,
-                                color: Color(0xFFFF3B30), size: 18),
+                            const Icon(Icons.warning_rounded, color: Color(0xFFFF3B30), size: 14),
                             const SizedBox(width: 8),
                             Expanded(
-                              child: Text(
-                                _errorFinalizar!,
-                                style: const TextStyle(
-                                    color: Color(0xFFFF3B30), fontSize: 13),
-                              ),
+                              child: Text(_errorFinalizar!,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Color(0xFFFF3B30), fontSize: 11)),
                             ),
-                            TextButton(
-                              onPressed: _finalizarCarrera,
+                            GestureDetector(
+                              onTap: _finalizarCarrera,
                               child: const Text('Reintentar',
-                                  style: TextStyle(
-                                      color: Color(0xFFFF3B30),
-                                      fontWeight: FontWeight.bold)),
+                                  style: TextStyle(color: Color(0xFFFF3B30), fontWeight: FontWeight.bold, fontSize: 11)),
                             ),
                           ],
                         ),
                       ),
-                    ],
 
-                    // Botones
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: SizedBox(
-                            height: 52,
-                            child: ElevatedButton.icon(
-                              onPressed:
-                                  _finalizando ? null : _pausarReanudar,
-                              icon: Icon(
-                                _corriendo
-                                    ? Icons.pause_rounded
-                                    : Icons.play_arrow_rounded,
-                                color: Colors.white,
-                              ),
-                              label: Text(
-                                _corriendo ? 'Pausar' : 'Reanudar',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 15),
-                              ),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _corriendo
-                                    ? tc.primaryDeep
-                                    : const Color(0xFF34C759),
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16)),
+                    if (_finalizando)
+                      const Center(child: CircularProgressIndicator(strokeWidth: 3))
+                    else
+                      Row(
+                        children: [
+                          // Botón Pausar/Reanudar (Principal)
+                          Expanded(
+                            flex: 3,
+                            child: SizedBox(
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: _pausarReanudar,
+                                icon: Icon(
+                                  _corriendo ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                label: Text(
+                                  _corriendo ? 'PAUSAR' : 'REANUDAR',
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.5,
+                                      fontSize: 12),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: _corriendo ? tc.primaryDeep : const Color(0xFF34C759),
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          flex: 2,
-                          child: SizedBox(
-                            height: 52,
-                            child: _finalizando
-                                ? Container(
-                                    height: 52,
-                                    decoration: BoxDecoration(
-                                      color: tc.card,
-                                      borderRadius:
-                                          BorderRadius.circular(16),
-                                    ),
-                                    child: const Center(
-                                        child: CircularProgressIndicator(
-                                            strokeWidth: 2)),
-                                  )
-                                : OutlinedButton(
-                                    onPressed: _confirmarFinalizar,
-                                    style: OutlinedButton.styleFrom(
-                                      side: const BorderSide(
-                                          color: Color(0xFFFF3B30),
-                                          width: 1.5),
-                                      foregroundColor:
-                                          const Color(0xFFFF3B30),
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(16)),
-                                    ),
-                                    child: const Text('Finalizar',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 15)),
-                                  ),
+                          const SizedBox(width: 10),
+                          // Botón Finalizar
+                          Expanded(
+                            flex: 2,
+                            child: SizedBox(
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: _confirmarFinalizar,
+                                icon: const Icon(Icons.stop_rounded, color: Colors.white, size: 18),
+                                label: const Text('PARAR',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFFF3B30),
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
                   ],
                 ),
-              ),
+              ],
             ),
           ),
         ],
@@ -588,44 +652,66 @@ class _RunActivePageState extends State<RunActivePage>
   Widget _metricCard(AppColors tc, IconData icon, Color color, String label,
       String value, String unit) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: tc.card,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 14),
-              const SizedBox(width: 4),
-              Text(label,
-                  style: TextStyle(
-                      color: tc.textHint,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600)),
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: color, size: 13),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  color: tc.textHint,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 8),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
             children: [
-              Text(value,
-                  style: TextStyle(
-                      color: tc.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      height: 1)),
+              Text(
+                value,
+                style: TextStyle(
+                  color: tc.textPrimary,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
               const SizedBox(width: 3),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Text(unit,
-                    style: TextStyle(
-                        color: tc.textSecondary,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600)),
+              Text(
+                unit,
+                style: TextStyle(
+                  color: tc.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),

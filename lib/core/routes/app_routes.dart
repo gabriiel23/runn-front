@@ -11,6 +11,8 @@ import 'package:runn_front/features/login/register/presentation/pages/login_page
 import 'package:runn_front/features/login/register/presentation/pages/register_page.dart';
 import 'package:runn_front/features/home/presentation/pages/home_page.dart';
 import 'package:runn_front/features/home/presentation/pages/news_edit_page.dart';
+import 'package:runn_front/features/home/presentation/pages/admin_frases_list_page.dart';
+import 'package:runn_front/features/home/presentation/pages/admin_frase_edit_page.dart';
 import 'package:runn_front/features/community/presentation/pages/community_page.dart';
 import 'package:runn_front/features/community/presentation/pages/runners_page.dart';
 import 'package:runn_front/features/community/presentation/pages/groups_page.dart';
@@ -45,6 +47,8 @@ import 'package:runn_front/features/community/presentation/pages/event_participa
 import 'package:runn_front/features/community/presentation/pages/event_ticket_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_waiting_list_page.dart';
 import 'package:runn_front/features/community/presentation/pages/event_scanner_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_scanned_list_page.dart';
+import 'package:runn_front/features/community/presentation/pages/event_all_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_statistics_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/my_badges_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/settings_page.dart';
@@ -178,6 +182,27 @@ final GoRouter appRouter = GoRouter(
         final id = state.pathParameters['id']!;
         return NewsEditPage(novedadId: id);
       },
+    ),
+
+    // Admin Frases (Global pages over bottom bar)
+    GoRoute(
+      path: '/admin_frases',
+      name: 'admin_frases',
+      builder: (context, state) => const AdminFrasesListPage(),
+      routes: [
+        GoRoute(
+          path: ':id',
+          name: 'admin_frase_edit',
+          builder: (context, state) {
+            final id = state.pathParameters['id']!;
+            final extra = state.extra as Map<String, dynamic>?;
+            return AdminFraseEditPage(
+              fraseId: id,
+              fraseData: extra,
+            );
+          },
+        ),
+      ]
     ),
 
     // Shell — main navigation with bottom bar
@@ -370,6 +395,19 @@ final GoRouter appRouter = GoRouter(
                     );
                   },
                 ),
+                GoRoute(
+                  path: 'event/:eventId/scanned',
+                  name: 'event_scanned_list',
+                  builder: (context, state) {
+                    final eventId = state.pathParameters['eventId']!;
+                    return EventScannedListPage(eventId: eventId);
+                  },
+                ),
+                GoRoute(
+                  path: 'events/all',
+                  name: 'event_all',
+                  builder: (context, state) => const EventAllPage(),
+                ),
               ],
             ),
           ],
@@ -388,8 +426,7 @@ final GoRouter appRouter = GoRouter(
                   path: 'detail/:id',
                   name: 'territory_detail',
                   builder: (context, state) {
-                    final idStr = state.pathParameters['id']!;
-                    final id = int.tryParse(idStr) ?? 1;
+                    final id = state.pathParameters['id']!;
                     return TerritoryDetailView(
                       territoryId: id,
                       onBack: () => context.pop(),

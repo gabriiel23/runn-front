@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
@@ -115,6 +115,9 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen>
     with SingleTickerProviderStateMixin {
+  
+  int _currentStep = 0; // 0 = Seleccionar Tema, 1 = Ver Carrusel
+
   static const int _virtualMultiplier = 1000;
   late final PageController _pageController;
   int _virtualPage = _carouselPages.length * _virtualMultiplier;
@@ -133,7 +136,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           ..addStatusListener((status) {
             if (status == AnimationStatus.completed) _nextPage();
           });
-    _timerController.forward();
+    
+    // Si iniciamos en step 1, correr el timer. Por ahora inicia en 0.
+    // _timerController.forward();
   }
 
   void _nextPage() {
@@ -146,6 +151,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _goToRealIndex(int index) {
+    if (_currentStep == 0) return;
     final offset = index - _realIndex;
     final targetVirtual = _virtualPage + offset;
     _pageController.animateToPage(
@@ -156,8 +162,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   }
 
   void _onPageChanged(int virtualIndex) {
+    if (_currentStep == 0) return;
     setState(() => _virtualPage = virtualIndex);
     _timerController.reset();
+    _timerController.forward();
+  }
+
+  void _continuarAlCarrusel() {
+    setState(() {
+      _currentStep = 1;
+    });
+    // Al entrar al carrusel, empezamos el auto-slide
     _timerController.forward();
   }
 
@@ -174,41 +189,194 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     return Scaffold(
       backgroundColor: colors.bg,
       body: SafeArea(
-        child: Column(
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 600),
+          switchInCurve: Curves.easeOut,
+          switchOutCurve: Curves.easeIn,
+          child: _currentStep == 0
+              ? _buildStep1(context, colors)
+              : _buildStep2(context, colors),
+        ),
+      ),
+    );
+  }
+
+  // ── STEP 1: Selección de Tema ──────────────────────────────────────────────
+  Widget _buildStep1(BuildContext context, AppColors colors) {
+    return LayoutBuilder(
+      key: const ValueKey('step1'),
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              child: IntrinsicHeight(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Spacer(),
+                    // Logo o ícono central
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: colors.primaryDeep.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.palette_rounded,
+                        size: 48,
+                        color: colors.primaryDeep,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Personaliza tu Experiencia',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w800,
+                        color: colors.textPrimary,
+                        letterSpacing: -0.8,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Elige cómo prefieres que se vea tu aplicación.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: colors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+
+                    _buildThemeSelector(context),
+                    
+                    const Spacer(),
+                    const SizedBox(height: 16),
+                    
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 32),
+                      child: _buildBottomButton(
+                        context: context,
+                        colors: colors,
+                        text: 'Continuar',
+                        icon: Icons.arrow_forward_rounded,
+                        onTap: _continuarAlCarrusel,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeSelector(BuildContext context) {
+    // Tenemos 4 temas, los mostraremos en 2 filas de 2.
+    return Column(
+      children: [
+        Row(
           children: [
-            // ── HEADER: Selector de tema ───────────────────────────────────
-            Expanded(
-              flex: 20,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 0, bottom: 0),
-                child: _buildThemeHeader(context),
+            Expanded(child: _buildThemeCard(context, _themes[0])),
+            const SizedBox(width: 12),
+            Expanded(child: _buildThemeCard(context, _themes[1])),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(child: _buildThemeCard(context, _themes[2])),
+            const SizedBox(width: 12),
+            Expanded(child: _buildThemeCard(context, _themes[3])),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThemeCard(BuildContext context, _ThemeOption opt) {
+    final notifier = context.themeNotifier;
+    final colors = context.colors;
+    final isSelected =
+        notifier.scheme == opt.scheme && notifier.brightness == opt.brightness;
+
+    return GestureDetector(
+      onTap: () => notifier.setTheme(opt.scheme, opt.brightness),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? opt.swatchDeep.withValues(alpha: 0.15)
+              : colors.card,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected
+                ? opt.swatchDeep
+                : colors.primaryWithAlpha(0.15),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: opt.swatchDeep.withValues(alpha: 0.1),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  )
+                ]
+              : [],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 24, // 14 + 10 para superponer un poco
+                  height: 14,
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        left: 0,
+                        child: _colorDot(opt.swatch, 14),
+                      ),
+                      Positioned(
+                        left: 10,
+                        child: _colorDot(opt.swatchDeep, 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(opt.emoji, style: const TextStyle(fontSize: 24)),
+            const SizedBox(height: 8),
+            Text(
+              opt.label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: isSelected ? opt.swatchDeep : colors.textSecondary,
               ),
             ),
-
-            // ── Divider separador ──────────────────────────────────────────
-            Divider(
-              height: 0,
-              thickness: 2,
-              indent: 20,
-              endIndent: 20,
-              color: colors.primaryDark,
-            ),
-
-            // ── MEDIO: Carrusel infinito ───────────────────────────────────
-            Expanded(
-              flex: 60,
-              child: Padding(
-                padding: const EdgeInsets.only(top:48, bottom: 48),
-                child: _buildCarousel(colors),
-              ),
-            ),
-
-            // ── BOTTOM: Botón ──────────────────────────────────────────────
-            Expanded(
-              flex: 10,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 16),
-                child: _buildBottomButton(context, colors),
+            Text(
+              opt.label2,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w400,
+                color: isSelected
+                    ? opt.swatchDeep.withValues(alpha: 0.8)
+                    : colors.textSecondary,
               ),
             ),
           ],
@@ -217,98 +385,34 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  // ── HEADER: fila horizontal con chips de tema ──────────────────────────────
-  Widget _buildThemeHeader(BuildContext context) {
-    final notifier = context.themeNotifier;
-    final colors = context.colors;
+  // ── STEP 2: Carrusel Infinito ──────────────────────────────────────────────
+  Widget _buildStep2(BuildContext context, AppColors colors) {
+    return Column(
+      key: const ValueKey('step2'),
+      children: [
+        // ── MEDIO: Carrusel infinito ───────────────────────────────────
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 48, bottom: 24),
+            child: _buildCarousel(colors),
+          ),
+        ),
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(
-            'ELIGE TU ESTILO',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: colors.textSecondary,
-              letterSpacing: 1.1,
-            ),
+        // ── BOTTOM: Botón ──────────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
+          child: _buildBottomButton(
+            context: context,
+            colors: colors,
+            text: 'Comenzar',
+            icon: Icons.rocket_launch_rounded,
+            onTap: () => context.go('/login'),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: _themes.map((opt) {
-              final isSelected =
-                  notifier.scheme == opt.scheme &&
-                  notifier.brightness == opt.brightness;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => notifier.setTheme(opt.scheme, opt.brightness),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? opt.swatchDeep.withValues(alpha: 0.15)
-                          : colors.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected
-                            ? opt.swatchDeep
-                            : colors.primaryWithAlpha(0.15),
-                        width: isSelected ? 2 : 1,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _colorDot(opt.swatch, 10),
-                            const SizedBox(width: 3),
-                            _colorDot(opt.swatchDeep, 10),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(opt.emoji, style: const TextStyle(fontSize: 14)),
-                        const SizedBox(height: 2),
-                        Text(
-                          opt.label,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            color: isSelected
-                                ? opt.swatchDeep
-                                : colors.textSecondary,
-                          ),
-                        ),
-                        Text(
-                          opt.label2,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w400,
-                            color: isSelected
-                                ? opt.swatchDeep.withValues(alpha: 0.8)
-                                : colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
-  // ── CARRUSEL INFINITO ──────────────────────────────────────────────────────
   Widget _buildCarousel(AppColors colors) {
     return Column(
       children: [
@@ -325,7 +429,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
         // Dots indicadores
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.symmetric(vertical: 24),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(_carouselPages.length, (i) {
@@ -354,65 +458,68 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   Widget _buildCarouselSlide(_OnboardingPage page, AppColors colors) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 24), // Ajustado a 24
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          colors.primaryWithAlpha(0.25),
-                          colors.primaryMidWithAlpha(0.45),
-                        ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            colors.primaryWithAlpha(0.25),
+                            colors.primaryMidWithAlpha(0.45),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                  page.imageUrl.isNotEmpty
-                      ? Image.asset(
-                          page.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              _buildFallback(page, colors),
-                        )
-                      : _buildFallback(page, colors),
-                ],
+                    page.imageUrl.isNotEmpty
+                        ? Image.asset(
+                            page.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) =>
+                                _buildFallback(page, colors),
+                          )
+                        : _buildFallback(page, colors),
+                  ],
+                ),
               ),
             ),
           ),
 
           // Texto debajo de la imagen
           Padding(
-            padding: const EdgeInsets.only(top: 16),
+            padding: const EdgeInsets.only(top: 24),
             child: Column(
               children: [
                 Text(
                   page.title,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 28,
                     fontWeight: FontWeight.w800,
                     color: colors.textPrimary,
                     letterSpacing: -0.5,
                     height: 1.15,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Text(
                   page.description,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 14,
+                    fontSize: 16,
                     color: colors.textSecondary,
                     height: 1.5,
                   ),
@@ -458,44 +565,48 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  // ── BOTÓN ──────────────────────────────────────────────────────────────────
-  Widget _buildBottomButton(BuildContext context, AppColors colors) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: GestureDetector(
-        onTap: () => context.go('/login'),
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: colors.primary,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: colors.primaryWithAlpha(0.4),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Comenzar',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: colors.textPrimary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.rocket_launch_rounded,
+  // ── BOTÓN REUTILIZABLE ──────────────────────────────────────────────────────
+  Widget _buildBottomButton({
+    required BuildContext context,
+    required AppColors colors,
+    required String text,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 18),
+        decoration: BoxDecoration(
+          color: colors.primary,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: colors.primaryWithAlpha(0.4),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              text,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: colors.textPrimary,
-                size: 20,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(width: 8),
+            Icon(
+              icon,
+              color: colors.textPrimary,
+              size: 20,
+            ),
+          ],
         ),
       ),
     );
@@ -507,7 +618,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     decoration: BoxDecoration(
       color: color,
       shape: BoxShape.circle,
-      border: Border.all(color: Colors.white, width: 1),
+      border: Border.all(color: Colors.white, width: 1.5),
     ),
   );
 }

@@ -3,11 +3,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Configuración central de la API de RUNN.
 /// Ajusta [baseUrl] si cambias de emulador a dispositivo físico.
 class ApiConfig {
-  // IP de la empresa
-  // static const String baseUrl = 'http://192.168.101.17:3000';
+  // IP desplegada
+  static const String baseUrl = 'http://31.97.100.216';
 
-  // IP de la casa
-  static const String baseUrl = 'http://192.168.1.92:3000';
+  // IP local casa
+  // static const String baseUrl = 'http://192.168.1.92:8005';
+
+  // IP local empresa
+  // static const String baseUrl = 'http://';
 
   // Claves de SharedPreferences
   static const String tokenKey = 'runn_token';

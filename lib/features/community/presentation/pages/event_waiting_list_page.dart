@@ -145,6 +145,54 @@ class _EventWaitingListPageState extends State<EventWaitingListPage> {
                     padding: const EdgeInsets.only(top: 8.0),
                     child: Text('Motivo: ${item['motivo']}', style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
                   ),
+                if (item['comprobante_url'] != null && item['comprobante_url'].toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          barrierColor: Colors.black.withValues(alpha: 0.9),
+                          builder: (dialogCtx) => Stack(
+                            children: [
+                              Positioned.fill(
+                                child: InteractiveViewer(
+                                  child: Image.network(item['comprobante_url']!, fit: BoxFit.contain),
+                                ),
+                              ),
+                              Positioned(
+                                top: 40,
+                                right: 20,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: IconButton(
+                                    icon: const Icon(Icons.close_rounded, color: Colors.white, size: 32),
+                                    onPressed: () => Navigator.pop(dialogCtx),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: context.colors.primaryLight,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: context.colors.primaryDeep.withValues(alpha: 0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.receipt_long_rounded, size: 16, color: context.colors.primaryDeep),
+                            const SizedBox(width: 6),
+                            Text('Ver Comprobante', style: TextStyle(color: context.colors.primaryDeep, fontSize: 12, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
             trailing: estado == 'pendiente' 
@@ -181,15 +229,39 @@ class _EventWaitingListPageState extends State<EventWaitingListPage> {
           foregroundColor: c.textPrimary,
           title: const Text('Lista de Espera', style: TextStyle(fontWeight: FontWeight.bold)),
           elevation: 0,
-          bottom: TabBar(
-            labelColor: c.primaryDeep,
-            unselectedLabelColor: c.textSecondary,
-            indicatorColor: c.primaryDeep,
-            tabs: const [
-              Tab(text: 'Pendientes'),
-              Tab(text: 'Admitidos'),
-              Tab(text: 'Rechazados'),
-            ],
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(60),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Container(
+                height: 44,
+                decoration: BoxDecoration(
+                  color: c.primaryDeepWithAlpha(0.08),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: TabBar(
+                  dividerColor: Colors.transparent,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  padding: const EdgeInsets.all(4),
+                  indicatorPadding: EdgeInsets.zero,
+                  indicator: BoxDecoration(
+                    color: c.primary,
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  labelColor: Colors.white,
+                  unselectedLabelColor: c.textSecondary,
+                  labelStyle: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                  tabs: [
+                    Tab(text: 'Pendientes'),
+                    Tab(text: 'Admitidos'),
+                    Tab(text: 'Rechazados'),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
         body: _isLoading 

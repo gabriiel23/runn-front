@@ -44,6 +44,9 @@ class _EventEditPageState extends State<EventEditPage> {
   Uint8List? _newPhotoBytes;
   
   List<LatLng> _routePoints = [];
+  List<String> _indicaciones = [];
+  List<Map<String, String>> _cuentasBancarias = [];
+  final TextEditingController _indicacionCtrl = TextEditingController();
 
   @override
   void initState() {
@@ -87,6 +90,16 @@ class _EventEditPageState extends State<EventEditPage> {
       }
       _routePoints.add(LatLng(e.puntoFin!['lat'], e.puntoFin!['lng']));
     }
+
+    _indicaciones = List<String>.from(e?.indicaciones ?? []);
+    if (e?.cuentasBancarias != null && e!.cuentasBancarias!.isNotEmpty) {
+      _cuentasBancarias = e.cuentasBancarias!.map((c) => {
+        'banco': c['banco']?.toString() ?? '',
+        'numero': c['numero']?.toString() ?? '',
+        'titular': c['titular']?.toString() ?? '',
+        'cedula': c['cedula']?.toString() ?? '',
+      }).toList();
+    }
   }
 
   @override
@@ -100,6 +113,7 @@ class _EventEditPageState extends State<EventEditPage> {
     _precioCtrl.dispose();
     _limiteParticipantesCtrl.dispose();
     _limiteListaEsperaCtrl.dispose();
+    _indicacionCtrl.dispose();
     super.dispose();
   }
 
@@ -217,6 +231,8 @@ class _EventEditPageState extends State<EventEditPage> {
         'es_pago': _esPago.toString(),
         if (_esPago && _precioCtrl.text.trim().isNotEmpty)
           'precio': _precioCtrl.text.trim(),
+        if (_esPago && _cuentasBancarias.isNotEmpty)
+          'cuentas_bancarias': jsonEncode(_cuentasBancarias),
         if (_limiteParticipantesCtrl.text.trim().isNotEmpty)
           'limite_participantes': _limiteParticipantesCtrl.text.trim(),
         if (_limiteListaEsperaCtrl.text.trim().isNotEmpty)
@@ -230,7 +246,9 @@ class _EventEditPageState extends State<EventEditPage> {
               'lng': e.value.longitude,
               'orden': e.key + 1
             }).toList()),
-        }
+        },
+        if (_indicaciones.isNotEmpty)
+          'indicaciones': jsonEncode(_indicaciones),
       };
 
       if (esCreacion) {
@@ -570,6 +588,10 @@ class _EventEditPageState extends State<EventEditPage> {
                   ),
                   prefixIcon: Icons.attach_money_rounded,
                 ),
+                const SizedBox(height: 20),
+                _buildSectionLabel(c, 'Cuentas Bancarias para cobros'),
+                const SizedBox(height: 8),
+                _buildCuentasBancariasList(c),
               ],
               const SizedBox(height: 20),
 
@@ -654,6 +676,79 @@ class _EventEditPageState extends State<EventEditPage> {
                         ),
                       ),
                     ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // ─── Indicaciones para Participantes ────────────────────────
+              _buildSectionLabel(c, 'Indicaciones para Participantes'),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: c.card,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: c.primaryDeepWithAlpha(0.1)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _indicacionCtrl,
+                            style: TextStyle(color: c.textPrimary),
+                            decoration: InputDecoration(
+                              hintText: 'Ej: Llegar 1 hora antes del evento',
+                              hintStyle: TextStyle(color: c.textHint),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: () {
+                            final texto = _indicacionCtrl.text.trim();
+                            if (texto.isEmpty) return;
+                            setState(() {
+                              _indicaciones.add(texto);
+                              _indicacionCtrl.clear();
+                            });
+                          },
+                          icon: Icon(Icons.add_circle_rounded, color: c.primaryDeep, size: 32),
+                        ),
+                      ],
+                    ),
+                    if (_indicaciones.isNotEmpty) ...
+                      [const SizedBox(height: 12),
+                      ..._indicaciones.asMap().entries.map((entry) {
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: c.primaryLight,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            children: [
+                              Text('${entry.key + 1}.', style: TextStyle(color: c.primaryDeep, fontWeight: FontWeight.bold)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(entry.value, style: TextStyle(color: c.textPrimary, fontSize: 13)),
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _indicaciones.removeAt(entry.key)),
+                                child: Icon(Icons.close_rounded, size: 16, color: c.textHint),
+                              ),
+                            ],
+                          ),
+                        );
+                      })
+                    ],
                   ],
                 ),
               ),
@@ -775,6 +870,84 @@ class _EventEditPageState extends State<EventEditPage> {
           borderSide: const BorderSide(color: Color(0xFFFF3B30), width: 2),
         ),
       ),
+    );
+  }
+
+  Widget _buildCuentasBancariasList(dynamic c) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (int i = 0; i < _cuentasBancarias.length; i++)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: c.inputFill,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: c.inputBorder, width: 1.5),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Cuenta #${i + 1}', style: TextStyle(fontWeight: FontWeight.bold, color: c.textPrimary)),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, color: Colors.red, size: 20),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      onPressed: () {
+                        setState(() => _cuentasBancarias.removeAt(i));
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  initialValue: _cuentasBancarias[i]['banco'],
+                  onChanged: (val) => _cuentasBancarias[i]['banco'] = val,
+                  style: TextStyle(fontSize: 14, color: c.textPrimary),
+                  decoration: InputDecoration(hintText: 'Banco (ej. Pichincha)', hintStyle: TextStyle(color: c.textHint, fontSize: 13), filled: true, fillColor: c.card, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none)),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  initialValue: _cuentasBancarias[i]['numero'],
+                  onChanged: (val) => _cuentasBancarias[i]['numero'] = val,
+                  style: TextStyle(fontSize: 14, color: c.textPrimary),
+                  decoration: InputDecoration(hintText: 'Número de Cuenta', hintStyle: TextStyle(color: c.textHint, fontSize: 13), filled: true, fillColor: c.card, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none)),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  initialValue: _cuentasBancarias[i]['titular'],
+                  onChanged: (val) => _cuentasBancarias[i]['titular'] = val,
+                  style: TextStyle(fontSize: 14, color: c.textPrimary),
+                  decoration: InputDecoration(hintText: 'Nombre del Titular', hintStyle: TextStyle(color: c.textHint, fontSize: 13), filled: true, fillColor: c.card, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none)),
+                ),
+                const SizedBox(height: 8),
+                TextFormField(
+                  initialValue: _cuentasBancarias[i]['cedula'],
+                  onChanged: (val) => _cuentasBancarias[i]['cedula'] = val,
+                  style: TextStyle(fontSize: 14, color: c.textPrimary),
+                  decoration: InputDecoration(hintText: 'Cédula / RUC', hintStyle: TextStyle(color: c.textHint, fontSize: 13), filled: true, fillColor: c.card, border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none)),
+                ),
+              ],
+            ),
+          ),
+        OutlinedButton.icon(
+          onPressed: () {
+            setState(() {
+              _cuentasBancarias.add({'banco': '', 'numero': '', 'titular': '', 'cedula': ''});
+            });
+          },
+          icon: Icon(Icons.add_rounded, color: c.primaryDeep, size: 20),
+          label: Text('Agregar otra cuenta', style: TextStyle(color: c.primaryDeep)),
+          style: OutlinedButton.styleFrom(
+            side: BorderSide(color: c.primaryDeep.withValues(alpha: 0.5)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ],
     );
   }
 }

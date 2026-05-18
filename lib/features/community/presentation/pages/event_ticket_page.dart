@@ -95,6 +95,7 @@ class _EventTicketPageState extends State<EventTicketPage> {
     final Uint8List qrBytes = base64Decode(base64Qr);
     final String codigoAlpha = codigoMap['codigo_alfanumerico'];
     final bool usado = codigoMap['usado'] == true;
+    final List<String> indicaciones = evento.indicaciones ?? [];
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -204,6 +205,71 @@ class _EventTicketPageState extends State<EventTicketPage> {
                   icon: const Icon(Icons.download_rounded),
                   label: const Text('Descargar a Galería', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 ),
+              // ─── Indicaciones ──────────────────────────────────────────────────
+              if (indicaciones.isNotEmpty) ...[                
+                const SizedBox(height: 24),
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: c.card,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: c.primaryDeepWithAlpha(0.12)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.assignment_rounded, color: c.primaryDeep, size: 22),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Indicaciones del Evento',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: c.textPrimary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 14),
+                      ...indicaciones.asMap().entries.map((entry) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: c.primaryDeep,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${entry.key + 1}',
+                                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  entry.value,
+                                  style: TextStyle(color: c.textPrimary, fontSize: 14, height: 1.5),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 40),
             ],
           ),
         ),

@@ -50,6 +50,12 @@ class ActividadesService {
     await RunnHttpClient.patch('/actividades/$actividadId/compartir');
   }
 
+  // ─── ELIMINAR ACTIVIDAD ─────────────────────────────────────────────────────
+  // DELETE /actividades/:id
+  static Future<void> eliminarActividad(String actividadId) async {
+    await RunnHttpClient.delete('/actividades/$actividadId');
+  }
+
   // ─── AGREGAR FOTO A ACTIVIDAD ───────────────────────────────────────────────
   // POST /actividades/:id/foto
   static Future<Map<String, dynamic>> agregarFoto(

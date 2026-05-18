@@ -26,14 +26,19 @@ class _EventScannerPageState extends State<EventScannerPage> {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
     
-    // El formato del QR es: "RUNN-EVENTO:{eventoId}:{userId}:{codigoAlfanumerico}"
-    // Pero el admin también puede digitar el código alfanumérico manualmente.
-    // Nosotros enviaremos el valor completo o parcial al backend, y el backend sabrá qué hacer (porque busca por codigo == req.body.codigo).
-    // Nota: El backend de hecho lo busca por 'codigo_alfanumerico'. En el backend dice:
-    // const qrParts = codigo.split(':'); if qrParts[0]==RUNN-EVENTO -> qrParts[3] is the alfanumerico.
+    // El QR completo tiene formato: "RUNN-EVENTO:{eventoId}:USUARIO:{userId}:CODIGO:{codigoAlpha}"
+    // Extraemos solo el código alfanumérico corto para enviarlo al backend.
+    String codigoLimpio = barcodeValue.trim().toUpperCase();
+    if (codigoLimpio.startsWith('RUNN-EVENTO:')) {
+      final parts = codigoLimpio.split(':');
+      // Formato: RUNN-EVENTO, {id}, USUARIO, {userId}, CODIGO, {alpha}
+      if (parts.length >= 6) {
+        codigoLimpio = parts[5];
+      }
+    }
     
     try {
-      final res = await EventosService.verificarCodigo(widget.eventId, barcodeValue);
+      final res = await EventosService.verificarCodigo(widget.eventId, codigoLimpio);
       final status = res['status'] as String?;
       
       if (!mounted) return;

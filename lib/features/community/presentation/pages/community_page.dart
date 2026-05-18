@@ -8,6 +8,8 @@ import '../../services/eventos_service.dart';
 import '../../services/usuarios_service.dart';
 import '../../domain/models/evento_model.dart';
 import '../../../../core/config/api_config.dart';
+import 'package:runn_front/features/notifications/services/notificaciones_notifier.dart';
+import 'package:runn_front/features/notifications/presentation/widgets/notification_bell.dart';
 import 'event_edit_page.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -79,6 +81,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     await Future.wait([
       _fetchEventos(),
       _fetchStats(),
+      NotificacionesNotifier.instance.fetchUnreadCount(),
     ]);
   }
 
@@ -235,42 +238,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                             size: 22,
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => context.go('/notifications'),
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: context.colors.primaryLight,
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Stack(
-                              children: [
-                                Center(
-                                  child: Icon(
-                                    Icons.notifications_outlined,
-                                    color: context.colors.primaryDeepWithAlpha(
-                                      0.8,
-                                    ),
-                                    size: 22,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 10,
-                                  right: 10,
-                                  child: Container(
-                                    width: 7,
-                                    height: 7,
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFFF6B6B),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        const NotificationBell(),
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -846,32 +814,45 @@ class _CommunityScreenState extends State<CommunityScreen>
                 ),
               ],
             ),
-            if (_userRol == 'admin')
-              TextButton.icon(
-                onPressed: () async {
-                  final result = await Navigator.of(context).push<bool>(
-                    MaterialPageRoute(builder: (_) => const EventEditPage()),
-                  );
-                  // Si se creó un evento, recargamos la lista
-                  if (result == true && mounted) {
-                    setState(() { _eventosLoading = true; _eventosError = ''; });
-                    await _fetchEventos();
-                  }
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: c.primaryDeep,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            Row(
+              children: [
+                // "Ver todo" — visible para todos
+                TextButton(
+                  onPressed: () => context.pushNamed('event_all'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: c.primaryDeep,
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('Ver todo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text(
-                  'Crear',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                ),
-              ),
-          ],
-        ),
+                if (_userRol == 'admin') ...[
+                  const SizedBox(width: 4),
+                  TextButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.of(context).push<bool>(
+                        MaterialPageRoute(builder: (_) => const EventEditPage()),
+                      );
+                      if (result == true && mounted) {
+                        setState(() { _eventosLoading = true; _eventosError = ''; });
+                        await _fetchEventos();
+                      }
+                    },
+                    style: TextButton.styleFrom(
+                      foregroundColor: c.primaryDeep,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Crear', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ],
+            ),
+        ],
+      ),
         const SizedBox(height: 16),
 
         if (_eventosLoading)

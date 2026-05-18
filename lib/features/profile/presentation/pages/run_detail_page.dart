@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
+import 'package:runn_front/core/utils/format_utils.dart';
 import '../../../start_career/domain/actividad_model.dart';
 import '../../../start_career/services/actividades_service.dart';
 
@@ -17,8 +18,10 @@ class RunDetailPage extends StatefulWidget {
 
 class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProviderStateMixin {
   late AnimationController _badgeCtrl;
+  GoogleMapController? _mapController;
   ActividadHistorial? _actividad;
   bool _isLoading = true;
+  bool _isDeleting = false;
   String? _error;
 
   static const LatLng _centroLocalizacionGeneral = LatLng(-0.22985, -78.52495); // Quito, EC
@@ -46,6 +49,7 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
           _isLoading = false;
         });
         _badgeCtrl.forward();
+        _fitMapBounds();
       }
     } catch (e) {
       if (mounted) {
@@ -55,6 +59,72 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
         });
       }
     }
+  }
+
+  Future<void> _borrarActividad() async {
+    final c = context.colors;
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: c.bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Eliminar actividad', style: TextStyle(color: c.textPrimary, fontWeight: FontWeight.bold)),
+        content: Text('¿Seguro quieres eliminar esta actividad permanentemente del historial?', style: TextStyle(color: c.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancelar', style: TextStyle(color: c.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF3B30),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _isDeleting = true);
+    try {
+      await ActividadesService.eliminarActividad(widget.actividadId);
+      if (!mounted) return;
+      // Retornar true para indicar que hubo cambios (y refescar listados)
+      context.pop(true);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isDeleting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al eliminar'), backgroundColor: Color(0xFFFF3B30)),
+      );
+    }
+  }
+
+  void _fitMapBounds() {
+    if (_mapController == null || _actividad?.puntosRuta == null || _actividad!.puntosRuta!.isEmpty) return;
+
+    double minLat = _actividad!.puntosRuta![0]['lat']!;
+    double maxLat = minLat;
+    double minLng = _actividad!.puntosRuta![0]['lng']!;
+    double maxLng = minLng;
+
+    for (var point in _actividad!.puntosRuta!) {
+      if (point['lat']! < minLat) minLat = point['lat']!;
+      if (point['lat']! > maxLat) maxLat = point['lat']!;
+      if (point['lng']! < minLng) minLng = point['lng']!;
+      if (point['lng']! > maxLng) maxLng = point['lng']!;
+    }
+
+    _mapController!.animateCamera(
+      CameraUpdate.newLatLngBounds(
+        LatLngBounds(southwest: LatLng(minLat, minLng), northeast: LatLng(maxLat, maxLng)),
+        40, // Padding
+      ),
+    );
   }
 
   String _fechaFmt(DateTime? d) {
@@ -73,7 +143,7 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: _isLoading
+      body: _isLoading || _isDeleting
           ? Center(child: CircularProgressIndicator(color: c.primaryDeep))
           : _error != null
               ? _buildErrorView(c)
@@ -105,6 +175,11 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
   Widget _buildContentView(AppColors c) {
     final a = _actividad!;
     final isRunning = a.tipo == 'correr';
+    final hasRoute = a.puntosRuta != null && a.puntosRuta!.length >= 2;
+    List<LatLng> routePoints = [];
+    if (hasRoute) {
+      routePoints = a.puntosRuta!.map((p) => LatLng(p['lat']!, p['lng']!)).toList();
+    }
 
     return CustomScrollView(
       slivers: [
@@ -122,9 +197,26 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
               onPressed: () => context.pop(),
             ),
           ),
+          actions: [
+            Container(
+              margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+              decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                onPressed: _borrarActividad,
+              ),
+            ),
+          ],
           flexibleSpace: FlexibleSpaceBar(
             background: GoogleMap(
-              initialCameraPosition: const CameraPosition(target: _centroLocalizacionGeneral, zoom: 12),
+              initialCameraPosition: CameraPosition(
+                target: hasRoute ? routePoints.first : _centroLocalizacionGeneral, 
+                zoom: hasRoute ? 14 : 12,
+              ),
+              onMapCreated: (ctrl) {
+                _mapController = ctrl;
+                if (hasRoute) _fitMapBounds();
+              },
               myLocationEnabled: false,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
@@ -132,6 +224,15 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
               mapToolbarEnabled: false,
               scrollGesturesEnabled: false,
               zoomGesturesEnabled: false,
+              polylines: {
+                if (hasRoute)
+                  Polyline(
+                    polylineId: const PolylineId('ruta_actividad'),
+                    points: routePoints,
+                    color: c.primaryDeep,
+                    width: 5,
+                  ),
+              },
             ),
           ),
         ),
@@ -191,13 +292,16 @@ class _RunDetailPageState extends State<RunDetailPage> with SingleTickerProvider
                 // ── Estadísticas principales ─────────────────────
                 _sectionTitle(c, '🏃 Rendimiento principal'),
                 const SizedBox(height: 10),
-                Row(children: [
-                  Expanded(child: _statCard(c, '📏', 'Distancia', '${a.distanciaKm.toStringAsFixed(2)} km', c.primaryDeep)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _statCard(c, '⏱', 'Tiempo', a.duracionFormateada, c.primaryDeep)),
-                  const SizedBox(width: 10),
-                  Expanded(child: _statCard(c, '⚡', 'Ritmo', '${a.ritmoPromedio.toStringAsFixed(1)} m/km', c.primaryDeep)),
-                ]),
+                Builder(builder: (_) {
+                  final dist = formatDistancia(a.distanciaKm);
+                  return Row(children: [
+                    Expanded(child: _statCard(c, '📏', 'Distancia', '${dist.valor} ${dist.unidad}', c.primaryDeep)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard(c, '⏱', 'Tiempo', a.duracionFormateada, c.primaryDeep)),
+                    const SizedBox(width: 10),
+                    Expanded(child: _statCard(c, '⚡', 'Ritmo', '${a.ritmoPromedio.toStringAsFixed(1)} m/km', c.primaryDeep)),
+                  ]);
+                }),
                 const SizedBox(height: 10),
 
                 // ── Estadísticas secundarias ─────────────────────

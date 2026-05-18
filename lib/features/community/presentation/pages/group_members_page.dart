@@ -5,6 +5,7 @@ import '../../../../core/services/http_client.dart';
 import '../../services/grupos_service.dart';
 import '../../services/admin_service.dart';
 import '../../domain/models/grupo_model.dart';
+import '../../../../core/config/api_config.dart';
 
 class GroupMembersPage extends StatefulWidget {
   final String grupoId;
@@ -23,27 +24,34 @@ class GroupMembersPage extends StatefulWidget {
 }
 
 class _GroupMembersPageState extends State<GroupMembersPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   List<MiembroGrupo> _miembros = [];
   List<SolicitudGrupo> _solicitudes = [];
   List<InvitacionPanel> _invitaciones = [];
   bool _isLoading = true;
   bool _isActing = false;
-  late TabController _tabController;
+  TabController? _tabController;
 
-  bool get _esCreador => widget.miRol == 'creador';
-  bool get _esAdmin => widget.miRol == 'admin' || widget.miRol == 'creador';
+  String? _miRol;
+  String? _miId;
+
+  bool get _esCreador => _miRol == 'creador';
+  bool get _esAdmin => _miRol == 'admin' || _miRol == 'creador';
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _esAdmin ? 3 : 1, vsync: this);
+    _miRol = widget.miRol;
+    _miId = widget.miId;
+    if (_miRol != null) {
+      _tabController = TabController(length: _esAdmin ? 3 : 1, vsync: this);
+    }
     _load();
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _tabController?.dispose();
     super.dispose();
   }
 
@@ -51,6 +59,15 @@ class _GroupMembersPageState extends State<GroupMembersPage>
     setState(() => _isLoading = true);
     try {
       final detalle = await GruposService.getGrupoDetalle(widget.grupoId);
+      
+      // Auto-completar informacion si viene vacia desde las notificaciones
+      _miId ??= await ApiConfig.getCurrentUserId();
+      if (_miRol == null && _miId != null) {
+        final idx = detalle.miembros.indexWhere((m) => m.id == _miId);
+        if (idx != -1) _miRol = detalle.miembros[idx].rol;
+      }
+      _tabController ??= TabController(length: _esAdmin ? 3 : 1, vsync: this);
+
       List<SolicitudGrupo> sol = [];
       List<InvitacionPanel> inv = [];
       if (_esAdmin) {
@@ -301,7 +318,7 @@ class _GroupMembersPageState extends State<GroupMembersPage>
           ),
         ),
         // ── TabBar con el estilo pill ──────────────────────────────────
-        bottom: _esAdmin
+        bottom: (_esAdmin && _tabController != null)
             ? PreferredSize(
                 preferredSize: const Size.fromHeight(72),
                 child: Padding(
@@ -363,7 +380,7 @@ class _GroupMembersPageState extends State<GroupMembersPage>
           ? Center(child: CircularProgressIndicator(color: c.primaryDeep))
           : Stack(
               children: [
-                _esAdmin
+                (_esAdmin && _tabController != null)
                     ? TabBarView(
                         controller: _tabController,
                         children: [

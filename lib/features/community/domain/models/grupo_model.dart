@@ -232,6 +232,7 @@ class GrupoDetalle {
   final List<GrupoReto> retos;
   final List<GrupoActividad> actividades;
   final List<GrupoMultimedia> multimedia;
+  final GrupoDisputaActiva? disputaActiva;
 
   const GrupoDetalle({
     required this.grupo,
@@ -243,6 +244,7 @@ class GrupoDetalle {
     required this.retos,
     required this.actividades,
     required this.multimedia,
+    this.disputaActiva,
   });
 
   factory GrupoDetalle.fromJson(Map<String, dynamic> json) {
@@ -262,6 +264,7 @@ class GrupoDetalle {
       retos: retosJson.map((r) => GrupoReto.fromJson(r as Map<String, dynamic>)).toList(),
       actividades: actividadesJson.map((a) => GrupoActividad.fromJson(a as Map<String, dynamic>)).toList(),
       multimedia: multimediaJson.map((m) => GrupoMultimedia.fromJson(m as Map<String, dynamic>)).toList(),
+      disputaActiva: json['disputa_activa'] != null ? GrupoDisputaActiva.fromJson(json['disputa_activa'] as Map<String, dynamic>) : null,
     );
   }
 
@@ -378,4 +381,35 @@ class InvitacionPanel {
   // Getters de conveniencia para la UI
   String get nombre => usuarioNombre;
   String? get avatarUrl => usuarioAvatarUrl;
+}
+
+// ─── DISPUTA ACTIVA DEL GRUPO ────────────────────────────────────────────────
+class GrupoDisputaActiva {
+  final String id;
+  final String territorioId;
+  final String territorioNombre;
+  final DateTime? expiraEn;
+  
+  const GrupoDisputaActiva({
+    required this.id, 
+    required this.territorioId, 
+    required this.territorioNombre, 
+    this.expiraEn,
+  });
+  
+  factory GrupoDisputaActiva.fromJson(Map<String,dynamic> json) {
+    return GrupoDisputaActiva(
+      id: json['id']?.toString() ?? '',
+      territorioId: json['territorio_id']?.toString() ?? '',
+      territorioNombre: json['territorio_nombre']?.toString() ?? '',
+      expiraEn: _parseDate(json['expira_en']),
+    );
+  }
+
+  /// Horas restantes para expirar
+  int get horasRestantes {
+    if (expiraEn == null) return 0;
+    final dif = expiraEn!.difference(DateTime.now()).inHours;
+    return dif > 0 ? dif : 0;
+  }
 }

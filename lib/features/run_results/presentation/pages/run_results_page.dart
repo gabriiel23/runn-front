@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 import 'package:runn_front/core/services/http_client.dart';
+import 'package:runn_front/core/utils/format_utils.dart';
 import 'package:runn_front/features/challenges/data/models/reto_models.dart';
 import '../../../start_career/services/actividades_service.dart';
 import '../../../start_career/domain/actividad_model.dart';
@@ -118,6 +119,47 @@ class _RunResultsPageState extends State<RunResultsPage>
     context.go('/home');
   }
 
+  Future<void> _descartarYVolver() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: context.colors.bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Descartar actividad', style: TextStyle(color: context.colors.textPrimary, fontWeight: FontWeight.bold)),
+        content: Text('¿Estás seguro de descartar esta actividad? No se guardará en tu historial.', style: TextStyle(color: context.colors.textSecondary)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Cancelar', style: TextStyle(color: context.colors.textSecondary)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFF3B30),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Descartar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmar != true) return;
+
+    setState(() => _compartiendo = true);
+    try {
+      await ActividadesService.eliminarActividad(widget.resumen.actividadId);
+      if (!mounted) return;
+      context.go('/home');
+    } catch (_) {
+       if (!mounted) return;
+       setState(() => _compartiendo = false);
+       ScaffoldMessenger.of(context).showSnackBar(
+         const SnackBar(content: Text('Error al descartar la actividad'), backgroundColor: Color(0xFFFF3B30)),
+       );
+    }
+  }
+
   Future<void> _compartir() async {
     setState(() => _compartiendo = true);
     await _subirFotoSiExiste();
@@ -125,8 +167,9 @@ class _RunResultsPageState extends State<RunResultsPage>
       await ActividadesService.compartirActividad(widget.resumen.actividadId);
       if (!mounted) return;
       setState(() { _compartida = true; });
+      final dist = formatDistancia(widget.resumen.distanciaKm);
       await Share.share(
-        'Acabo de correr ${widget.resumen.distanciaKm.toStringAsFixed(2)} km '
+        'Acabo de recorrer ${dist.valor} ${dist.unidad} '
         'en ${widget.resumen.duracionFormateada} con RUNN 🏃‍♂️\n'
         '¡Únete a la comunidad de corredores!',
       );
@@ -289,13 +332,16 @@ class _RunResultsPageState extends State<RunResultsPage>
                   // ── Estadísticas principales ─────────────────────
                   _sectionTitle(c, '🏃 Rendimiento principal'),
                   const SizedBox(height: 10),
-                  Row(children: [
-                    Expanded(child: _statCard(c, '📏', 'Distancia', '${r.distanciaKm.toStringAsFixed(2)} km', c.primaryDeep)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _statCard(c, '⏱', 'Tiempo', r.duracionFormateada, c.primaryDeep)),
-                    const SizedBox(width: 10),
-                    Expanded(child: _statCard(c, '⚡', 'Ritmo', '${r.ritmoPromedio.toStringAsFixed(1)} m/km', c.primaryDeep)),
-                  ]),
+                  Builder(builder: (_) {
+                    final dist = formatDistancia(r.distanciaKm);
+                    return Row(children: [
+                      Expanded(child: _statCard(c, '📏', 'Distancia', '${dist.valor} ${dist.unidad}', c.primaryDeep)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _statCard(c, '⏱', 'Tiempo', r.duracionFormateada, c.primaryDeep)),
+                      const SizedBox(width: 10),
+                      Expanded(child: _statCard(c, '⚡', 'Ritmo', '${r.ritmoPromedio.toStringAsFixed(1)} m/km', c.primaryDeep)),
+                    ]);
+                  }),
                   const SizedBox(height: 10),
 
                   // ── Estadísticas secundarias ─────────────────────
@@ -342,12 +388,10 @@ class _RunResultsPageState extends State<RunResultsPage>
                   Row(children: [
                     Expanded(
                       child: _actionBtn(
-                        icon: _compartiendo
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Icon(_compartida ? Icons.check_rounded : Icons.share_rounded, color: Colors.white, size: 20),
-                        label: _compartida ? '¡Compartida!' : 'Compartir',
-                        color: _compartida ? const Color(0xFF34C759) : c.primaryDeep,
-                        onTap: (_compartiendo || _compartida) ? null : _compartir,
+                        icon: const Icon(Icons.delete_outline_rounded, color: Colors.white, size: 20),
+                        label: 'Descartar',
+                        color: const Color(0xFFFF3B30),
+                        onTap: _compartiendo ? null : _descartarYVolver,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -355,13 +399,25 @@ class _RunResultsPageState extends State<RunResultsPage>
                       child: _actionBtn(
                         icon: _compartiendo && !_compartida
                             ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.home_rounded, color: Colors.white, size: 20),
-                        label: _selectedPhoto != null ? 'Guardar foto y volver' : 'Volver al inicio',
-                        color: const Color(0xFF636366),
+                            : const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                        label: _selectedPhoto != null ? 'Guardar foto' : 'Guardar',
+                        color: c.primaryDeep,
                         onTap: _compartiendo ? null : _guardarYVolver,
                       ),
                     ),
                   ]),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: _actionBtn(
+                      icon: _compartiendo
+                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Icon(_compartida ? Icons.check_rounded : Icons.share_rounded, color: Colors.white, size: 20),
+                      label: _compartida ? '¡Compartida exitosamente!' : 'Compartir actividad',
+                      color: _compartida ? const Color(0xFF34C759) : const Color(0xFF636366),
+                      onTap: (_compartiendo || _compartida) ? null : _compartir,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                 ],
               ),

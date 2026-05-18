@@ -29,6 +29,24 @@ class EventosService {
     return await RunnHttpClient.post('/eventos/$id/unirse');
   }
 
+  // ─── UNIRSE A EVENTO DE PAGO ──────────────────────────────────────────────
+  // POST /eventos/:id/unirse-pago
+
+  static Future<Map<String, dynamic>> unirseEventoPago(
+    String id, {
+    required List<int> comprobanteBytes,
+    required String comprobanteFilename,
+  }) async {
+    final response = await RunnHttpClient.postMultipart(
+      '/eventos/$id/unirse-pago',
+      bytes: comprobanteBytes,
+      filename: comprobanteFilename,
+      fieldName: 'comprobante',
+      fields: {}, // Ningún otro campo es requerido
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
   // ─── SALIRSE DEL EVENTO ───────────────────────────────────────────────────
   // DELETE /eventos/:id/unirse
 
@@ -131,6 +149,20 @@ class EventosService {
     return await RunnHttpClient.post('/eventos/$id/verificar-codigo', body: {
       'codigo': codigo,
     });
+  }
+
+  // ─── OBTENER LISTA DE ESCANEADOS (solo admin) ────────────────────────────
+  // GET /eventos/:id/escaneados
+
+  static Future<Map<String, dynamic>> getEscaneados(String id) async {
+    return await RunnHttpClient.get('/eventos/$id/escaneados');
+  }
+
+  // ─── FINALIZAR EVENTO (solo admin) ──────────────────────────────────────
+  // PUT /eventos/:id/finalizar
+
+  static Future<void> finalizarEvento(String id) async {
+    await RunnHttpClient.put('/eventos/$id/finalizar');
   }
 }
 
