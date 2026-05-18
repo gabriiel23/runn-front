@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
@@ -37,20 +35,15 @@ class _RunActivePageState extends State<RunActivePage>
     with TickerProviderStateMixin {
   AppColors get c => context.colors;
 
-  // Cronómetro (controlado localmente)
+  // Cronómetro y métricas — ahora vienen del isolate de TrackingService
   int _duracionSegs = 0;
   bool _corriendo = true;
-  Timer? _timer;
 
   // Métricas GPS
   List<LatLng> _puntos = [];
   double _distanciaKm = 0;
   double _velocidadMaxKmh = 0;
   double _pesoKg = 70;
-
-  // GPS directo (mismo enfoque que TerritoryConquestRunPage)
-  StreamSubscription<Position>? _gpsSub;
-  Position? _lastPosition;
 
   // Mapa
   GoogleMapController? _mapController;
@@ -73,21 +66,25 @@ class _RunActivePageState extends State<RunActivePage>
     }
 
     _cargarPeso();
-    _startTimer();
-    _startGps();
+    _arrancarConForegroundService();
+  }
 
-    // Detener el foreground service si estuviera corriendo
-    () async {
-      try { await TrackingService.stop(); } catch (_) {}
-    }();
+  Future<void> _arrancarConForegroundService() async {
+    // 1. Parar cualquier servicio previo
+    try { await TrackingService.stop(); } catch (_) {}
+
+    // 2. Registrar callback ANTES de arrancar el servicio
+    TrackingService.addDataCallback(_onDatosForeground);
+
+    // 3. Arrancar el foreground service (GPS en segundo plano)
+    await TrackingService.start();
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    _gpsSub?.cancel();
     _pulseCtrl.dispose();
     _mapController?.dispose();
+    TrackingService.removeDataCallback(_onDatosForeground);
     super.dispose();
   }
 
@@ -97,90 +94,44 @@ class _RunActivePageState extends State<RunActivePage>
     if (peso != null && mounted) setState(() => _pesoKg = peso);
   }
 
-  // ─── CRONÓMETRO ────────────────────────────────────────────────────────────
+  // ─── DATOS DEL FOREGROUND SERVICE (segundo plano) ──────────────────────────
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted && _corriendo) setState(() => _duracionSegs++);
-    });
-  }
-
-  // ─── GPS DIRECTO (Geolocator + Haversine) ──────────────────────────────────
-
-  void _startGps() {
-    _gpsSub?.cancel();
-    _gpsSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 3, // Mínimo 3m entre actualizaciones (fidelidad alta)
-      ),
-    ).listen(_onNewPosition, onError: (_) {});
-  }
-
-  void _onNewPosition(Position pos) {
+  void _onDatosForeground(dynamic data) {
     if (!mounted || !_corriendo) return;
-    final nuevo = LatLng(pos.latitude, pos.longitude);
+    if (data is! Map) return;
 
-    double delta = 0;
-    if (_lastPosition != null) {
-      delta = _haversineKm(
-        _lastPosition!.latitude,
-        _lastPosition!.longitude,
-        pos.latitude,
-        pos.longitude,
-      );
-
-      // Filtro de delta: ignorar saltos de GPS irreales (> 80m entre lecturas de 3m filter)
-      // y también descartar movimientos menores a 0.003 km (3m) que son ruido estático
-      if (delta > 0.08 || delta < 0.003) {
-        _lastPosition = pos; // Actualizar referencia pero NO sumar
-        return;
-      }
-    }
-
-    if (pos.speed > 0) {
-      final velKmh = pos.speed * 3.6;
-      if (velKmh > _velocidadMaxKmh) _velocidadMaxKmh = velKmh;
-    }
+    final lat = (data['lat'] as num?)?.toDouble();
+    final lng = (data['lng'] as num?)?.toDouble();
+    final dist = (data['distanciaKm'] as num?)?.toDouble();
+    final dur = (data['duracionSegs'] as num?)?.toInt();
+    final speed = (data['speed'] as num?)?.toDouble() ?? 0.0;
+    final velKmh = speed * 3.6;
 
     setState(() {
-      _puntos = [..._puntos, nuevo];
-      _distanciaKm += delta;
-      _lastPosition = pos;
-    });
+      if (dist != null) _distanciaKm = dist;
+      if (dur != null) _duracionSegs = dur;
+      if (velKmh > _velocidadMaxKmh) _velocidadMaxKmh = velKmh;
 
-    _mapController?.animateCamera(CameraUpdate.newLatLng(nuevo));
+      if (lat != null && lng != null) {
+        final nuevo = LatLng(lat, lng);
+        // Solo agrega punto si es diferente al último (evita duplicados)
+        if (_puntos.isEmpty || _puntos.last != nuevo) {
+          _puntos = [..._puntos, nuevo];
+          _mapController?.animateCamera(CameraUpdate.newLatLng(nuevo));
+        }
+      }
+    });
   }
+
 
   // ─── PAUSA / REANUDAR ──────────────────────────────────────────────────────
 
   void _pausarReanudar() {
-    if (_corriendo) {
-      _timer?.cancel();
-      _gpsSub?.cancel();
-    } else {
-      _startTimer();
-      _startGps();
-    }
     setState(() => _corriendo = !_corriendo);
+    // Cuando pausa: el foreground service sigue vivo pero no acumulamos datos
+    // Cuando reanuda: el foreground service ya estaba corriendo en segundo plano
   }
 
-  // ─── HAVERSINE ─────────────────────────────────────────────────────────────
-
-  double _haversineKm(double lat1, double lng1, double lat2, double lng2) {
-    const R = 6371.0;
-    final dLat = _deg2rad(lat2 - lat1);
-    final dLng = _deg2rad(lng2 - lng1);
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(_deg2rad(lat1)) *
-            cos(_deg2rad(lat2)) *
-            sin(dLng / 2) *
-            sin(dLng / 2);
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a));
-  }
-
-  double _deg2rad(double deg) => deg * (pi / 180);
 
   // ─── MÉTRICAS DERIVADAS ────────────────────────────────────────────────────
 
@@ -310,8 +261,7 @@ class _RunActivePageState extends State<RunActivePage>
   }
 
   Future<void> _cancelarCarrera() async {
-    _timer?.cancel();
-    _gpsSub?.cancel();
+    try { await TrackingService.stop(); } catch (_) {}
     try {
       await ActividadesService.eliminarActividad(widget.actividadId);
       if (mounted) context.go('/home');
@@ -321,8 +271,7 @@ class _RunActivePageState extends State<RunActivePage>
   }
 
   Future<void> _finalizarCarrera() async {
-    _timer?.cancel();
-    _gpsSub?.cancel();
+    try { await TrackingService.stop(); } catch (_) {}
     setState(() {
       _finalizando = true;
       _errorFinalizar = null;

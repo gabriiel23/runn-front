@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:runn_front/core/config/api_config.dart';
@@ -11,6 +10,7 @@ import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 import 'package:runn_front/core/services/http_client.dart';
 import '../../../start_career/services/actividades_service.dart';
+import '../../../start_career/services/tracking_service.dart';
 import '../../data/models/territory_model.dart';
 import '../../services/territory_service.dart';
 
@@ -49,17 +49,12 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
   // Cronómetro
   int _duracionSegs = 0;
   bool _corriendo = true;
-  Timer? _timer;
 
   // Métricas GPS
   List<LatLng> _puntos = [];
   double _distanciaKm = 0;
   double _velocidadMaxKmh = 0;
   double _pesoKg = 70;
-
-  // GPS
-  StreamSubscription<Position>? _gpsSub;
-  Position? _lastPosition;
 
   // Mapa
   GoogleMapController? _mapController;
@@ -82,8 +77,7 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
     )..repeat(reverse: true);
 
     _cargarPeso();
-    _startTimer();
-    _startGps();
+    _arrancarConForegroundService();
     _buildPolygonOverlay();
 
     if (widget.latInicio != null && widget.lngInicio != null) {
@@ -91,12 +85,17 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
     }
   }
 
+  Future<void> _arrancarConForegroundService() async {
+    try { await TrackingService.stop(); } catch (_) {}
+    TrackingService.addDataCallback(_onDatosForeground);
+    await TrackingService.start();
+  }
+
   @override
   void dispose() {
-    _timer?.cancel();
-    _gpsSub?.cancel();
     _pulseCtrl.dispose();
     _mapController?.dispose();
+    TrackingService.removeDataCallback(_onDatosForeground);
     super.dispose();
   }
 
@@ -151,85 +150,49 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
     } catch (_) {}
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() => _duracionSegs++);
-    });
-  }
-
   void _pausarReanudar() {
-    if (_corriendo) {
-      _timer?.cancel();
-      _gpsSub?.cancel();
-    } else {
-      _startTimer();
-      _startGps();
-    }
     setState(() => _corriendo = !_corriendo);
+    // El foreground service sigue corriendo; solo ignoramos datos cuando _corriendo==false
   }
 
-  void _startGps() {
-    _gpsSub?.cancel();
-    _gpsSub = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
-      ),
-    ).listen(_onNewPosition, onError: (_) {});
-  }
+  // ─── DATOS DEL FOREGROUND SERVICE ──────────────────────────────────────────
 
-  void _onNewPosition(Position pos) {
-    if (!mounted) return;
-    final nuevo = LatLng(pos.latitude, pos.longitude);
+  void _onDatosForeground(dynamic data) {
+    if (!mounted || !_corriendo) return;
+    if (data is! Map) return;
 
-    double delta = 0;
-    if (_lastPosition != null) {
-      delta = _haversineKm(
-        _lastPosition!.latitude,
-        _lastPosition!.longitude,
-        pos.latitude,
-        pos.longitude,
-      );
-    }
-
-    if (pos.speed > 0) {
-      final velKmh = pos.speed * 3.6;
-      if (velKmh > _velocidadMaxKmh) _velocidadMaxKmh = velKmh;
-    }
+    final lat = (data['lat'] as num?)?.toDouble();
+    final lng = (data['lng'] as num?)?.toDouble();
+    final dist = (data['distanciaKm'] as num?)?.toDouble();
+    final dur = (data['duracionSegs'] as num?)?.toInt();
+    final speed = (data['speed'] as num?)?.toDouble() ?? 0.0;
+    final velKmh = speed * 3.6;
 
     setState(() {
-      _puntos = [..._puntos, nuevo];
-      _distanciaKm += delta;
-      _lastPosition = pos;
-      _polylines = _puntos.length >= 2
-          ? {
-              Polyline(
-                polylineId: const PolylineId('ruta_conquista'),
-                points: _puntos,
-                color: c.primaryDeep,
-                width: 6,
-              ),
-            }
-          : {};
+      if (dist != null) _distanciaKm = dist;
+      if (dur != null) _duracionSegs = dur;
+      if (velKmh > _velocidadMaxKmh) _velocidadMaxKmh = velKmh;
+
+      if (lat != null && lng != null) {
+        final nuevo = LatLng(lat, lng);
+        if (_puntos.isEmpty || _puntos.last != nuevo) {
+          _puntos = [..._puntos, nuevo];
+          _polylines = _puntos.length >= 2
+              ? {
+                  Polyline(
+                    polylineId: const PolylineId('ruta_conquista'),
+                    points: _puntos,
+                    color: c.primaryDeep,
+                    width: 6,
+                  ),
+                }
+              : {};
+          _mapController?.animateCamera(CameraUpdate.newLatLng(nuevo));
+        }
+      }
     });
-
-    _mapController?.animateCamera(CameraUpdate.newLatLng(nuevo));
   }
 
-  double _haversineKm(double lat1, double lng1, double lat2, double lng2) {
-    const R = 6371.0;
-    final dLat = _deg2rad(lat2 - lat1);
-    final dLng = _deg2rad(lng2 - lng1);
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(_deg2rad(lat1)) *
-            cos(_deg2rad(lat2)) *
-            sin(dLng / 2) *
-            sin(dLng / 2);
-    return R * 2 * atan2(sqrt(a), sqrt(1 - a));
-  }
-
-  double _deg2rad(double deg) => deg * (pi / 180);
 
   double get _ritmoMinkm =>
       _distanciaKm > 0 ? (_duracionSegs / 60) / _distanciaKm : 0;
@@ -360,8 +323,7 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
   }
 
   Future<void> _cancelarCarrera() async {
-    _timer?.cancel();
-    _gpsSub?.cancel();
+    try { await TrackingService.stop(); } catch (_) {}
     try {
       await ActividadesService.eliminarActividad(widget.actividadId);
     } catch (_) {}
@@ -369,8 +331,7 @@ class _TerritoryConquestRunPageState extends State<TerritoryConquestRunPage>
   }
 
   Future<void> _finalizarYConquistar() async {
-    _timer?.cancel();
-    _gpsSub?.cancel();
+    try { await TrackingService.stop(); } catch (_) {}
     setState(() {
       _finalizando = true;
       _errorFinalizar = null;
