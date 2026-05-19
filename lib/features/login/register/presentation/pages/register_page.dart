@@ -266,62 +266,62 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                               const SizedBox(height: 28),
 
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Divider(
-                                      color: c.primaryMidWithAlpha(0.4),
-                                      thickness: 1,
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                    ),
-                                    child: Text(
-                                      'O regístrate con',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: c.textHint,
-                                        letterSpacing: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Divider(
-                                      color: c.primaryMidWithAlpha(0.4),
-                                      thickness: 1,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 20),
+                              // Row(
+                              //   children: [
+                              //     Expanded(
+                              //       child: Divider(
+                              //         color: c.primaryMidWithAlpha(0.4),
+                              //         thickness: 1,
+                              //       ),
+                              //     ),
+                              //     Padding(
+                              //       padding: const EdgeInsets.symmetric(
+                              //         horizontal: 16,
+                              //       ),
+                              //       child: Text(
+                              //         'O regístrate con',
+                              //         style: TextStyle(
+                              //           fontSize: 11,
+                              //           fontWeight: FontWeight.w600,
+                              //           color: c.textHint,
+                              //           letterSpacing: 0.8,
+                              //         ),
+                              //       ),
+                              //     ),
+                              //     Expanded(
+                              //       child: Divider(
+                              //         color: c.primaryMidWithAlpha(0.4),
+                              //         thickness: 1,
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
+                              // const SizedBox(height: 20),
 
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: _buildSocialButton(
-                                      icon: Icons.g_mobiledata_rounded,
-                                      iconColor: const Color(0xFFEA4335),
-                                      label: 'Google',
-                                      onTap: () {},
-                                      c: c,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Expanded(
-                                    child: _buildSocialButton(
-                                      icon: Icons.apple_rounded,
-                                      iconColor: c.textPrimary,
-                                      label: 'Apple',
-                                      onTap: () {},
-                                      c: c,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 28),
+                              // Row(
+                              //   children: [
+                              //     Expanded(
+                              //       child: _buildSocialButton(
+                              //         icon: Icons.g_mobiledata_rounded,
+                              //         iconColor: const Color(0xFFEA4335),
+                              //         label: 'Google',
+                              //         onTap: () {},
+                              //         c: c,
+                              //       ),
+                              //     ),
+                              //     const SizedBox(width: 16),
+                              //     Expanded(
+                              //       child: _buildSocialButton(
+                              //         icon: Icons.apple_rounded,
+                              //         iconColor: c.textPrimary,
+                              //         label: 'Apple',
+                              //         onTap: () {},
+                              //         c: c,
+                              //       ),
+                              //     ),
+                              //   ],
+                              // ),
+                              // const SizedBox(height: 28),
 
                               Center(
                                 child: GestureDetector(
@@ -457,45 +457,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  Widget _buildSocialButton({
-    required IconData icon,
-    required Color iconColor,
-    required String label,
-    required VoidCallback onTap,
-    required c,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: c.card,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.primaryMidWithAlpha(0.5), width: 1.5),
-          boxShadow: [
-            BoxShadow(
-              color: c.primaryWithAlpha(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: iconColor, size: 22),
-            const SizedBox(width: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: c.textPrimary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildSocialButton({
+  //   required IconData icon,
+  //   required Color iconColor,
+  //   required String label,
+  //   required VoidCallback onTap,
+  //   required c,
+  // }) {
+  //   return GestureDetector(
+  //     onTap: onTap,
+  //     child: Container(
+  //       padding: const EdgeInsets.symmetric(vertical: 14),
+  //       decoration: BoxDecoration(
+  //         color: c.card,
+  //         borderRadius: BorderRadius.circular(14),
+  //         border: Border.all(color: c.primaryMidWithAlpha(0.5), width: 1.5),
+  //         boxShadow: [
+  //           BoxShadow(
+  //             color: c.primaryWithAlpha(0.15),
+  //             blurRadius: 8,
+  //             offset: const Offset(0, 3),
+  //           ),
+  //         ],
+  //       ),
+  //       child: Row(
+  //         mainAxisAlignment: MainAxisAlignment.center,
+  //         children: [
+  //           Icon(icon, color: iconColor, size: 22),
+  //           const SizedBox(width: 8),
+  //           Text(
+  //             label,
+  //             style: TextStyle(
+  //               fontSize: 14,
+  //               fontWeight: FontWeight.w600,
+  //               color: c.textPrimary,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 }

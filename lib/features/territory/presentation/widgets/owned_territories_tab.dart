@@ -233,9 +233,7 @@ class _TerritoryGlobalCard extends StatelessWidget {
           color: c.card,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-              color: libre
-                  ? c.primaryDeepWithAlpha(0.06)
-                  : statusColor.withValues(alpha: 0.15)),
+              color: statusColor.withValues(alpha: 0.2)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),
@@ -251,22 +249,16 @@ class _TerritoryGlobalCard extends StatelessWidget {
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: libre
-                    ? c.primaryDeepWithAlpha(0.06)
-                    : statusColor.withValues(alpha: 0.12),
+                color: statusColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 libre
-                    ? Icons.flag_outlined
+                    ? Icons.explore_rounded
                     : territory.isOwned(userId)
-                        ? Icons.shield_rounded
-                        : Icons.flag_rounded,
-                color: libre
-                    ? c.textHint
-                    : territory.isOwned(userId)
-                        ? statusColor
-                        : const Color(0xFFF44336),
+                        ? Icons.workspace_premium_rounded
+                        : Icons.local_fire_department_rounded,
+                color: statusColor,
                 size: 24,
               ),
             ),
@@ -297,17 +289,16 @@ class _TerritoryGlobalCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: libre
-                              ? c.primaryDeepWithAlpha(0.06)
-                              : statusColor.withValues(alpha: 0.12),
+                          color: statusColor.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          territory.statusLabel(userId),
+                          territory.statusLabel(userId).toUpperCase(),
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: libre ? c.textHint : statusColor,
+                            fontWeight: FontWeight.w800,
+                            color: statusColor,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ),

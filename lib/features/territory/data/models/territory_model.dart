@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:runn_front/core/theme/theme_scope.dart';
 
 // ─── PROPIETARIO ─────────────────────────────────────────────────────────────
 
@@ -190,11 +189,11 @@ class TerritoryModel {
   Color statusColor(BuildContext context, String userId) {
     switch (statusFor(userId)) {
       case 'owned':
-        return context.colors.primaryMid;
+        return const Color(0xFF7ED957); // Verde - Mío
       case 'rival':
-        return context.colors.textSecondary;
+        return const Color(0xFFFF6B6B); // Rojo - Rival
       default:
-        return context.colors.surface;
+        return const Color(0xFF3B82F6); // Azul - Libre
     }
   }
 

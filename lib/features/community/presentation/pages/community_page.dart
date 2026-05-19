@@ -10,6 +10,7 @@ import '../../domain/models/evento_model.dart';
 import '../../../../core/config/api_config.dart';
 import 'package:runn_front/features/notifications/services/notificaciones_notifier.dart';
 import 'package:runn_front/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:runn_front/features/territory/services/territory_service.dart';
 import 'event_edit_page.dart';
 
 class CommunityScreen extends StatefulWidget {
@@ -39,6 +40,10 @@ class _CommunityScreenState extends State<CommunityScreen>
   // ─── Estado de Comunidad (Estadísticas) ──────────────────────────────────
   Map<String, int> _stats = {'grupos': 0, 'runners': 0, 'eventos': 0};
   bool _statsLoading = true;
+
+  // ─── Estado de Rivales ──────────────────────────────────────────────────
+  List<Map<String, dynamic>> _rivals = [];
+  bool _rivalsLoading = true;
 
   String? _userRol;
 
@@ -81,6 +86,7 @@ class _CommunityScreenState extends State<CommunityScreen>
     await Future.wait([
       _fetchEventos(),
       _fetchStats(),
+      _fetchRivals(),
       NotificacionesNotifier.instance.fetchUnreadCount(),
     ]);
   }
@@ -97,9 +103,83 @@ class _CommunityScreenState extends State<CommunityScreen>
   Future<void> _fetchEventos() async {
     try {
       final lista = await EventosService.getEventos();
-      if (mounted) setState(() { _eventos = lista; _eventosLoading = false; });
+      final ahora = DateTime.now();
+      final hoy = DateTime(ahora.year, ahora.month, ahora.day);
+      final proximos = lista.where((e) {
+        if (e.finalizado) return false;
+        if (e.fecha == null) return true;
+        return !e.fecha!.isBefore(hoy);
+      }).toList();
+
+      if (mounted) setState(() { _eventos = proximos; _eventosLoading = false; });
     } catch (e) {
       if (mounted) setState(() { _eventosError = e.toString(); _eventosLoading = false; });
+    }
+  }
+
+  Future<void> _fetchRivals() async {
+    try {
+      final myId = await ApiConfig.getCurrentUserId() ?? '';
+      if (myId.isEmpty) {
+        if (mounted) setState(() => _rivalsLoading = false);
+        return;
+      }
+      
+      final territorios = await TerritorioService.getTerritorios(modalidad: 'individual');
+      final rivalData = <String, Map<String, dynamic>>{};
+      
+      for (final t in territorios) {
+        bool iAmInHistory = t.historial.any((h) => h.usuario?.id == myId);
+        bool iAmOwner = t.isOwned(myId);
+        
+        if (iAmInHistory || iAmOwner) {
+          for (final h in t.historial) {
+            final uid = h.usuario?.id;
+            if (uid != null && uid != myId) {
+              if (!rivalData.containsKey(uid)) {
+                rivalData[uid] = {
+                  'id': uid,
+                  'name': h.usuario?.nombre ?? 'Corredor',
+                  'level': h.usuario?.nivel ?? '1',
+                  'challenges': 0,
+                  'territoriesLost': 0,
+                };
+              }
+              rivalData[uid]!['challenges'] = (rivalData[uid]!['challenges'] as int) + 1;
+            }
+          }
+          if (t.propietario != null && t.propietario!.id != myId) {
+            final uid = t.propietario!.id;
+             if (!rivalData.containsKey(uid)) {
+                rivalData[uid] = {
+                  'id': uid,
+                  'name': t.propietario!.nombre,
+                  'level': t.propietario!.nivel ?? '1',
+                  'challenges': 1,
+                  'territoriesLost': 1,
+                };
+              } else {
+                 rivalData[uid]!['territoriesLost'] = (rivalData[uid]!['territoriesLost'] as int) + 1;
+              }
+          }
+        }
+      }
+      
+      final rivalList = rivalData.values.toList();
+      rivalList.sort((a, b) {
+        final scoreA = (a['challenges'] as int) + (a['territoriesLost'] as int) * 2;
+        final scoreB = (b['challenges'] as int) + (b['territoriesLost'] as int) * 2;
+        return scoreB.compareTo(scoreA);
+      });
+      
+      if (mounted) {
+        setState(() {
+          _rivals = rivalList.take(3).toList();
+          _rivalsLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _rivalsLoading = false);
     }
   }
 
@@ -885,11 +965,39 @@ class _CommunityScreenState extends State<CommunityScreen>
         else if (_eventos.isEmpty)
           SizedBox(
             height: 240,
-            child: Center(
-              child: Text(
-                'No hay eventos próximos',
-                style: TextStyle(color: c.textHint, fontSize: 14),
-              ),
+            width: double.infinity,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: c.primaryDeepWithAlpha(0.06),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.event_busy_rounded, size: 40, color: c.primaryDeepWithAlpha(0.6)),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Sin eventos a la vista',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Aún no hay eventos próximos programados.\n¡Mantente atento a las novedades!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: c.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
             ),
           )
         else
@@ -1109,29 +1217,61 @@ class _CommunityScreenState extends State<CommunityScreen>
   // ──────────────────────────────────────────────────────────────────────────
 
   Widget _buildNearbyRunners() {
-    final rivals = [
-      {
-        'id': '1',
-        'name': 'María González',
-        'level': 12,
-        'challenges': 5,
-        'territoriesLost': 2,
-      },
-      {
-        'id': '2',
-        'name': 'Carlos Ruiz',
-        'level': 9,
-        'challenges': 3,
-        'territoriesLost': 1,
-      },
-      {
-        'id': '3',
-        'name': 'Ana Martínez',
-        'level': 15,
-        'challenges': 7,
-        'territoriesLost': 4,
-      },
-    ];
+    if (_rivalsLoading) {
+      return _skeletonRow(160, 20);
+    }
+
+    if (_rivals.isEmpty) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.bolt_rounded, size: 20, color: context.colors.primary),
+              const SizedBox(width: 6),
+              const Text(
+                'Rivales',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(24),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: context.colors.card,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: context.colors.primaryDeepWithAlpha(0.08)),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.handshake_rounded, size: 40, color: context.colors.textHint),
+                const SizedBox(height: 12),
+                Text(
+                  'Sin rivales por ahora',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: context.colors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Conquista territorios o entra en disputas\npara encontrar oponentes.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: context.colors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1140,7 +1280,7 @@ class _CommunityScreenState extends State<CommunityScreen>
           children: [
             Icon(Icons.bolt_rounded, size: 20, color: context.colors.primary),
             const SizedBox(width: 6),
-            Text(
+            const Text(
               'Rivales',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
@@ -1148,14 +1288,13 @@ class _CommunityScreenState extends State<CommunityScreen>
         ),
         const SizedBox(height: 16),
 
-        ...rivals.map(
+        ..._rivals.map(
           (rival) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: InkWell(
               onTap: () => context.pushNamed(
-                'rival_details',
+                'profile_others_runners',
                 pathParameters: {'userId': rival['id'] as String},
-                extra: rival,
               ),
               borderRadius: BorderRadius.circular(20),
               child: _buildRivalItem(rival, context),

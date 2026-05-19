@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import '../../data/models/ranking_model.dart';
 import '../../services/territory_service.dart';
+import '../../data/models/territory_model.dart';
 
 const _gridSize = 6;
 
@@ -19,6 +20,7 @@ class TerritoryRunnerProfilePage extends StatefulWidget {
 class _TerritoryRunnerProfilePageState
     extends State<TerritoryRunnerProfilePage> {
   RankingUsuarioModel? _runner;
+  List<TerritoryModel> _territorios = [];
   int _rank = 0;
   bool _loading = true;
   String? _error;
@@ -36,13 +38,23 @@ class _TerritoryRunnerProfilePageState
       _error = null;
     });
     try {
-      final lista = await TerritorioService.getRankingIndividual();
-      final idx = lista.indexWhere((r) => r.id == widget.runnerId);
+      final results = await Future.wait([
+        TerritorioService.getRankingIndividual(),
+        TerritorioService.getTerritorios(modalidad: 'individual'),
+      ]);
+      
+      final listaRanking = results[0] as List<RankingUsuarioModel>;
+      final listaTerritorios = results[1] as List<TerritoryModel>;
+      
+      final idx = listaRanking.indexWhere((r) => r.id == widget.runnerId);
+      final ownedTerritories = listaTerritorios.where((t) => t.propietario?.id == widget.runnerId).toList();
+
       if (!mounted) return;
       setState(() {
         _runner =
-            idx >= 0 ? lista[idx] : (lista.isNotEmpty ? lista.first : null);
+            idx >= 0 ? listaRanking[idx] : (listaRanking.isNotEmpty ? listaRanking.first : null);
         _rank = idx >= 0 ? idx + 1 : 1;
+        _territorios = ownedTerritories;
         _loading = false;
       });
     } catch (e) {
@@ -230,17 +242,142 @@ class _TerritoryRunnerProfilePageState
 
                   // Mini mapa visual (grid estático decorativo)
                   _SectionTitle(
-                      title: 'Zonas conquistadas', color: accentColor),
+                      title: 'Resumen Conquistas', color: accentColor),
                   const SizedBox(height: 14),
                   _TerritoryMiniGrid(
                     count: runner.totalTerritorios,
                     color: accentColor,
                   ),
 
+                  const SizedBox(height: 32),
+
+                  _SectionTitle(
+                      title: 'Territorios Dominados', color: accentColor),
+                  const SizedBox(height: 14),
+                  if (_territorios.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: c.card,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: c.primaryDeepWithAlpha(0.05)),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(Icons.flag_outlined, size: 40, color: c.textHint),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Aún no domina territorios',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: c.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    ..._territorios.map((t) => _buildTerritoryCard(t, context, accentColor)),
+
                   const SizedBox(height: 40),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTerritoryCard(TerritoryModel territory, BuildContext context, Color accentColor) {
+    final c = context.colors;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Icons.flag_rounded,
+              color: accentColor,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  territory.nombre,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: c.textPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.timer_outlined,
+                        size: 14, color: c.textSecondary),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Récord: ${territory.tiempoRecordFormateado ?? "00:00:00"}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: c.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'Defensas',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: c.textSecondary,
+                ),
+              ),
+              Text(
+                '${territory.totalDefensas}',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: accentColor,
+                  letterSpacing: -0.5,
+                ),
+              ),
+            ],
           ),
         ],
       ),

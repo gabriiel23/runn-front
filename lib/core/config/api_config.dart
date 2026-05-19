@@ -4,13 +4,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Ajusta [baseUrl] si cambias de emulador a dispositivo físico.
 class ApiConfig {
   // IP desplegada
-  static const String baseUrl = 'http://31.97.100.216';
+  // static const String baseUrl = 'http://31.97.100.216';
 
   // IP local casa
-  // static const String baseUrl = 'http://192.168.1.92:8005';
+  static const String baseUrl = 'http://192.168.1.92:8005';
 
   // IP local empresa
-  // static const String baseUrl = 'http://';
+  // static const String baseUrl = 'http://192.168.101.5:8005';
 
   // Claves de SharedPreferences
   static const String tokenKey = 'runn_token';

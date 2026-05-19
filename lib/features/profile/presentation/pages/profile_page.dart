@@ -416,6 +416,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                     'Puntos',
                     Icons.leaderboard_rounded,
                     const Color(0xFFFFB84D),
+                    onTap: _showPointsInfoBottomSheet,
                   ),
                 ],
               ),
@@ -433,10 +434,13 @@ class _ProfileScreenState extends State<ProfileScreen>
     String value,
     String label,
     IconData icon,
-    Color color,
-  ) {
+    Color color, {
+    VoidCallback? onTap,
+  }) {
     final c = context.colors;
-    return Column(
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
       children: [
         Container(
           width: 80,
@@ -470,6 +474,222 @@ class _ProfileScreenState extends State<ProfileScreen>
             fontSize: 11,
             color: c.textSecondary,
             fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    ));
+  }
+
+  void _showPointsInfoBottomSheet() {
+    final c = context.colors;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: c.bg,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: SafeArea(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handler
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 24),
+                  decoration: BoxDecoration(
+                    color: c.textHint.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFB84D).withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.leaderboard_rounded, color: Color(0xFFFFB84D), size: 28),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Tus Puntos',
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: c.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          Text(
+                            '¿Cómo conseguirlos?',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: c.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                
+                // Sections
+                _buildPointsInfoItem(
+                  context,
+                  icon: Icons.directions_run_rounded,
+                  color: c.primaryDeep,
+                  title: 'Carreras',
+                  description: 'Gana puntos al acumular kilómetros en tus carreras.',
+                  pointsList: [
+                    'Al menos 1 km: +10 pts',
+                    'Más de 5 km: +15 pts',
+                    'Más de 10 km: +25 pts',
+                    'Media Maratón (21 km): +50 pts',
+                    'Maratón (42 km): +100 pts',
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                _buildPointsInfoItem(
+                  context,
+                  icon: Icons.flag_rounded,
+                  color: const Color(0xFFE8698A),
+                  title: 'Territorios',
+                  description: 'Compite por los territorios en el mapa.',
+                  pointsList: [
+                    'Participar en una disputa: +10 pts',
+                    'Conquistar territorio libre: +25 pts',
+                    'Arrebatar territorio a otro: +35 pts',
+                  ],
+                ),
+                const SizedBox(height: 20),
+                
+                _buildPointsInfoItem(
+                  context,
+                  icon: Icons.local_fire_department_rounded,
+                  color: const Color(0xFFFF6B6B),
+                  title: 'Retos',
+                  description: 'Supera retos diarios y semanales.',
+                  pointsList: [
+                    'Completar reto diario: +10 pts',
+                    'Completar reto semanal: +50 pts',
+                  ],
+                ),
+                const SizedBox(height: 32),
+                
+                // Close button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: c.primaryDeep,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      '¡Entendido!',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPointsInfoItem(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String description,
+    required List<String> pointsList,
+  }) {
+    final c = context.colors;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          margin: const EdgeInsets.only(top: 2),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: c.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                description,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: c.textSecondary,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...pointsList.map((pt) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Icon(Icons.check_circle_rounded, size: 14, color: color.withValues(alpha: 0.8)),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            pt,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: c.textPrimary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
+            ],
           ),
         ),
       ],

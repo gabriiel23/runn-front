@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:runn_front/core/config/api_config.dart';
@@ -842,9 +843,18 @@ class _PropietarioRow extends StatelessWidget {
     final avatarUrl = propietario?.avatarUrl ?? grupo?.fotoUrl;
     final subtitulo = propietario?.ciudad ?? 'Sin ubicación';
 
-    return Row(
-      children: [
-        CircleAvatar(
+    return GestureDetector(
+      onTap: () {
+        if (propietario != null && propietario.id.isNotEmpty) {
+          context.pushNamed(
+            'territory_runner_profile',
+            pathParameters: {'runnerId': propietario.id},
+          );
+        }
+      },
+      child: Row(
+        children: [
+          CircleAvatar(
           radius: 24,
           backgroundColor: c.primaryDeepWithAlpha(0.12),
           backgroundImage:
@@ -893,7 +903,8 @@ class _PropietarioRow extends StatelessWidget {
               ),
             ],
           ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -1020,8 +1031,8 @@ class _HistorialCard extends StatelessWidget {
               ),
             ),
           ),
-        ],
-      ),
+          ],
+        ),
     );
   }
 }

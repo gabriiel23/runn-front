@@ -214,7 +214,7 @@ class _HomeScreenState extends State<HomeScreen>
                       _buildHeader(c),
 
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
+                        padding: const EdgeInsets.fromLTRB(24, 12, 24, 110),
                         child: _isRefreshing 
                           ? _buildHomeSkeleton(context)
                           : Column(
@@ -305,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen>
               final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
               
               // Calcular transición del botón 
-              final dockTop = safeTop + 130.0 - scrollOffset; 
+              final dockTop = safeTop + 154.0 - scrollOffset; 
               final floatTop = sh - 175.0; // Mucho más arriba para no taparlo con el bottom nav
               const double targetFabSize = 86.0; // FAB más grande y visible
               
