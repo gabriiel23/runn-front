@@ -12,7 +12,6 @@ import 'package:runn_front/features/start_career/services/actividades_service.da
 import 'package:runn_front/features/home/data/models/home_stats_model.dart';
 import 'package:runn_front/features/notifications/services/notificaciones_notifier.dart';
 import 'package:runn_front/features/notifications/presentation/widgets/notification_bell.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:runn_front/features/home/data/models/frase_model.dart';
 import 'package:runn_front/features/home/services/frases_service.dart';
 
@@ -38,7 +37,8 @@ class _HomeScreenState extends State<HomeScreen>
   int _newsCurrentPage = 0;
   int _quoteCurrentPage = 0;
 
-  bool _isAdmin = false;
+  bool _isAdminNoticias = false;
+  bool _isSuperAdmin = false;
   String _userName = 'Runner';
   bool _isLoadingNews = true;
   bool _isLoadingStats = true;
@@ -138,10 +138,12 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Future<void> _checkRole() async {
-    final prefs = await SharedPreferences.getInstance();
+    final esAdminNoticias = await ApiConfig.isAdminNoticias();
+    final esSuperAdmin = await ApiConfig.isSuperAdmin();
     if (mounted) {
       setState(() {
-        _isAdmin = prefs.getString(ApiConfig.userRolKey) == 'admin';
+        _isAdminNoticias = esAdminNoticias;
+        _isSuperAdmin = esSuperAdmin;
       });
     }
   }
@@ -227,7 +229,7 @@ class _HomeScreenState extends State<HomeScreen>
                                   'Novedades',
                                   Icons.newspaper_rounded,
                                   context,
-                                  trailing: _isAdmin
+                                  trailing: _isAdminNoticias
                                       ? IconButton(
                                           onPressed: () async {
                                             final refresh = await context.push(
@@ -253,23 +255,25 @@ class _HomeScreenState extends State<HomeScreen>
 
                                 const SizedBox(height: 28),
 
-                                _buildSectionHeader(
-                                  'Stats rápidas',
-                                  Icons.bolt_rounded,
-                                  context,
-                                ),
-                                const SizedBox(height: 16),
-                                _statsRow(),
+                                if (!_isSuperAdmin) ...[
+                                  _buildSectionHeader(
+                                    'Stats rápidas',
+                                    Icons.bolt_rounded,
+                                    context,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  _statsRow(),
 
-                                const SizedBox(height: 28),
-                                _weeklyStats(),
+                                  const SizedBox(height: 28),
+                                  _weeklyStats(),
 
-                                const SizedBox(height: 32),
+                                  const SizedBox(height: 32),
+                                ],
                                 _buildSectionHeader(
                                   'Motivación',
                                   Icons.local_fire_department_rounded,
                                   context,
-                                  trailing: _isAdmin
+                                  trailing: _isAdminNoticias
                                       ? ElevatedButton.icon(
                                           onPressed: () {
                                             context.push('/admin_frases');
@@ -347,13 +351,13 @@ class _HomeScreenState extends State<HomeScreen>
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: () => context.go('/start_career'),
+                      onTap: () => _isSuperAdmin ? context.pushNamed('admin_roles') : context.go('/start_career'),
                       borderRadius: BorderRadius.circular(currentRadius),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.play_circle_fill_rounded,
+                            _isSuperAdmin ? Icons.admin_panel_settings_rounded : Icons.play_circle_fill_rounded,
                             color: c.primaryLight,
                             size: iconSize,
                           ),
@@ -362,7 +366,7 @@ class _HomeScreenState extends State<HomeScreen>
                             Opacity(
                               opacity: textOpacity,
                               child: Text(
-                                'Iniciar Carrera',
+                                _isSuperAdmin ? 'Gestionar Roles' : 'Iniciar Carrera',
                                 overflow: TextOverflow.visible,
                                 softWrap: false,
                                 style: TextStyle(
@@ -534,7 +538,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _loadNews() async {
     try {
-      final items = _isAdmin
+      final items = _isAdminNoticias
           ? await NovedadesService.getAdminNovedades()
           : await NovedadesService.getNovedades();
       if (mounted) {
@@ -595,7 +599,7 @@ class _HomeScreenState extends State<HomeScreen>
                     backgroundColor: Colors.transparent,
                     builder: (ctx) => NewsDetailBottomSheet(
                       novedad: item,
-                      isAdmin: _isAdmin,
+                      isAdmin: _isAdminNoticias,
                       onRefreshRequested: _loadNews,
                     ),
                   );

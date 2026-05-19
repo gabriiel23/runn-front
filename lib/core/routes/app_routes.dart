@@ -57,6 +57,7 @@ import 'package:runn_front/features/profile/presentation/pages/wearables_page.da
 import 'package:runn_front/features/profile/presentation/pages/profile_multimedia_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/run_history_page.dart';
 import 'package:runn_front/features/profile/presentation/pages/run_detail_page.dart';
+import 'package:runn_front/features/profile/presentation/pages/admin_roles_page.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -203,6 +204,13 @@ final GoRouter appRouter = GoRouter(
           },
         ),
       ]
+    ),
+
+    // Admin Roles (SuperAdmin only) 
+    GoRoute(
+      path: '/admin/roles',
+      name: 'admin_roles',
+      builder: (context, state) => const AdminRolesPage(),
     ),
 
     // Shell — main navigation with bottom bar

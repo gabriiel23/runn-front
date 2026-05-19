@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/features/home/data/models/novedad_model.dart';
 import 'package:runn_front/features/home/services/novedades_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:runn_front/core/config/api_config.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class NewsDetailPage extends StatefulWidget {
@@ -28,11 +28,10 @@ class _NewsDetailPageState extends State<NewsDetailPage> {
   }
 
   Future<void> _checkRoleAndLoad() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rol = prefs.getString('rol');
+    final esAdminNoticias = await ApiConfig.isAdminNoticias();
     if (mounted) {
       setState(() {
-        _isAdmin = rol == 'admin';
+        _isAdmin = esAdminNoticias;
       });
     }
     _fetchNovedad();

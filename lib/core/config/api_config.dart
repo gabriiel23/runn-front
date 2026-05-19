@@ -75,11 +75,34 @@ class ApiConfig {
     if (rol != null) await prefs.setString(userRolKey, rol);
   }
 
-  /// Retorna el rol del usuario ("usuario" | "admin"), o null si no existe.
+  /// Retorna el rol completo del usuario guardado en sesión, o null si no existe.
+  /// El rol puede ser una cadena compuesta separada por comas, p.ej. "admin_eventos,admin_noticias".
   static Future<String?> getUserRol() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(userRolKey);
   }
+
+  // ─── HELPERS DE VERIFICACIÓN DE ROLES ─────────────────────────────────────
+
+  /// Verifica si el usuario tiene un rol específico.
+  /// Soporta roles compuestos separados por comas.
+  /// `superadmin` y el heredado `admin` tienen acceso a todo.
+  static Future<bool> _tieneRol(String rolRequerido) async {
+    final rolString = await getUserRol();
+    if (rolString == null || rolString.isEmpty) return false;
+    final roles = rolString.split(',').map((r) => r.trim().toLowerCase()).toList();
+    if (roles.contains('superadmin') || roles.contains('admin')) return true;
+    return roles.contains(rolRequerido.toLowerCase());
+  }
+
+  /// Retorna true si el usuario es superadmin (o tiene el rol heredado 'admin').
+  static Future<bool> isSuperAdmin() => _tieneRol('superadmin');
+
+  /// Retorna true si el usuario puede crear/editar eventos.
+  static Future<bool> isAdminEventos() => _tieneRol('admin_eventos');
+
+  /// Retorna true si el usuario puede crear/editar noticias y frases.
+  static Future<bool> isAdminNoticias() => _tieneRol('admin_noticias');
 
   /// Retorna el ID del usuario actual.
   static Future<String?> getCurrentUserId() async {

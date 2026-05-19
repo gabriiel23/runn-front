@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
+import 'package:runn_front/core/config/api_config.dart';
 import '../../services/profile_service.dart';
 import '../../domain/models/insignia_model.dart';
 import '../../../start_career/services/actividades_service.dart';
@@ -25,6 +26,7 @@ class _ProfileScreenState extends State<ProfileScreen>
   InsigniasResult? _insignias;
   bool _isLoading = true;
   bool _isRefreshing = false;
+  bool _isSuperAdmin = false;
 
   @override
   void initState() {
@@ -53,10 +55,12 @@ class _ProfileScreenState extends State<ProfileScreen>
   }
 
   Future<void> _loadProfile() async {
+    final esSuperAdmin = await ApiConfig.isSuperAdmin();
     // 1. Carga instantánea desde caché local
     final local = await ProfileService.getLocalProfile();
     if (mounted) {
       setState(() {
+        _isSuperAdmin = esSuperAdmin;
         _userData = local;
         _isLoading = false;
       });
@@ -149,12 +153,14 @@ class _ProfileScreenState extends State<ProfileScreen>
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         const SizedBox(height: 28),
-                        _buildBadgesSection(context),
-                        const SizedBox(height: 28),
-                        _buildStatisticsSection(context),
-                        const SizedBox(height: 28),
-                        _buildHistorialSection(context),
-                        const SizedBox(height: 28),
+                        if (!_isSuperAdmin) ...[
+                          _buildBadgesSection(context),
+                          const SizedBox(height: 28),
+                          _buildStatisticsSection(context),
+                          const SizedBox(height: 28),
+                          _buildHistorialSection(context),
+                          const SizedBox(height: 28),
+                        ],
                         _buildMultimediaSection(context),
                         const SizedBox(height: 60),
                       ]),
@@ -391,38 +397,40 @@ class _ProfileScreenState extends State<ProfileScreen>
             const SizedBox(height: 28),
 
             // ── Círculos de stats ─────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _buildStatCircle(
-                    context,
-                    _estadisticas != null ? '${_estadisticas!.territoriosConquistados}' : '–',
-                    'Territorios',
-                    Icons.flag_rounded,
-                    const Color(0xFFE8698A),
-                  ),
-                  _buildStatCircle(
-                    context,
-                    _estadisticas != null ? _estadisticas!.distanciaTotalKm.toStringAsFixed(1) : '–',
-                    'KM Totales',
-                    Icons.directions_run_rounded,
-                    c.primaryDeep,
-                  ),
-                  _buildStatCircle(
-                    context,
-                    '$puntos',
-                    'Puntos',
-                    Icons.leaderboard_rounded,
-                    const Color(0xFFFFB84D),
-                    onTap: _showPointsInfoBottomSheet,
-                  ),
-                ],
+            if (!_isSuperAdmin) ...[
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatCircle(
+                      context,
+                      _estadisticas != null ? '${_estadisticas!.territoriosConquistados}' : '–',
+                      'Territorios',
+                      Icons.flag_rounded,
+                      const Color(0xFFE8698A),
+                    ),
+                    _buildStatCircle(
+                      context,
+                      _estadisticas != null ? _estadisticas!.distanciaTotalKm.toStringAsFixed(1) : '–',
+                      'KM Totales',
+                      Icons.directions_run_rounded,
+                      c.primaryDeep,
+                    ),
+                    _buildStatCircle(
+                      context,
+                      '$puntos',
+                      'Puntos',
+                      Icons.leaderboard_rounded,
+                      const Color(0xFFFFB84D),
+                      onTap: _showPointsInfoBottomSheet,
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            const SizedBox(height: 32),
+              const SizedBox(height: 32),
+            ],
           ],
         ),
       ),

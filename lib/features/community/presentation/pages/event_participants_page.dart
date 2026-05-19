@@ -21,7 +21,7 @@ class _EventParticipantsPageState extends State<EventParticipantsPage> {
   int _total = 0;
   bool _isLoading = true;
   String _errorMsg = '';
-  String? _userRol;
+  bool _isAdminEventos = false;
   bool _isActionLoading = false;
 
   @override
@@ -31,8 +31,8 @@ class _EventParticipantsPageState extends State<EventParticipantsPage> {
   }
 
   Future<void> _loadInitialData() async {
-    final rol = await ApiConfig.getUserRol();
-    if (mounted) setState(() => _userRol = rol);
+    final esAdmin = await ApiConfig.isAdminEventos();
+    if (mounted) setState(() => _isAdminEventos = esAdmin);
     await _loadParticipantes();
   }
 
@@ -143,7 +143,7 @@ class _EventParticipantsPageState extends State<EventParticipantsPage> {
             ),
         ],
       ),
-      floatingActionButton: _userRol == 'admin'
+      floatingActionButton: _isAdminEventos
           ? FloatingActionButton.extended(
               onPressed: _abrirModalAgregar,
               backgroundColor: c.primaryDeep,
@@ -248,7 +248,7 @@ class _EventParticipantsPageState extends State<EventParticipantsPage> {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_userRol == 'admin')
+              if (_isAdminEventos)
                 Container(
                   margin: const EdgeInsets.only(right: 8),
                   child: IconButton(

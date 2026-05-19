@@ -35,6 +35,7 @@ class _TerritoryDetailViewState extends State<TerritoryDetailView> {
   bool _isActing = false;
   String? _error;
   String? _miId;
+  bool _isSuperAdmin = false;
 
   @override
   void initState() {
@@ -49,6 +50,7 @@ class _TerritoryDetailViewState extends State<TerritoryDetailView> {
       _error = null;
     });
     try {
+      _isSuperAdmin = await ApiConfig.isSuperAdmin();
       _miId = await ApiConfig.getCurrentUserId();
       final t = await TerritorioService.getTerritorioDetalle(widget.territoryId);
       if (!mounted) return;
@@ -308,66 +310,67 @@ class _TerritoryDetailViewState extends State<TerritoryDetailView> {
 
 
                 // ── CTA BUTTON ───────────────────────────────────────────────
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [c.primaryDeep, c.primaryDark],
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: c.primaryDeepWithAlpha(0.35),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
+                if (!_isSuperAdmin)
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [c.primaryDeep, c.primaryDark],
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
                       ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: _isActing ? null : _verificarProximidadYConquistar,
                       borderRadius: BorderRadius.circular(18),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            if (_isActing)
-                              const SizedBox(
-                                width: 22, height: 22,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                              )
-                            else
-                              Icon(
+                      boxShadow: [
+                        BoxShadow(
+                          color: c.primaryDeepWithAlpha(0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: _isActing ? null : _verificarProximidadYConquistar,
+                        borderRadius: BorderRadius.circular(18),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              if (_isActing)
+                                const SizedBox(
+                                  width: 22, height: 22,
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              else
+                                Icon(
+                                  esPropio
+                                      ? Icons.shield_rounded
+                                      : Icons.bolt_rounded,
+                                  color: Colors.white,
+                                  size: 22,
+                                ),
+                              const SizedBox(width: 8),
+                              Text(
                                 esPropio
-                                    ? Icons.shield_rounded
-                                    : Icons.bolt_rounded,
-                                color: Colors.white,
-                                size: 22,
+                                    ? '¡Defender mi territorio!'
+                                    : t.libre
+                                        ? '¡Conquistar territorio!'
+                                        : '¡Disputar territorio!',
+                                style: const TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: -0.3,
+                                ),
                               ),
-                            const SizedBox(width: 8),
-                            Text(
-                              esPropio
-                                  ? '¡Defender mi territorio!'
-                                  : t.libre
-                                      ? '¡Conquistar territorio!'
-                                      : '¡Disputar territorio!',
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
           ),

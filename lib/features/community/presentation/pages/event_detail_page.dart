@@ -25,7 +25,7 @@ class _EventDetailPageState extends State<EventDetailPage> with RouteAware {
   bool _isLoading = true;
   bool _isActionLoading = false;
   String _errorMsg = '';
-  String? _userRol;
+  bool _isAdminEventos = false;
 
   GoogleMapController? _mapController;
 
@@ -59,8 +59,8 @@ class _EventDetailPageState extends State<EventDetailPage> with RouteAware {
   }
 
   Future<void> _loadRol() async {
-    final rol = await ApiConfig.getUserRol();
-    if (mounted) setState(() => _userRol = rol);
+    final esAdmin = await ApiConfig.isAdminEventos();
+    if (mounted) setState(() => _isAdminEventos = esAdmin);
   }
 
   Future<void> _loadDetalle() async {
@@ -246,7 +246,7 @@ class _EventDetailPageState extends State<EventDetailPage> with RouteAware {
     }
 
     final evento = _detalle!.evento;
-    final isAdmin = _userRol == 'admin';
+    final isAdmin = _isAdminEventos;
 
     return Scaffold(
       backgroundColor: c.bg,
@@ -809,7 +809,7 @@ class _EventDetailPageState extends State<EventDetailPage> with RouteAware {
 
   Widget _buildBottomSheet(BuildContext context) {
     final c = context.colors;
-    final isAdmin = _userRol == 'admin';
+    final isAdmin = _isAdminEventos;
     if (_detalle == null || isAdmin) return const SizedBox.shrink();
 
     final yaInscrito = _detalle!.yaInscrito;

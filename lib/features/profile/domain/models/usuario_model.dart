@@ -13,6 +13,7 @@ class UsuarioModel {
   final String? nivel;
   final String? objetivo;
   final int puntos;
+  final String? rol;
   final DateTime? creadoEn;
 
   const UsuarioModel({
@@ -29,6 +30,7 @@ class UsuarioModel {
     this.nivel,
     this.objetivo,
     this.puntos = 0,
+    this.rol,
     this.creadoEn,
   });
 
@@ -47,6 +49,7 @@ class UsuarioModel {
       nivel: json['nivel'] as String?,
       objetivo: json['objetivo'] as String?,
       puntos: (json['puntos'] as num?)?.toInt() ?? 0,
+      rol: json['rol'] as String?,
       creadoEn: json['creado_en'] != null
           ? DateTime.tryParse(json['creado_en'] as String)
           : null,
@@ -67,6 +70,7 @@ class UsuarioModel {
         if (nivel != null) 'nivel': nivel,
         if (objetivo != null) 'objetivo': objetivo,
         'puntos': puntos,
+        if (rol != null) 'rol': rol,
       };
 
   /// Crear una copia con algunos campos actualizados.

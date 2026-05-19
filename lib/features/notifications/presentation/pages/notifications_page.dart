@@ -230,6 +230,16 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         // Mostrar el mensaje sin navegar (ya contienen el detalle en el texto)
         break;
 
+      // ── ROLES ──────────────────────────────────────────────
+      case TipoNotificacion.rolActualizado:
+        final rolesStr = notif.rolesEmbebidos ?? '';
+        if (rolesStr.contains('admin_eventos')) {
+          context.goNamed('event_all');
+        } else {
+          context.go('/home');
+        }
+        break;
+
       case TipoNotificacion.otros:
         break;
     }
@@ -801,6 +811,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return '🏁 Evento finalizado';
       case TipoNotificacion.listaEsperaEvento:
         return 'En lista de espera';
+      case TipoNotificacion.rolActualizado:
+        return '¡Has recibido un nuevo rol!';
       case TipoNotificacion.otros:
         return 'Notificacion';
     }
@@ -851,6 +863,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return Icons.flag_rounded;
       case TipoNotificacion.listaEsperaEvento:
         return Icons.hourglass_bottom_rounded;
+      case TipoNotificacion.rolActualizado:
+        return Icons.admin_panel_settings_rounded;
       case TipoNotificacion.otros:
         return Icons.notifications_rounded;
     }
@@ -903,6 +917,8 @@ class _NotificationsScreenState extends State<NotificationsScreen>
         return const Color(0xFF607D8B); // Gris azulado
       case TipoNotificacion.listaEsperaEvento:
         return const Color(0xFFFF9800); // Naranja
+      case TipoNotificacion.rolActualizado:
+        return const Color(0xFF9C27B0); // Púrpura
       case TipoNotificacion.otros:
         return context.colors.textHint; // Gris
     }

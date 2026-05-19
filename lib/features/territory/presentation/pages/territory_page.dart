@@ -59,8 +59,8 @@ class _TerritoriesScreenState extends State<TerritoriesScreen>
   }
 
   Future<void> _loadAdminStatus() async {
-    final rol = await ApiConfig.getUserRol();
-    if (mounted) setState(() => _isAdmin = rol == 'admin');
+    final esSuperAdmin = await ApiConfig.isSuperAdmin();
+    if (mounted) setState(() => _isAdmin = esSuperAdmin);
   }
 
   void _openAdminPanel() {

@@ -32,6 +32,7 @@ enum TipoNotificacion {
   eventoFinalizado('evento_finalizado'),
   listaEsperaEvento('lista_espera_evento'),
   // ── Otros ───────────────────────────────────────────────
+  rolActualizado('rol_actualizado'),
   otros('otros');
 
   final String value;
@@ -92,6 +93,8 @@ enum TipoNotificacion {
         return '🏁 Finalizado';
       case TipoNotificacion.listaEsperaEvento:
         return '⏳ En espera';
+      case TipoNotificacion.rolActualizado:
+        return '👑 Nuevo Rol';
       case TipoNotificacion.otros:
         return 'Otros';
     }
@@ -173,6 +176,13 @@ class NotificacionModel {
     return match?.group(1);
   }
 
+  /// Extrae los roles embebidos al final del mensaje.
+  /// Formato: `...mensaje... roles_embebidos:admin_eventos,usuario`
+  String? get rolesEmbebidos {
+    final match = RegExp(r'roles_embebidos:([a-z,_]+)').firstMatch(mensaje);
+    return match?.group(1);
+  }
+
   /// Versión limpia del mensaje sin los suffixes de metadatos.
   String get mensajeLimpio => mensaje
       .replaceAll(RegExp(r'\s*grupo_id:[\w-]+'), '')
@@ -180,6 +190,7 @@ class NotificacionModel {
       .replaceAll(RegExp(r'\s*reto_id:[\w-]+'), '')
       .replaceAll(RegExp(r'\s*actividad_id:[\w-]+'), '')
       .replaceAll(RegExp(r'\s*evento_id:[\w-]+'), '')
+      .replaceAll(RegExp(r'\s*roles_embebidos:[a-z,_]+'), '')
       .trim();
 }
 

@@ -45,7 +45,8 @@ class _CommunityScreenState extends State<CommunityScreen>
   List<Map<String, dynamic>> _rivals = [];
   bool _rivalsLoading = true;
 
-  String? _userRol;
+  bool _isAdminEventos = false;
+  bool _isSuperAdmin = false;
 
   @override
   void initState() {
@@ -81,8 +82,14 @@ class _CommunityScreenState extends State<CommunityScreen>
   }
 
   Future<void> _loadRolYEventos() async {
-    final rol = await ApiConfig.getUserRol();
-    if (mounted) setState(() => _userRol = rol);
+    final esAdminEventos = await ApiConfig.isAdminEventos();
+    final esSuperAdmin = await ApiConfig.isSuperAdmin();
+    if (mounted) {
+      setState(() {
+        _isAdminEventos = esAdminEventos;
+        _isSuperAdmin = esSuperAdmin;
+      });
+    }
     await Future.wait([
       _fetchEventos(),
       _fetchStats(),
@@ -225,8 +232,8 @@ class _CommunityScreenState extends State<CommunityScreen>
                                 const SizedBox(height: 32),
                                 _buildEventsSection(),
                                 const SizedBox(height: 32),
-                                _buildNearbyRunners(),
-                                const SizedBox(height: 40),
+                                if (!_isSuperAdmin) _buildNearbyRunners(),
+                                const SizedBox(height: 110),
                               ],
                             ),
                       ),
@@ -907,7 +914,7 @@ class _CommunityScreenState extends State<CommunityScreen>
                   ),
                   child: const Text('Ver todo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
                 ),
-                if (_userRol == 'admin') ...[
+                if (_isAdminEventos) ...[
                   const SizedBox(width: 4),
                   TextButton.icon(
                     onPressed: () async {

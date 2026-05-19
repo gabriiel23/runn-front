@@ -18,7 +18,7 @@ class _EventAllPageState extends State<EventAllPage>
   List<EventoModel> _proximos = [];
   List<EventoModel> _pasados = [];
   bool _isLoading = true;
-  String? _userRol;
+  bool _isAdminEventos = false;
 
   @override
   void initState() {
@@ -36,10 +36,10 @@ class _EventAllPageState extends State<EventAllPage>
   Future<void> _loadAll() async {
     setState(() => _isLoading = true);
     try {
-      final rolFuture = ApiConfig.getUserRol();
+      final adminFuture = ApiConfig.isAdminEventos();
       final eventosFuture = EventosService.getEventos();
-      final results = await Future.wait([rolFuture, eventosFuture]);
-      final rol = results[0] as String?;
+      final results = await Future.wait([adminFuture, eventosFuture]);
+      final esAdmin = results[0] as bool;
       final todos = results[1] as List<EventoModel>;
 
       final now = DateTime.now();
@@ -59,7 +59,7 @@ class _EventAllPageState extends State<EventAllPage>
 
       if (mounted) {
         setState(() {
-          _userRol = rol;
+          _isAdminEventos = esAdmin;
           _proximos = proximos;
           _pasados = pasados;
           _isLoading = false;
@@ -180,7 +180,7 @@ class _EventAllPageState extends State<EventAllPage>
           ),
         ),
       ),
-      floatingActionButton: _userRol == 'admin'
+      floatingActionButton: _isAdminEventos
           ? FloatingActionButton.extended(
               onPressed: () =>
                   context.pushNamed('event_create').then((_) => _loadAll()),
@@ -249,7 +249,7 @@ class _EventAllPageState extends State<EventAllPage>
 
   Widget _buildCard(EventoModel evento, {required bool isPast}) {
     final c = context.colors;
-    final isAdmin = _userRol == 'admin';
+    final isAdmin = _isAdminEventos;
 
     return GestureDetector(
       onTap: () => context

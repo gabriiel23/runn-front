@@ -81,8 +81,8 @@ class _ChallengesPageState extends State<ChallengesPage>
     _cargarSemanal();
     _cargarInsignias();
     NotificacionesNotifier.instance.fetchUnreadCount();
-    final rol = await ApiConfig.getUserRol();
-    if (mounted) setState(() => _esAdmin = rol == 'admin');
+    final esAdmin = await ApiConfig.isSuperAdmin();
+    if (mounted) setState(() => _esAdmin = esAdmin);
   }
 
   Future<void> _cargarDiario() async {

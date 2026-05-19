@@ -29,6 +29,7 @@ class ProfileService {
       pais: usuario.pais,
       pesoKg: usuario.pesoKg,
       alturaCm: usuario.alturaCm,
+      rol: usuario.rol,  // ← sincronizar rol fresco desde servidor
     );
     // Garantizar que el avatar URL esté siempre en caché
     if (usuario.avatarUrl != null && usuario.avatarUrl!.isNotEmpty) {

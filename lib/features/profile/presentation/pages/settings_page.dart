@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:runn_front/core/config/api_config.dart';
 import 'package:runn_front/core/theme/theme_scope.dart';
 import 'package:runn_front/core/theme/app_theme.dart';
 
@@ -16,6 +17,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late AppColorScheme _pendingScheme;
   late AppBrightness _pendingBrightness;
   bool _initialized = false;
+  bool _isSuperAdmin = false;
 
   bool get _hasPendingChange {
     final notifier = context.themeNotifier;
@@ -31,6 +33,10 @@ class _SettingsPageState extends State<SettingsPage> {
       _pendingScheme = notifier.scheme;
       _pendingBrightness = notifier.brightness;
       _initialized = true;
+      // Cargar permisos de superadmin asincrónicamente
+      ApiConfig.isSuperAdmin().then((v) {
+        if (mounted) setState(() => _isSuperAdmin = v);
+      });
     }
   }
 
@@ -130,6 +136,11 @@ class _SettingsPageState extends State<SettingsPage> {
                 const SizedBox(height: 32),
                 _buildSectionTitle('Apariencia'),
                 _buildThemeSelector(),
+                if (_isSuperAdmin) ...[
+                  const SizedBox(height: 32),
+                  _buildSectionTitle('Administración'),
+                  _buildAdminGroup(),
+                ],
                 const SizedBox(height: 48),
                 _buildLogoutButton(),
                 const SizedBox(height: 24),
@@ -692,6 +703,56 @@ class _SettingsPageState extends State<SettingsPage> {
                 fontWeight: FontWeight.bold,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Admin group ──────────────────────────────────────────────────────────────
+
+  Widget _buildAdminGroup() {
+    final c = context.colors;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            c.primaryDeep.withValues(alpha: 0.10),
+            c.primaryDeep.withValues(alpha: 0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: c.primaryDeep.withValues(alpha: 0.20)),
+      ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+            leading: Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: c.primaryDeep.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.manage_accounts_rounded, color: c.primaryDeep, size: 22),
+            ),
+            title: Text(
+              'Gestionar Roles de Usuarios',
+              style: TextStyle(
+                color: c.textPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: 14,
+              ),
+            ),
+            subtitle: Text(
+              'Asigna y revoca roles de admin',
+              style: TextStyle(color: c.textSecondary, fontSize: 12),
+            ),
+            trailing: Icon(Icons.chevron_right_rounded, color: c.primaryDeep),
+            onTap: () => context.pushNamed('admin_roles'),
           ),
         ],
       ),
